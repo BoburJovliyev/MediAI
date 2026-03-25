@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, Heart
+  Shield, Menu, X, Heart, LogOut, User
 } from "lucide-react";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab";
@@ -11,6 +11,8 @@ interface DashboardLayoutProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   children: React.ReactNode;
+  onSignOut?: () => void;
+  userName?: string;
 }
 
 const navItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
