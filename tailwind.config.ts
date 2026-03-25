@@ -12,8 +12,26 @@ export default {
         "2xl": "1400px",
       },
     },
+    fontFamily: {
+      display: ['Space Grotesk', 'sans-serif'],
+      body: ['Plus Jakarta Sans', 'sans-serif'],
+    },
     extend: {
       colors: {
+        medical: {
+          teal: "hsl(var(--medical-teal))",
+          "teal-light": "hsl(var(--medical-teal-light))",
+          green: "hsl(var(--medical-green))",
+          "green-light": "hsl(var(--medical-green-light))",
+          blue: "hsl(var(--medical-blue))",
+          "blue-light": "hsl(var(--medical-blue-light))",
+          purple: "hsl(var(--medical-purple))",
+          "purple-light": "hsl(var(--medical-purple-light))",
+          orange: "hsl(var(--medical-orange))",
+          "orange-light": "hsl(var(--medical-orange-light))",
+          red: "hsl(var(--medical-red))",
+          "red-light": "hsl(var(--medical-red-light))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
