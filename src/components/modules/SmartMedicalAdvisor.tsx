@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Send, Pill, Stethoscope, TestTube, Loader2, User } from "lucide-react";
+import { Brain, Pill, Stethoscope, TestTube, Loader2, User } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface PatientData {
   complaint: string;
@@ -20,6 +23,7 @@ interface Diagnosis {
 }
 
 const SmartMedicalAdvisor = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<PatientData>({ complaint: "", bloodResults: "", mriSummary: "", age: "", gender: "" });
   const [loading, setLoading] = useState(false);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
@@ -27,24 +31,46 @@ const SmartMedicalAdvisor = () => {
   const handleSubmit = async () => {
     if (!data.complaint) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 3500));
-    setDiagnosis({
-      condition: "Lumbar Disk Herniation (L4-L5)",
-      confidence: 87,
-      description: "Bemor shikoyatlari, MRT natijalari va klinik ko'rsatkichlar asosida bel umurtqa diskining chiqishi (herniya) aniqlandi. L4-L5 darajasida dorsolateral herniya nerve ildiziga bosim ko'rsatmoqda.",
-      medications: [
-        { name: "Ibuprofen", dose: "400mg", frequency: "Kuniga 2 marta", duration: "7 kun" },
-        { name: "Mydocalm", dose: "150mg", frequency: "Kuniga 3 marta", duration: "14 kun" },
-        { name: "Milgamma", dose: "1 ampula", frequency: "Kuniga 1 marta", duration: "10 kun" },
-      ],
-      lifestyle: [
-        "Og'ir yuk ko'tarmaslik (5 kg dan ortiq)",
-        "Har 45 daqiqada o'rnidan turib harakatlanish",
-        "Maxsus ortopedik to'shak ishlatish",
-        "Suzish va yurish mashqlari",
-      ],
-    });
-    setLoading(false);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("diagnose", {
+        body: { ...data },
+      });
+
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+
+      const d: Diagnosis = {
+        condition: result.condition || "Noma'lum",
+        confidence: result.confidence || 0,
+        description: result.description || "",
+        medications: result.medications || [],
+        lifestyle: result.lifestyle || [],
+      };
+      setDiagnosis(d);
+
+      // Save to database
+      if (user) {
+        await supabase.from("diagnoses").insert({
+          user_id: user.id,
+          complaint: data.complaint,
+          blood_results: data.bloodResults,
+          mri_summary: data.mriSummary,
+          condition_name: d.condition,
+          confidence: d.confidence,
+          description: d.description,
+          medications: d.medications as any,
+          lifestyle_tips: d.lifestyle as any,
+          ai_model: "gemini-2.5-flash",
+        });
+      }
+
+      toast.success("Tashxis muvaffaqiyatli yakunlandi!");
+    } catch (err: any) {
+      console.error("Diagnosis error:", err);
+      toast.error(err.message || "Tashxisda xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fields: { key: keyof PatientData; label: string; icon: React.ReactNode; placeholder: string; multiline?: boolean }[] = [
@@ -61,27 +87,18 @@ const SmartMedicalAdvisor = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Input Form */}
         <div className="space-y-4">
           <div className="bg-card rounded-2xl p-6 shadow-card border border-border space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Yosh</label>
-                <input
-                  type="number"
-                  value={data.age}
-                  onChange={(e) => setData({ ...data, age: e.target.value })}
-                  placeholder="45"
-                  className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
+                <input type="number" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} placeholder="45"
+                  className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Jins</label>
-                <select
-                  value={data.gender}
-                  onChange={(e) => setData({ ...data, gender: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
+                <select value={data.gender} onChange={(e) => setData({ ...data, gender: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                   <option value="">Tanlang</option>
                   <option value="male">Erkak</option>
                   <option value="female">Ayol</option>
@@ -91,72 +108,39 @@ const SmartMedicalAdvisor = () => {
 
             {fields.map((f) => (
               <div key={f.key}>
-                <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2">
-                  {f.icon} {f.label}
-                </label>
+                <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2">{f.icon} {f.label}</label>
                 {f.multiline ? (
-                  <textarea
-                    value={data[f.key]}
-                    onChange={(e) => setData({ ...data, [f.key]: e.target.value })}
-                    placeholder={f.placeholder}
-                    rows={3}
-                    className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                  />
+                  <textarea value={data[f.key]} onChange={(e) => setData({ ...data, [f.key]: e.target.value })} placeholder={f.placeholder} rows={3}
+                    className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
                 ) : (
-                  <input
-                    value={data[f.key]}
-                    onChange={(e) => setData({ ...data, [f.key]: e.target.value })}
-                    placeholder={f.placeholder}
-                    className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                  <input value={data[f.key]} onChange={(e) => setData({ ...data, [f.key]: e.target.value })} placeholder={f.placeholder}
+                    className="w-full px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 )}
               </div>
             ))}
 
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !data.complaint}
-              className="w-full gradient-accent text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  AI Tahlil qilmoqda...
-                </>
-              ) : (
-                <>
-                  <Brain size={20} />
-                  Tashxis va Tavsiya Olish
-                </>
-              )}
+            <button onClick={handleSubmit} disabled={loading || !data.complaint}
+              className="w-full gradient-accent text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              {loading ? <><Loader2 size={20} className="animate-spin" /> AI Tahlil qilmoqda...</> : <><Brain size={20} /> Tashxis va Tavsiya Olish</>}
             </button>
           </div>
         </div>
 
-        {/* Results */}
         <AnimatePresence>
           {diagnosis && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-4"
-            >
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="bg-card rounded-2xl p-6 shadow-card border border-border space-y-5">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-display font-bold text-foreground">{diagnosis.condition}</h3>
-                    <span className="medical-badge bg-medical-teal-light text-medical-teal">
-                      {diagnosis.confidence}% ishonch
-                    </span>
+                    <span className="medical-badge bg-medical-teal-light text-medical-teal">{diagnosis.confidence}% ishonch</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{diagnosis.description}</p>
                 </div>
 
-                {/* Medications */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
-                    <Pill size={16} className="text-medical-purple" />
-                    Dori vositalari
+                    <Pill size={16} className="text-medical-purple" /> Dori vositalari
                   </h4>
                   <div className="space-y-2">
                     {diagnosis.medications.map((med, i) => (
@@ -171,22 +155,18 @@ const SmartMedicalAdvisor = () => {
                   </div>
                 </div>
 
-                {/* Lifestyle */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-3">Hayot tarzi tavsiyalari:</h4>
                   <div className="space-y-2">
                     {diagnosis.lifestyle.map((tip, i) => (
                       <div key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                        <span className="w-5 h-5 rounded-full bg-medical-green-light text-medical-green flex items-center justify-center text-xs font-bold shrink-0">
-                          {i + 1}
-                        </span>
+                        <span className="w-5 h-5 rounded-full bg-medical-green-light text-medical-green flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
                         {tip}
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-
               <MedicalDisclaimer type="medication" />
             </motion.div>
           )}
