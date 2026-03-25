@@ -14,7 +14,222 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      diagnoses: {
+        Row: {
+          ai_model: string | null
+          blood_results: string | null
+          complaint: string | null
+          condition_name: string | null
+          confidence: number | null
+          created_at: string
+          description: string | null
+          id: string
+          lifestyle_tips: Json | null
+          medications: Json | null
+          mri_summary: string | null
+          patient_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          blood_results?: string | null
+          complaint?: string | null
+          condition_name?: string | null
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifestyle_tips?: Json | null
+          medications?: Json | null
+          mri_summary?: string | null
+          patient_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          blood_results?: string | null
+          complaint?: string | null
+          condition_name?: string | null
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifestyle_tips?: Json | null
+          medications?: Json | null
+          mri_summary?: string | null
+          patient_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnoses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          age: number | null
+          created_at: string
+          full_name: string
+          gender: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          full_name: string
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          full_name?: string
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rehab_sessions: {
+        Row: {
+          accuracy_score: number | null
+          completed_reps: number | null
+          created_at: string
+          duration_seconds: number | null
+          exercise_name: string
+          feedback_log: Json | null
+          id: string
+          patient_id: string | null
+          total_reps: number | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          completed_reps?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_name: string
+          feedback_log?: Json | null
+          id?: string
+          patient_id?: string | null
+          total_reps?: number | null
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          completed_reps?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_name?: string
+          feedback_log?: Json | null
+          id?: string
+          patient_id?: string | null
+          total_reps?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehab_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_analyses: {
+        Row: {
+          ai_model: string | null
+          created_at: string
+          findings: Json | null
+          id: string
+          image_url: string | null
+          patient_id: string | null
+          recommendation: string | null
+          scan_type: string | null
+          severity: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          created_at?: string
+          findings?: Json | null
+          id?: string
+          image_url?: string | null
+          patient_id?: string | null
+          recommendation?: string | null
+          scan_type?: string | null
+          severity?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          created_at?: string
+          findings?: Json | null
+          id?: string
+          image_url?: string | null
+          patient_id?: string | null
+          recommendation?: string | null
+          scan_type?: string | null
+          severity?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_analyses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
