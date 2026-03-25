@@ -2,6 +2,9 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface AnalysisResult {
   findings: string[];
@@ -18,6 +21,7 @@ const severityConfig = {
 };
 
 const AIRadiologist = () => {
+  const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -36,21 +40,42 @@ const AIRadiologist = () => {
   const handleAnalyze = useCallback(async () => {
     if (!image) return;
     setAnalyzing(true);
-    // Simulate AI analysis (in production would call backend)
-    await new Promise((r) => setTimeout(r, 3000));
-    setResult({
-      findings: [
-        "Chap o'pka yuqori qismida 12mm nodular soya aniqlandi",
-        "Plevral effuziya belgilari kuzatilmaydi",
-        "Yurak o'lchamlari normal chegarada",
-        "Mediastinal strukturalar normal",
-      ],
-      severity: "moderate",
-      recommendation: "Pulmonolog konsultatsiyasi va qo'shimcha KT tekshiruvi tavsiya etiladi. 3 oy ichida nazorat rentgenografiya o'tkazish lozim.",
-      regions: ["Chap o'pka yuqori bo'limi", "Mediastinum"],
-    });
-    setAnalyzing(false);
-  }, [image]);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-scan", {
+        body: { imageBase64: image, scanType: "xray" },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      const analysisResult: AnalysisResult = {
+        findings: data.findings || [],
+        severity: data.severity || "normal",
+        recommendation: data.recommendation || "",
+        regions: data.regions || [],
+      };
+      setResult(analysisResult);
+
+      // Save to database
+      if (user) {
+        await supabase.from("scan_analyses").insert({
+          user_id: user.id,
+          scan_type: "xray",
+          findings: data.findings,
+          severity: data.severity,
+          recommendation: data.recommendation,
+          ai_model: "gemini-2.5-flash",
+        });
+      }
+
+      toast.success("Tahlil muvaffaqiyatli yakunlandi!");
+    } catch (err: any) {
+      console.error("Analysis error:", err);
+      toast.error(err.message || "Tahlilda xatolik yuz berdi");
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [image, user]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -72,7 +97,6 @@ const AIRadiologist = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upload Area */}
         <div className="space-y-4">
           <div
             onDragOver={(e) => e.preventDefault()}
@@ -106,28 +130,17 @@ const AIRadiologist = () => {
               className="w-full gradient-primary text-primary-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-60 shadow-glow"
             >
               {analyzing ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Tahlil qilinmoqda...
-                </>
+                <><Loader2 size={20} className="animate-spin" /> AI Tahlil qilmoqda...</>
               ) : (
-                <>
-                  <FileImage size={20} />
-                  AI Tahlilni Boshlash
-                </>
+                <><FileImage size={20} /> AI Tahlilni Boshlash</>
               )}
             </motion.button>
           )}
         </div>
 
-        {/* Results */}
         <AnimatePresence>
           {result && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-4"
-            >
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="bg-card rounded-2xl p-6 shadow-card border border-border space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display font-bold text-foreground">Tahlil Natijalari</h3>
@@ -135,7 +148,6 @@ const AIRadiologist = () => {
                     {severityConfig[result.severity].label}
                   </span>
                 </div>
-
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-foreground">Topilmalar:</h4>
                   {result.findings.map((f, i) => (
@@ -145,7 +157,6 @@ const AIRadiologist = () => {
                     </div>
                   ))}
                 </div>
-
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold text-foreground">Tekshirilgan hududlar:</h4>
                   <div className="flex flex-wrap gap-2">
@@ -154,7 +165,6 @@ const AIRadiologist = () => {
                     ))}
                   </div>
                 </div>
-
                 <div className="bg-secondary rounded-xl p-4">
                   <div className="flex items-start gap-2">
                     <AlertCircle size={16} className="text-primary shrink-0 mt-0.5" />
@@ -165,7 +175,6 @@ const AIRadiologist = () => {
                   </div>
                 </div>
               </div>
-
               <MedicalDisclaimer type="diagnosis" />
             </motion.div>
           )}
