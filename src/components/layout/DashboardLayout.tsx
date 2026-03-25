@@ -22,7 +22,7 @@ const navItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} /> },
 ];
 
-const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName }: DashboardLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
