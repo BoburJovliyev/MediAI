@@ -56,11 +56,23 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           ))}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-border">
+        <div className="mt-auto pt-6 border-t border-border space-y-3">
+          {userName && (
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <User size={16} className="text-muted-foreground" />
+              <span className="truncate">{userName}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield size={14} />
             <span>HIPAA Compliant • Encrypted</span>
           </div>
+          {onSignOut && (
+            <button onClick={onSignOut} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
+              <LogOut size={18} />
+              Chiqish
+            </button>
+          )}
         </div>
       </aside>
 
