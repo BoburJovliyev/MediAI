@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell } from "lucide-react";
+import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ const PatientsManager = () => {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [history, setHistory] = useState<{ scans: any[]; diagnoses: any[]; rehabs: any[] }>({ scans: [], diagnoses: [], rehabs: [] });
   const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const loadPatients = useCallback(async () => {
     if (!user) return;
@@ -96,6 +97,131 @@ const PatientsManager = () => {
     setHistory({ scans: scans.data || [], diagnoses: diagnoses.data || [], rehabs: rehabs.data || [] });
   };
 
+  const generatePDF = async () => {
+    if (!selectedPatient) return;
+    setPdfLoading(true);
+
+    try {
+      // Build HTML content for PDF
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { font-family: 'Helvetica', 'Arial', sans-serif; margin: 40px; color: #1a1a2e; line-height: 1.6; }
+h1 { color: #0891b2; border-bottom: 3px solid #0891b2; padding-bottom: 10px; font-size: 24px; }
+h2 { color: #2563eb; margin-top: 25px; font-size: 18px; }
+h3 { color: #7c3aed; font-size: 14px; margin: 15px 0 5px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.patient-info { background: #f0fdfa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+.patient-info p { margin: 4px 0; font-size: 14px; }
+.section { margin-bottom: 20px; }
+.item { background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #0891b2; }
+.item-title { font-weight: bold; font-size: 14px; }
+.item-detail { font-size: 12px; color: #64748b; margin-top: 4px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-green { background: #dcfce7; color: #16a34a; }
+.badge-red { background: #fef2f2; color: #dc2626; }
+.badge-blue { background: #dbeafe; color: #2563eb; }
+.footer { margin-top: 40px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center; }
+.disclaimer { background: #fef3c7; padding: 12px; border-radius: 8px; margin-top: 20px; font-size: 11px; color: #92400e; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+th { background: #f1f5f9; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>🏥 MediFlow AI - Bemor Hisoboti</h1>
+<div class="patient-info">
+  <p><strong>Bemor:</strong> ${selectedPatient.full_name}</p>
+  <p><strong>Yosh:</strong> ${selectedPatient.age || "—"} | <strong>Jins:</strong> ${selectedPatient.gender === "male" ? "Erkak" : selectedPatient.gender === "female" ? "Ayol" : "—"}</p>
+  <p><strong>Telefon:</strong> ${selectedPatient.phone || "—"}</p>
+  <p><strong>Sana:</strong> ${format(new Date(), "dd.MM.yyyy HH:mm")}</p>
+</div>
+
+${history.scans.length > 0 ? `
+<div class="section">
+  <h2>📷 Skan Tahlillari (${history.scans.length})</h2>
+  <table>
+    <tr><th>Tur</th><th>Darajasi</th><th>Tavsiya</th><th>Sana</th></tr>
+    ${history.scans.map((s: any) => `
+    <tr>
+      <td>${s.scan_type?.toUpperCase() || "—"}</td>
+      <td><span class="badge ${s.severity === "severe" ? "badge-red" : "badge-green"}">${s.severity || "—"}</span></td>
+      <td>${s.recommendation?.slice(0, 80) || "—"}...</td>
+      <td>${format(new Date(s.created_at), "dd.MM.yyyy")}</td>
+    </tr>`).join("")}
+  </table>
+</div>` : ""}
+
+${history.diagnoses.length > 0 ? `
+<div class="section">
+  <h2>🧠 Tashxislar (${history.diagnoses.length})</h2>
+  ${history.diagnoses.map((d: any) => `
+  <div class="item">
+    <div class="item-title">${d.condition_name || "Noma'lum"} ${d.confidence ? `<span class="badge badge-blue">${d.confidence}%</span>` : ""}</div>
+    <div class="item-detail">${d.description?.slice(0, 200) || d.complaint?.slice(0, 200) || ""}</div>
+    ${d.medications ? `<h3>💊 Dorilar:</h3><div class="item-detail">${Array.isArray(d.medications) ? d.medications.map((m: any) => `${m.name} ${m.dose} - ${m.frequency}`).join(", ") : JSON.stringify(d.medications)}</div>` : ""}
+    <div class="item-detail">${format(new Date(d.created_at), "dd.MM.yyyy HH:mm")}</div>
+  </div>`).join("")}
+</div>` : ""}
+
+${history.rehabs.length > 0 ? `
+<div class="section">
+  <h2>🏋️ Reabilitatsiya Seanslari (${history.rehabs.length})</h2>
+  <table>
+    <tr><th>Mashq</th><th>Takror</th><th>Aniqlik</th><th>Davomiylik</th><th>Sana</th></tr>
+    ${history.rehabs.map((r: any) => `
+    <tr>
+      <td>${r.exercise_name}</td>
+      <td>${r.completed_reps}/${r.total_reps}</td>
+      <td><span class="badge badge-green">${r.accuracy_score}%</span></td>
+      <td>${r.duration_seconds}s</td>
+      <td>${format(new Date(r.created_at), "dd.MM.yyyy")}</td>
+    </tr>`).join("")}
+  </table>
+</div>` : ""}
+
+<div class="disclaimer">
+  ⚠️ <strong>Ogohlantirish:</strong> Bu hisobot AI tomonidan yaratilgan bo'lib, faqat informatsion maqsadlarda. 
+  Bu professional tibbiy maslahat o'rnini bosmaydi. Har doim malakali shifokor bilan maslahatlashing.
+</div>
+
+<div class="footer">
+  MediFlow AI © ${new Date().getFullYear()} | Hisobot yaratilgan: ${format(new Date(), "dd.MM.yyyy HH:mm")}
+</div>
+</body>
+</html>`;
+
+      // Create a printable window
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+        toast.success("PDF hisobot tayyor! Print dialog orqali PDF sifatida saqlang.");
+      } else {
+        // Fallback: download as HTML
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${selectedPatient.full_name.replace(/\s+/g, "_")}_hisobot.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Hisobot yuklab olindi!");
+      }
+    } catch (err) {
+      toast.error("PDF yaratishda xatolik");
+      console.error(err);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const filtered = patients.filter((p) => p.full_name.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -111,7 +237,6 @@ const PatientsManager = () => {
         </button>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Bemor qidirish..."
@@ -119,7 +244,6 @@ const PatientsManager = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Patient List */}
         <div className="space-y-3">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground">Yuklanmoqda...</div>
@@ -144,16 +268,21 @@ const PatientsManager = () => {
           ))}
         </div>
 
-        {/* History Panel */}
         <div>
           {selectedPatient ? (
             <div className="bg-card rounded-2xl p-6 shadow-card border border-border space-y-5">
-              <div>
-                <h3 className="font-display font-bold text-foreground text-lg">{selectedPatient.full_name}</h3>
-                <p className="text-xs text-muted-foreground">Ro'yxatga olingan: {format(new Date(selectedPatient.created_at), "dd.MM.yyyy")}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-display font-bold text-foreground text-lg">{selectedPatient.full_name}</h3>
+                  <p className="text-xs text-muted-foreground">Ro'yxatga olingan: {format(new Date(selectedPatient.created_at), "dd.MM.yyyy")}</p>
+                </div>
+                <button onClick={generatePDF} disabled={pdfLoading}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-medical-teal-light text-medical-teal text-sm font-semibold hover:opacity-80 disabled:opacity-50">
+                  {pdfLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  PDF
+                </button>
               </div>
 
-              {/* Scans */}
               <div>
                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-2"><FileImage size={16} className="text-medical-teal" /> Skan tahlillari ({history.scans.length})</h4>
                 {history.scans.length === 0 ? <p className="text-xs text-muted-foreground">Hali tahlil yo'q</p> : history.scans.map((s) => (
@@ -164,7 +293,6 @@ const PatientsManager = () => {
                 ))}
               </div>
 
-              {/* Diagnoses */}
               <div>
                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-2"><Brain size={16} className="text-medical-purple" /> Tashxislar ({history.diagnoses.length})</h4>
                 {history.diagnoses.length === 0 ? <p className="text-xs text-muted-foreground">Hali tashxis yo'q</p> : history.diagnoses.map((d) => (
@@ -176,7 +304,6 @@ const PatientsManager = () => {
                 ))}
               </div>
 
-              {/* Rehab */}
               <div>
                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-2"><Dumbbell size={16} className="text-medical-orange" /> Reab. seanslar ({history.rehabs.length})</h4>
                 {history.rehabs.length === 0 ? <p className="text-xs text-muted-foreground">Hali seans yo'q</p> : history.rehabs.map((r) => (
@@ -196,7 +323,6 @@ const PatientsManager = () => {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm flex items-center justify-center p-4">
