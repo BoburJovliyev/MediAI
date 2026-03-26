@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
 import SmartMedicalAdvisor from "@/components/modules/SmartMedicalAdvisor";
 import TeleRehab from "@/components/modules/TeleRehab";
+import PatientsManager from "@/components/modules/PatientsManager";
+import AdminPanel from "@/components/modules/AdminPanel";
 import AuthPage from "./AuthPage";
 import { Loader2 } from "lucide-react";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -39,6 +42,8 @@ const AppContent = () => {
       case "radiologist": return <AIRadiologist />;
       case "advisor": return <SmartMedicalAdvisor />;
       case "rehab": return <TeleRehab />;
+      case "patients": return <PatientsManager />;
+      case "admin": return <AdminPanel />;
     }
   };
 
@@ -50,9 +55,11 @@ const AppContent = () => {
 };
 
 const Index = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default Index;
