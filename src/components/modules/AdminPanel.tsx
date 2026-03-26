@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Users, Activity, UserCog, Search, ChevronDown, Bell } from "lucide-react";
+import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ interface ProfileRow {
   user_id: string;
   full_name: string | null;
   role: string | null;
+  is_blocked: boolean;
   created_at: string;
 }
 
@@ -31,10 +32,10 @@ const AdminPanel = () => {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"users" | "activity" | "stats">("users");
   const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
+  const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
 
   useEffect(() => {
     if (!user) return;
-    // Check admin role via RPC-like query
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
       setIsAdmin(!!data);
     });
@@ -43,7 +44,6 @@ const AdminPanel = () => {
   useEffect(() => {
     if (!isAdmin) return;
     loadData();
-    // Realtime activity
     const channel = supabase.channel("admin-activity")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "activity_log" }, (payload) => {
         setActivities((prev) => [payload.new as ActivityRow, ...prev]);
@@ -56,13 +56,13 @@ const AdminPanel = () => {
   const loadData = async () => {
     const [profs, acts, scansC, diagC, rehabC, patsC] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("scan_analyses").select("id", { count: "exact", head: true }),
       supabase.from("diagnoses").select("id", { count: "exact", head: true }),
       supabase.from("rehab_sessions").select("id", { count: "exact", head: true }),
       supabase.from("patients").select("id", { count: "exact", head: true }),
     ]);
-    setProfiles(profs.data || []);
+    setProfiles(profs.data as ProfileRow[] || []);
     setActivities(acts.data || []);
     setGlobalStats({
       users: profs.data?.length || 0,
@@ -71,6 +71,41 @@ const AdminPanel = () => {
       rehabs: rehabC.count || 0,
       patients: patsC.count || 0,
     });
+  };
+
+  const toggleBlock = async (profile: ProfileRow) => {
+    const newBlocked = !profile.is_blocked;
+    const { error } = await supabase.from("profiles").update({ is_blocked: newBlocked } as any).eq("id", profile.id);
+    if (error) { toast.error("Xatolik: " + error.message); return; }
+    toast.success(newBlocked ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi");
+    
+    // Log activity
+    if (user) {
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        action: newBlocked ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi",
+        entity_type: "user",
+        entity_id: profile.user_id as any,
+        details: { target_name: profile.full_name } as any,
+      });
+    }
+    loadData();
+  };
+
+  const changeRole = async (userId: string, newRole: "admin" | "moderator" | "user") => {
+    await supabase.from("user_roles" as any).delete().eq("user_id", userId);
+    await supabase.from("user_roles" as any).insert({ user_id: userId, role: newRole });
+    
+    if (user) {
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        action: `Rol o'zgartirildi: ${newRole}`,
+        entity_type: "user",
+        entity_id: userId as any,
+      });
+    }
+    toast.success("Rol yangilandi");
+    loadData();
   };
 
   if (isAdmin === null) return <div className="flex items-center justify-center py-20 text-muted-foreground">Tekshirilmoqda...</div>;
@@ -84,13 +119,12 @@ const AdminPanel = () => {
 
   const filteredProfiles = profiles.filter((p) => p.full_name?.toLowerCase().includes(search.toLowerCase()));
 
-  const changeRole = async (userId: string, newRole: "admin" | "moderator" | "user") => {
-    // Delete existing then insert new
-    await supabase.from("user_roles" as any).delete().eq("user_id", userId);
-    await supabase.from("user_roles" as any).insert({ user_id: userId, role: newRole });
-    toast.success("Rol yangilandi");
-    loadData();
-  };
+  const filteredActivities = activities.filter((a) => {
+    if (activityFilter.type && !a.action.toLowerCase().includes(activityFilter.type.toLowerCase()) && !a.entity_type?.toLowerCase().includes(activityFilter.type.toLowerCase())) return false;
+    if (activityFilter.dateFrom && new Date(a.created_at) < new Date(activityFilter.dateFrom)) return false;
+    if (activityFilter.dateTo && new Date(a.created_at) > new Date(activityFilter.dateTo + "T23:59:59")) return false;
+    return true;
+  });
 
   const statsCards = [
     { label: "Foydalanuvchilar", value: globalStats.users, icon: <Users size={20} />, color: "bg-medical-blue-light text-medical-blue" },
@@ -140,19 +174,33 @@ const AdminPanel = () => {
           </div>
           <div className="space-y-2">
             {filteredProfiles.map((p) => (
-              <div key={p.id} className="bg-card rounded-xl p-4 border border-border flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">{p.full_name || "Nomsiz"}</p>
-                  <p className="text-xs text-muted-foreground">{format(new Date(p.created_at), "dd.MM.yyyy")} • {p.role || "user"}</p>
-                </div>
-                <div className="relative group">
-                  <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary text-sm text-foreground">
-                    <UserCog size={14} /> Rol <ChevronDown size={14} />
-                  </button>
-                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-elevated opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-10">
-                    {(["admin", "moderator", "user"] as const).map((r) => (
-                      <button key={r} onClick={() => changeRole(p.user_id, r)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
-                    ))}
+              <div key={p.id} className={`bg-card rounded-xl p-4 border transition-all ${p.is_blocked ? "border-destructive/30 opacity-60" : "border-border"}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">{p.full_name || "Nomsiz"}</p>
+                      {p.is_blocked && <span className="medical-badge bg-destructive/10 text-destructive">Bloklangan</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{format(new Date(p.created_at), "dd.MM.yyyy")} • {p.role || "user"}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Block/Unblock */}
+                    <button onClick={() => toggleBlock(p)}
+                      className={`p-2 rounded-lg transition-colors ${p.is_blocked ? "bg-medical-green-light text-medical-green hover:bg-medical-green/20" : "bg-destructive/10 text-destructive hover:bg-destructive/20"}`}
+                      title={p.is_blocked ? "Blokdan chiqarish" : "Bloklash"}>
+                      {p.is_blocked ? <CheckCircle2 size={16} /> : <Ban size={16} />}
+                    </button>
+                    {/* Role dropdown */}
+                    <div className="relative group">
+                      <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary text-sm text-foreground">
+                        <UserCog size={14} /> Rol
+                      </button>
+                      <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-elevated opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-10 min-w-[120px]">
+                        {(["admin", "moderator", "user"] as const).map((r) => (
+                          <button key={r} onClick={() => changeRole(p.user_id, r)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -162,18 +210,42 @@ const AdminPanel = () => {
       )}
 
       {tab === "activity" && (
-        <div className="space-y-2">
-          {activities.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">Faoliyat jurnali bo'sh</div>
-          ) : activities.map((a) => (
-            <div key={a.id} className="bg-card rounded-xl p-4 border border-border flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-medical-blue-light flex items-center justify-center shrink-0"><Bell size={14} className="text-medical-blue" /></div>
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground"><Filter size={16} /> Filtrlash</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <p className="text-sm font-medium text-foreground">{a.action}</p>
-                <p className="text-xs text-muted-foreground">{a.entity_type && `${a.entity_type} • `}{format(new Date(a.created_at), "dd.MM.yyyy HH:mm")}</p>
+                <label className="text-xs text-muted-foreground mb-1 block">Tur</label>
+                <input value={activityFilter.type} onChange={(e) => setActivityFilter({ ...activityFilter, type: e.target.value })} placeholder="Masalan: bloklandi, rol..."
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={12} /> Boshlanish</label>
+                <input type="date" value={activityFilter.dateFrom} onChange={(e) => setActivityFilter({ ...activityFilter, dateFrom: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={12} /> Tugash</label>
+                <input type="date" value={activityFilter.dateTo} onChange={(e) => setActivityFilter({ ...activityFilter, dateTo: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
             </div>
-          ))}
+          </div>
+
+          <div className="space-y-2">
+            {filteredActivities.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">Faoliyat topilmadi</div>
+            ) : filteredActivities.map((a) => (
+              <div key={a.id} className="bg-card rounded-xl p-4 border border-border flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-medical-blue-light flex items-center justify-center shrink-0"><Bell size={14} className="text-medical-blue" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">{a.action}</p>
+                  <p className="text-xs text-muted-foreground">{a.entity_type && `${a.entity_type} • `}{format(new Date(a.created_at), "dd.MM.yyyy HH:mm")}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
