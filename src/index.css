@@ -71,33 +71,56 @@
   }
 
   .dark {
-    --background: 220 20% 8%;
-    --foreground: 210 20% 95%;
-    --card: 220 18% 12%;
-    --card-foreground: 210 20% 95%;
-    --popover: 220 18% 12%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 195 80% 50%;
-    --primary-foreground: 220 20% 8%;
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 220 12% 16%;
-    --muted-foreground: 215 10% 55%;
-    --accent: 165 55% 50%;
-    --accent-foreground: 220 20% 8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 195 80% 50%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Tokyo Night palette */
+    --background: 235 21% 11%;
+    --foreground: 220 30% 90%;
+    --card: 235 18% 15%;
+    --card-foreground: 220 30% 90%;
+    --popover: 235 18% 15%;
+    --popover-foreground: 220 30% 90%;
+    --primary: 217 92% 76%;
+    --primary-foreground: 235 21% 11%;
+    --secondary: 235 15% 20%;
+    --secondary-foreground: 220 25% 85%;
+    --muted: 235 12% 18%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 143 50% 60%;
+    --accent-foreground: 235 21% 11%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 220 30% 95%;
+    --border: 235 15% 22%;
+    --input: 235 15% 22%;
+    --ring: 217 92% 76%;
+
+    --medical-teal: 217 92% 76%;
+    --medical-teal-light: 217 40% 20%;
+    --medical-green: 143 50% 60%;
+    --medical-green-light: 143 25% 18%;
+    --medical-blue: 217 92% 76%;
+    --medical-blue-light: 217 40% 20%;
+    --medical-purple: 265 89% 78%;
+    --medical-purple-light: 265 35% 20%;
+    --medical-orange: 28 80% 65%;
+    --medical-orange-light: 28 35% 18%;
+    --medical-red: 0 72% 55%;
+    --medical-red-light: 0 35% 18%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217, 92%, 76%), hsl(265, 89%, 78%));
+    --gradient-accent: linear-gradient(135deg, hsl(143, 50%, 60%), hsl(217, 92%, 76%));
+    --gradient-warm: linear-gradient(135deg, hsl(28, 80%, 65%), hsl(0, 72%, 55%));
+
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+    --shadow-elevated: 0 4px 16px -2px rgb(0 0 0 / 0.3);
+    --shadow-glow: 0 0 20px -5px hsl(217, 92%, 76%, 0.3);
+
+    --sidebar-background: 235 18% 13%;
+    --sidebar-foreground: 220 30% 90%;
+    --sidebar-primary: 217 92% 76%;
+    --sidebar-primary-foreground: 235 21% 11%;
+    --sidebar-accent: 235 15% 20%;
+    --sidebar-accent-foreground: 220 30% 90%;
+    --sidebar-border: 235 15% 22%;
+    --sidebar-ring: 217 92% 76%;
   }
 }
 

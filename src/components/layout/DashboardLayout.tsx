@@ -2,10 +2,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, Heart, LogOut, User
+  Shield, Menu, X, Heart, LogOut, User, Users, Moon, Sun
 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
@@ -20,10 +21,13 @@ const navItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} /> },
   { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} /> },
   { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} /> },
+  { id: "patients", label: "Bemorlar", icon: <Users size={20} /> },
+  { id: "admin", label: "Admin Panel", icon: <Shield size={20} /> },
 ];
 
 const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName }: DashboardLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -63,6 +67,10 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
               <span className="truncate">{userName}</span>
             </div>
           )}
+          <button onClick={toggle} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
+          </button>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield size={14} />
             <span>HIPAA Compliant • Encrypted</span>
@@ -84,9 +92,14 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           </div>
           <span className="font-display font-bold text-foreground">MediFlow AI</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggle} className="text-foreground p-1">
+            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Nav */}
