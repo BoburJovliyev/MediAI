@@ -93,7 +93,8 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           </div>
           <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <NotificationBell />
           <button onClick={toggle} className="text-foreground p-1">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
