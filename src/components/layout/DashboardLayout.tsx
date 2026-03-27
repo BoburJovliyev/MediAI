@@ -5,6 +5,7 @@ import {
   Shield, Menu, X, Heart, LogOut, User, Users, Moon, Sun
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
 
