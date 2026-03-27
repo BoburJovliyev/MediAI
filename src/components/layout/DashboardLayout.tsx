@@ -90,7 +90,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <Heart size={16} className="text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-foreground">MediFlow AI</span>
+          <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={toggle} className="text-foreground p-1">

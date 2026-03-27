@@ -50,7 +50,7 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
             <Heart size={32} className="text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">MediFlow AI</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground">Medi AI</h1>
           <p className="text-muted-foreground mt-1">Intelligent Healthcare Platform</p>
         </div>
 

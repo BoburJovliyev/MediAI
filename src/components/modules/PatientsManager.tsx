@@ -189,7 +189,7 @@ ${history.rehabs.length > 0 ? `
 </div>
 
 <div class="footer">
-  MediFlow AI © ${new Date().getFullYear()} | Hisobot yaratilgan: ${format(new Date(), "dd.MM.yyyy HH:mm")}
+  Medi AI © ${new Date().getFullYear()} | Hisobot yaratilgan: ${format(new Date(), "dd.MM.yyyy HH:mm")}
 </div>
 </body>
 </html>`;
