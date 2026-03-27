@@ -100,6 +100,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           age: number | null
@@ -298,7 +331,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "doctor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -426,7 +459,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "doctor"],
     },
   },
 } as const
