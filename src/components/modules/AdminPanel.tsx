@@ -113,6 +113,22 @@ const AdminPanel = () => {
     loadData();
   };
 
+  const sendNotification = async () => {
+    if (!notifyTitle.trim() || !notifyMessage.trim()) { toast.error("Sarlavha va xabar to'ldiring"); return; }
+    setSendingNotify(true);
+    const targets = notifyTarget === "all" ? profiles.map(p => p.user_id) : [notifyTarget];
+    const rows = targets.map(uid => ({ user_id: uid, title: notifyTitle, message: notifyMessage, type: notifyType }));
+    const { error } = await supabase.from("notifications").insert(rows);
+    if (error) { toast.error("Xatolik: " + error.message); } else {
+      toast.success(`${targets.length} ta foydalanuvchiga bildirishnoma yuborildi`);
+      setNotifyTitle(""); setNotifyMessage(""); setNotifyTarget("");
+      if (user) {
+        await supabase.from("activity_log").insert({ user_id: user.id, action: `Bildirishnoma yuborildi: ${notifyTitle}`, entity_type: "notification", details: { target_count: targets.length } as any });
+      }
+    }
+    setSendingNotify(false);
+  };
+
   if (isAdmin === null) return <div className="flex items-center justify-center py-20 text-muted-foreground">Tekshirilmoqda...</div>;
   if (!isAdmin) return (
     <div className="flex flex-col items-center justify-center py-20">
