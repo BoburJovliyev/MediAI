@@ -22,19 +22,26 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     { label: "Reab. seanslar", value: "—", icon: <Clock size={20} />, color: "bg-medical-purple-light text-medical-purple" },
   ]);
 
+  const [recentScans, setRecentScans] = useState<any[]>([]);
+  const [recentDiagnoses, setRecentDiagnoses] = useState<any[]>([]);
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [scans, diagnoses, patients, rehabs] = await Promise.all([
+      const [scans, diagnoses, patients, rehabs, lastScans, lastDiag] = await Promise.all([
         supabase.from("scan_analyses").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("diagnoses").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("patients").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("rehab_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("scan_analyses").select("id, scan_type, severity, created_at, recommendation").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("diagnoses").select("id, condition_name, confidence, created_at, description").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
       ]);
       setStats((s) => s.map((st, i) => ({
         ...st,
         value: String([scans, diagnoses, patients, rehabs][i].count ?? 0),
       })));
+      setRecentScans(lastScans.data || []);
+      setRecentDiagnoses(lastDiag.data || []);
     };
     load();
   }, [user]);
