@@ -270,6 +270,46 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {tab === "notify" && (
+        <div className="bg-card rounded-2xl p-6 border border-border space-y-4">
+          <div className="flex items-center gap-2 mb-2"><MessageSquare size={20} className="text-primary" /><h3 className="font-display font-bold text-foreground">Bildirishnoma yuborish</h3></div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Kimga</label>
+            <select value={notifyTarget} onChange={(e) => setNotifyTarget(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="">Tanlang...</option>
+              <option value="all">Barcha foydalanuvchilar</option>
+              {profiles.map(p => <option key={p.user_id} value={p.user_id}>{p.full_name || "Nomsiz"}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Turi</label>
+            <div className="flex gap-2">
+              {(["info", "warning", "success"] as const).map(t => (
+                <button key={t} onClick={() => setNotifyType(t)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${notifyType === t ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                  {t === "info" ? "Ma'lumot" : t === "warning" ? "Ogohlantirish" : "Muvaffaqiyat"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Sarlavha</label>
+            <input value={notifyTitle} onChange={(e) => setNotifyTitle(e.target.value)} placeholder="Bildirishnoma sarlavhasi"
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Xabar</label>
+            <textarea value={notifyMessage} onChange={(e) => setNotifyMessage(e.target.value)} placeholder="Bildirishnoma matni..." rows={3}
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+          </div>
+          <button onClick={sendNotification} disabled={sendingNotify || !notifyTarget}
+            className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold flex items-center gap-2 disabled:opacity-60 shadow-glow">
+            <Send size={16} /> {sendingNotify ? "Yuborilmoqda..." : "Yuborish"}
+          </button>
+        </div>
+      )}
+
       {tab === "stats" && (
         <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="font-display font-bold text-foreground mb-4">Umumiy statistika</h3>

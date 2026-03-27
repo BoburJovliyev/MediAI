@@ -74,6 +74,48 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <DashboardCharts />
       </motion.div>
 
+      {/* Recent analyses */}
+      <motion.div variants={item} className="grid md:grid-cols-2 gap-6">
+        <div className="bg-card rounded-2xl p-6 shadow-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2"><FileImage size={18} className="text-primary" /> So'nggi skanlar</h3>
+            <button onClick={() => onNavigate("radiologist")} className="text-xs text-primary hover:underline flex items-center gap-1">Barchasi <ArrowRight size={12} /></button>
+          </div>
+          {recentScans.length === 0 ? <p className="text-sm text-muted-foreground">Hali skan mavjud emas</p> : (
+            <div className="space-y-3">
+              {recentScans.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                  <div className={`w-2 h-2 rounded-full ${s.severity === "critical" ? "bg-destructive" : s.severity === "moderate" ? "bg-yellow-500" : "bg-medical-green"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{s.scan_type?.toUpperCase() || "Skan"} — {s.severity || "normal"}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), "dd.MM.yyyy HH:mm")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-card rounded-2xl p-6 shadow-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2"><Brain size={18} className="text-accent" /> So'nggi tashxislar</h3>
+            <button onClick={() => onNavigate("advisor")} className="text-xs text-primary hover:underline flex items-center gap-1">Barchasi <ArrowRight size={12} /></button>
+          </div>
+          {recentDiagnoses.length === 0 ? <p className="text-sm text-muted-foreground">Hali tashxis mavjud emas</p> : (
+            <div className="space-y-3">
+              {recentDiagnoses.map((d) => (
+                <div key={d.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                  <div className={`w-2 h-2 rounded-full ${(d.confidence || 0) > 80 ? "bg-medical-green" : "bg-yellow-500"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{d.condition_name || "Noma'lum"} — {d.confidence ? `${d.confidence}%` : ""}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(d.created_at), "dd.MM.yyyy HH:mm")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+
       <motion.div variants={item} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {modules.map((m) => (
           <motion.button key={m.id} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => onNavigate(m.id)}
