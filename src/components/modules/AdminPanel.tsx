@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar } from "lucide-react";
+import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -30,7 +30,12 @@ const AdminPanel = () => {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"users" | "activity" | "stats">("users");
+  const [tab, setTab] = useState<"users" | "activity" | "stats" | "notify">("users");
+  const [notifyTarget, setNotifyTarget] = useState("");
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyType, setNotifyType] = useState<"info" | "warning" | "success">("info");
+  const [sendingNotify, setSendingNotify] = useState(false);
   const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
   const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
 
@@ -108,6 +113,22 @@ const AdminPanel = () => {
     loadData();
   };
 
+  const sendNotification = async () => {
+    if (!notifyTitle.trim() || !notifyMessage.trim()) { toast.error("Sarlavha va xabar to'ldiring"); return; }
+    setSendingNotify(true);
+    const targets = notifyTarget === "all" ? profiles.map(p => p.user_id) : [notifyTarget];
+    const rows = targets.map(uid => ({ user_id: uid, title: notifyTitle, message: notifyMessage, type: notifyType }));
+    const { error } = await supabase.from("notifications").insert(rows);
+    if (error) { toast.error("Xatolik: " + error.message); } else {
+      toast.success(`${targets.length} ta foydalanuvchiga bildirishnoma yuborildi`);
+      setNotifyTitle(""); setNotifyMessage(""); setNotifyTarget("");
+      if (user) {
+        await supabase.from("activity_log").insert({ user_id: user.id, action: `Bildirishnoma yuborildi: ${notifyTitle}`, entity_type: "notification", details: { target_count: targets.length } as any });
+      }
+    }
+    setSendingNotify(false);
+  };
+
   if (isAdmin === null) return <div className="flex items-center justify-center py-20 text-muted-foreground">Tekshirilmoqda...</div>;
   if (!isAdmin) return (
     <div className="flex flex-col items-center justify-center py-20">
@@ -157,7 +178,7 @@ const AdminPanel = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-secondary rounded-xl p-1">
-        {([["users", "Foydalanuvchilar"], ["activity", "Faoliyat jurnali"], ["stats", "Statistika"]] as const).map(([id, label]) => (
+        {([["users", "Foydalanuvchilar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"], ["stats", "Statistika"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
@@ -246,6 +267,46 @@ const AdminPanel = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === "notify" && (
+        <div className="bg-card rounded-2xl p-6 border border-border space-y-4">
+          <div className="flex items-center gap-2 mb-2"><MessageSquare size={20} className="text-primary" /><h3 className="font-display font-bold text-foreground">Bildirishnoma yuborish</h3></div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Kimga</label>
+            <select value={notifyTarget} onChange={(e) => setNotifyTarget(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="">Tanlang...</option>
+              <option value="all">Barcha foydalanuvchilar</option>
+              {profiles.map(p => <option key={p.user_id} value={p.user_id}>{p.full_name || "Nomsiz"}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Turi</label>
+            <div className="flex gap-2">
+              {(["info", "warning", "success"] as const).map(t => (
+                <button key={t} onClick={() => setNotifyType(t)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${notifyType === t ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                  {t === "info" ? "Ma'lumot" : t === "warning" ? "Ogohlantirish" : "Muvaffaqiyat"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Sarlavha</label>
+            <input value={notifyTitle} onChange={(e) => setNotifyTitle(e.target.value)} placeholder="Bildirishnoma sarlavhasi"
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Xabar</label>
+            <textarea value={notifyMessage} onChange={(e) => setNotifyMessage(e.target.value)} placeholder="Bildirishnoma matni..." rows={3}
+              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+          </div>
+          <button onClick={sendNotification} disabled={sendingNotify || !notifyTarget}
+            className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold flex items-center gap-2 disabled:opacity-60 shadow-glow">
+            <Send size={16} /> {sendingNotify ? "Yuborilmoqda..." : "Yuborish"}
+          </button>
         </div>
       )}
 

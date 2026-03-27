@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock } from "lucide-react";
+import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardCharts from "./DashboardCharts";
+import { format } from "date-fns";
 
 interface DashboardHomeProps {
   onNavigate: (tab: "radiologist" | "advisor" | "rehab" | "patients") => void;
@@ -21,19 +22,26 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     { label: "Reab. seanslar", value: "—", icon: <Clock size={20} />, color: "bg-medical-purple-light text-medical-purple" },
   ]);
 
+  const [recentScans, setRecentScans] = useState<any[]>([]);
+  const [recentDiagnoses, setRecentDiagnoses] = useState<any[]>([]);
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [scans, diagnoses, patients, rehabs] = await Promise.all([
+      const [scans, diagnoses, patients, rehabs, lastScans, lastDiag] = await Promise.all([
         supabase.from("scan_analyses").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("diagnoses").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("patients").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("rehab_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("scan_analyses").select("id, scan_type, severity, created_at, recommendation").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("diagnoses").select("id, condition_name, confidence, created_at, description").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
       ]);
       setStats((s) => s.map((st, i) => ({
         ...st,
         value: String([scans, diagnoses, patients, rehabs][i].count ?? 0),
       })));
+      setRecentScans(lastScans.data || []);
+      setRecentDiagnoses(lastDiag.data || []);
     };
     load();
   }, [user]);
@@ -64,6 +72,48 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
       <motion.div variants={item}>
         <DashboardCharts />
+      </motion.div>
+
+      {/* Recent analyses */}
+      <motion.div variants={item} className="grid md:grid-cols-2 gap-6">
+        <div className="bg-card rounded-2xl p-6 shadow-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2"><FileImage size={18} className="text-primary" /> So'nggi skanlar</h3>
+            <button onClick={() => onNavigate("radiologist")} className="text-xs text-primary hover:underline flex items-center gap-1">Barchasi <ArrowRight size={12} /></button>
+          </div>
+          {recentScans.length === 0 ? <p className="text-sm text-muted-foreground">Hali skan mavjud emas</p> : (
+            <div className="space-y-3">
+              {recentScans.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                  <div className={`w-2 h-2 rounded-full ${s.severity === "critical" ? "bg-destructive" : s.severity === "moderate" ? "bg-yellow-500" : "bg-medical-green"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{s.scan_type?.toUpperCase() || "Skan"} — {s.severity || "normal"}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), "dd.MM.yyyy HH:mm")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-card rounded-2xl p-6 shadow-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2"><Brain size={18} className="text-accent" /> So'nggi tashxislar</h3>
+            <button onClick={() => onNavigate("advisor")} className="text-xs text-primary hover:underline flex items-center gap-1">Barchasi <ArrowRight size={12} /></button>
+          </div>
+          {recentDiagnoses.length === 0 ? <p className="text-sm text-muted-foreground">Hali tashxis mavjud emas</p> : (
+            <div className="space-y-3">
+              {recentDiagnoses.map((d) => (
+                <div key={d.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                  <div className={`w-2 h-2 rounded-full ${(d.confidence || 0) > 80 ? "bg-medical-green" : "bg-yellow-500"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{d.condition_name || "Noma'lum"} — {d.confidence ? `${d.confidence}%` : ""}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(d.created_at), "dd.MM.yyyy HH:mm")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </motion.div>
 
       <motion.div variants={item} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
