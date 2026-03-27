@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Mail, Lock, User, Loader2, ArrowRight } from "lucide-react";
+import { Heart, Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 
 interface AuthPageProps {
-  onAuth: (mode: "login" | "signup", email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
+  onAuth: (mode: "login" | "signup", email: string, password: string, fullName?: string, role?: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthPage = ({ onAuth }: AuthPageProps) => {
@@ -12,6 +12,7 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"doctor" | "user">("doctor");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
     setError("");
     setSuccess("");
     setLoading(true);
-    const result = await onAuth(mode, email, password, fullName);
+    const result = await onAuth(mode, email, password, fullName, role);
     if (result.error) {
       setError(result.error.message);
     } else if (mode === "signup") {
@@ -50,7 +51,7 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
             <Heart size={32} className="text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">MediFlow AI</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground">Medi AI</h1>
           <p className="text-muted-foreground mt-1">Intelligent Healthcare Platform</p>
         </div>
 
@@ -88,11 +89,32 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2"><User size={16} /> To'liq ism</label>
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Dr. Alisher Karimov" required
-                  className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
+              <>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2"><User size={16} /> To'liq ism</label>
+                  <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Dr. Alisher Karimov" required
+                    className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Rolni tanlang</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button" onClick={() => setRole("doctor")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        role === "doctor" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
+                      }`}>
+                      <Stethoscope size={24} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
+                      <span className={`text-sm font-semibold ${role === "doctor" ? "text-primary" : "text-muted-foreground"}`}>Doktor</span>
+                    </button>
+                    <button type="button" onClick={() => setRole("user")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        role === "user" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
+                      }`}>
+                      <UserCheck size={24} className={role === "user" ? "text-primary" : "text-muted-foreground"} />
+                      <span className={`text-sm font-semibold ${role === "user" ? "text-primary" : "text-muted-foreground"}`}>Foydalanuvchi</span>
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2"><Mail size={16} /> Email</label>

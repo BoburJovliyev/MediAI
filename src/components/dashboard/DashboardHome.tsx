@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import DashboardCharts from "./DashboardCharts";
 
 interface DashboardHomeProps {
   onNavigate: (tab: "radiologist" | "advisor" | "rehab" | "patients") => void;
@@ -48,7 +49,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
       <motion.div variants={item}>
         <h2 className="text-3xl font-display font-bold text-foreground">Xush kelibsiz, Doktor</h2>
-        <p className="text-muted-foreground mt-1">MediFlow AI diagnostika platformasi</p>
+        <p className="text-muted-foreground mt-1">Medi AI diagnostika platformasi</p>
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -59,6 +60,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             <p className="text-sm text-muted-foreground">{s.label}</p>
           </div>
         ))}
+      </motion.div>
+
+      <motion.div variants={item}>
+        <DashboardCharts />
       </motion.div>
 
       <motion.div variants={item} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

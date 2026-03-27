@@ -5,6 +5,7 @@ import {
   Shield, Menu, X, Heart, LogOut, User, Users, Moon, Sun
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
 
@@ -38,7 +39,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
             <Heart size={20} className="text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-display font-bold text-foreground">MediFlow AI</h1>
+            <h1 className="text-lg font-display font-bold text-foreground">Medi AI</h1>
             <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
           </div>
         </div>
@@ -61,12 +62,15 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         </nav>
 
         <div className="mt-auto pt-6 border-t border-border space-y-3">
-          {userName && (
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <User size={16} className="text-muted-foreground" />
-              <span className="truncate">{userName}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {userName && (
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <User size={16} className="text-muted-foreground" />
+                <span className="truncate">{userName}</span>
+              </div>
+            )}
+            <NotificationBell />
+          </div>
           <button onClick={toggle} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             {theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
@@ -90,9 +94,10 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <Heart size={16} className="text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-foreground">MediFlow AI</span>
+          <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <NotificationBell />
           <button onClick={toggle} className="text-foreground p-1">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
