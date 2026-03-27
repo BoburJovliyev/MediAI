@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock } from "lucide-react";
+import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardCharts from "./DashboardCharts";
+import { format } from "date-fns";
 
 interface DashboardHomeProps {
   onNavigate: (tab: "radiologist" | "advisor" | "rehab" | "patients") => void;
