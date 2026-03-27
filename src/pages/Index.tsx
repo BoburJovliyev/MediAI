@@ -28,8 +28,8 @@ const AppContent = () => {
   if (!user) {
     return (
       <AuthPage
-        onAuth={async (mode, email, password, fullName) => {
-          if (mode === "signup") return signUp(email, password, fullName || "");
+        onAuth={async (mode, email, password, fullName, role) => {
+          if (mode === "signup") return signUp(email, password, fullName || "", role);
           return signIn(email, password);
         }}
       />
