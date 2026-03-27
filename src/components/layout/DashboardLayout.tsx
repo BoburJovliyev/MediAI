@@ -38,7 +38,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
             <Heart size={20} className="text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-display font-bold text-foreground">MediFlow AI</h1>
+            <h1 className="text-lg font-display font-bold text-foreground">Medi AI</h1>
             <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
           </div>
         </div>
