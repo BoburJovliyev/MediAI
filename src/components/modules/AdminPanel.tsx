@@ -178,7 +178,7 @@ const AdminPanel = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-secondary rounded-xl p-1">
-        {([["users", "Foydalanuvchilar"], ["activity", "Faoliyat jurnali"], ["stats", "Statistika"]] as const).map(([id, label]) => (
+        {([["users", "Foydalanuvchilar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"], ["stats", "Statistika"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
