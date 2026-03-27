@@ -62,12 +62,15 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         </nav>
 
         <div className="mt-auto pt-6 border-t border-border space-y-3">
-          {userName && (
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <User size={16} className="text-muted-foreground" />
-              <span className="truncate">{userName}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {userName && (
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <User size={16} className="text-muted-foreground" />
+                <span className="truncate">{userName}</span>
+              </div>
+            )}
+            <NotificationBell />
+          </div>
           <button onClick={toggle} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             {theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
