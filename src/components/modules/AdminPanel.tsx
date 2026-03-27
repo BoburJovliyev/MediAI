@@ -30,7 +30,12 @@ const AdminPanel = () => {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"users" | "activity" | "stats">("users");
+  const [tab, setTab] = useState<"users" | "activity" | "stats" | "notify">("users");
+  const [notifyTarget, setNotifyTarget] = useState("");
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyType, setNotifyType] = useState<"info" | "warning" | "success">("info");
+  const [sendingNotify, setSendingNotify] = useState(false);
   const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
   const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
 
