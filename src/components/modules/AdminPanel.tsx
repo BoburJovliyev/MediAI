@@ -228,8 +228,8 @@ const AdminPanel = () => {
                         <UserCog size={14} /> Rol
                       </button>
                       <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-elevated opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-10 min-w-[120px]">
-                        {(["admin", "moderator", "user"] as const).map((r) => (
-                          <button key={r} onClick={() => changeRole(p.user_id, r)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
+                        {(["admin", "doctor", "user", "patient"] as const).map((r) => (
+                          <button key={r} onClick={() => changeRole(p.user_id, r as any)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
                         ))}
                       </div>
                     </div>
