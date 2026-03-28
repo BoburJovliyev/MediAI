@@ -64,7 +64,7 @@ const AdminPanel = () => {
   }, [isAdmin]);
 
   const loadData = async () => {
-    const [profs, acts, scansC, diagC, rehabC, patsC, recentScans, recentDiag] = await Promise.all([
+    const [profs, acts, scansC, diagC, rehabC, patsC, recentScans, recentDiag, chatsC, recentChats] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("scan_analyses").select("id", { count: "exact", head: true }),
@@ -73,17 +73,21 @@ const AdminPanel = () => {
       supabase.from("patients").select("id", { count: "exact", head: true }),
       supabase.from("scan_analyses").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("diagnoses").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("chat_messages").select("id", { count: "exact", head: true }),
+      supabase.from("chat_messages").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     setProfiles(profs.data as ProfileRow[] || []);
     setActivities(acts.data || []);
     setAllScans(recentScans.data || []);
     setAllDiagnoses(recentDiag.data || []);
+    setAllChats(recentChats.data || []);
     setGlobalStats({
       users: profs.data?.length || 0,
       scans: scansC.count || 0,
       diagnoses: diagC.count || 0,
       rehabs: rehabC.count || 0,
       patients: patsC.count || 0,
+      chats: chatsC.count || 0,
     });
   };
 
