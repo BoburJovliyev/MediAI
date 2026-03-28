@@ -21,10 +21,11 @@ interface DashboardLayoutProps {
 }
 
 const allNavItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
   { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
   { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
   { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "chat", label: "Chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient"] },
   { id: "patients", label: "Bemorlar", icon: <Users size={20} />, roles: ["admin", "doctor"] },
   { id: "admin", label: "Admin Panel", icon: <Shield size={20} />, roles: ["admin"] },
 ];
