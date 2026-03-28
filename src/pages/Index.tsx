@@ -19,28 +19,6 @@ const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <AuthPage
-        onAuth={async (mode, email, password, fullName, role) => {
-          if (mode === "signup") {
-            const result = await signUp(email, password, fullName || "", role);
-            return result;
-          }
-          return signIn(email, password);
-        }}
-      />
-    );
-  }
-
   // Handle pending doctor relationship after login
   useEffect(() => {
     if (!user) return;
@@ -55,6 +33,25 @@ const AppContent = () => {
     }
   }, [user]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <AuthPage
+        onAuth={async (mode, email, password, fullName, role) => {
+          if (mode === "signup") return signUp(email, password, fullName || "", role);
+          return signIn(email, password);
+        }}
+      />
+    );
+  }
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard": return <DashboardHome onNavigate={setActiveTab} />;
@@ -63,6 +60,7 @@ const AppContent = () => {
       case "rehab": return <TeleRehab />;
       case "patients": return <PatientsManager />;
       case "admin": return <AdminPanel />;
+      case "chat": return <ChatModule />;
     }
   };
 
