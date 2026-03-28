@@ -160,6 +160,7 @@ const AdminPanel = () => {
     { label: "Skan tahlillari", value: globalStats.scans, icon: <Activity size={20} />, color: "bg-medical-teal-light text-medical-teal" },
     { label: "Tashxislar", value: globalStats.diagnoses, icon: <Activity size={20} />, color: "bg-medical-green-light text-medical-green" },
     { label: "Bemorlar", value: globalStats.patients, icon: <Users size={20} />, color: "bg-medical-purple-light text-medical-purple" },
+    { label: "Chatlar", value: globalStats.chats, icon: <MessageCircle size={20} />, color: "bg-primary/10 text-primary" },
     { label: "Reab. seanslar", value: globalStats.rehabs, icon: <Activity size={20} />, color: "bg-medical-orange-light text-medical-orange" },
   ];
 
