@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck } from "lucide-react";
+import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 interface AuthPageProps {
