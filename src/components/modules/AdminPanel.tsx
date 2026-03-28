@@ -36,11 +36,13 @@ const AdminPanel = () => {
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState<"info" | "warning" | "success">("info");
   const [sendingNotify, setSendingNotify] = useState(false);
-  const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
+  const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0, chats: 0 });
   const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
   const [allScans, setAllScans] = useState<any[]>([]);
   const [allDiagnoses, setAllDiagnoses] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [allChats, setAllChats] = useState<any[]>([]);
+  const [chatFilterUser, setChatFilterUser] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
