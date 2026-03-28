@@ -43,6 +43,8 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       if (isAdmin) { setUserRole("admin"); return; }
       const { data: isDoctor } = await supabase.rpc("has_role", { _user_id: user.id, _role: "doctor" as any });
       if (isDoctor) { setUserRole("doctor"); return; }
+      const { data: isPatient } = await supabase.rpc("has_role", { _user_id: user.id, _role: "patient" as any });
+      if (isPatient) { setUserRole("patient"); return; }
       setUserRole("user");
     };
     checkRoles();
