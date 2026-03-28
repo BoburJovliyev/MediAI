@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare, FileImage, Brain, Eye } from "lucide-react";
+import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare, FileImage, Brain, Eye, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -30,17 +30,19 @@ const AdminPanel = () => {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"users" | "activity" | "notify" | "dashboards">("users");
+  const [tab, setTab] = useState<"users" | "activity" | "notify" | "dashboards" | "chats">("users");
   const [notifyTarget, setNotifyTarget] = useState("");
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyType, setNotifyType] = useState<"info" | "warning" | "success">("info");
   const [sendingNotify, setSendingNotify] = useState(false);
-  const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
+  const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0, chats: 0 });
   const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
   const [allScans, setAllScans] = useState<any[]>([]);
   const [allDiagnoses, setAllDiagnoses] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [allChats, setAllChats] = useState<any[]>([]);
+  const [chatFilterUser, setChatFilterUser] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -62,7 +64,7 @@ const AdminPanel = () => {
   }, [isAdmin]);
 
   const loadData = async () => {
-    const [profs, acts, scansC, diagC, rehabC, patsC, recentScans, recentDiag] = await Promise.all([
+    const [profs, acts, scansC, diagC, rehabC, patsC, recentScans, recentDiag, chatsC, recentChats] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("scan_analyses").select("id", { count: "exact", head: true }),
@@ -71,17 +73,21 @@ const AdminPanel = () => {
       supabase.from("patients").select("id", { count: "exact", head: true }),
       supabase.from("scan_analyses").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("diagnoses").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("chat_messages").select("id", { count: "exact", head: true }),
+      supabase.from("chat_messages").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     setProfiles(profs.data as ProfileRow[] || []);
     setActivities(acts.data || []);
     setAllScans(recentScans.data || []);
     setAllDiagnoses(recentDiag.data || []);
+    setAllChats(recentChats.data || []);
     setGlobalStats({
       users: profs.data?.length || 0,
       scans: scansC.count || 0,
       diagnoses: diagC.count || 0,
       rehabs: rehabC.count || 0,
       patients: patsC.count || 0,
+      chats: chatsC.count || 0,
     });
   };
 
@@ -154,6 +160,7 @@ const AdminPanel = () => {
     { label: "Skan tahlillari", value: globalStats.scans, icon: <Activity size={20} />, color: "bg-medical-teal-light text-medical-teal" },
     { label: "Tashxislar", value: globalStats.diagnoses, icon: <Activity size={20} />, color: "bg-medical-green-light text-medical-green" },
     { label: "Bemorlar", value: globalStats.patients, icon: <Users size={20} />, color: "bg-medical-purple-light text-medical-purple" },
+    { label: "Chatlar", value: globalStats.chats, icon: <MessageCircle size={20} />, color: "bg-primary/10 text-primary" },
     { label: "Reab. seanslar", value: globalStats.rehabs, icon: <Activity size={20} />, color: "bg-medical-orange-light text-medical-orange" },
   ];
 
@@ -168,7 +175,7 @@ const AdminPanel = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {statsCards.map((s) => (
           <div key={s.label} className="bg-card rounded-xl p-4 border border-border">
             <div className={`w-8 h-8 rounded-lg ${s.color} flex items-center justify-center mb-2`}>{s.icon}</div>
@@ -180,7 +187,7 @@ const AdminPanel = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-secondary rounded-xl p-1 overflow-x-auto">
-        {([["users", "Foydalanuvchilar"], ["dashboards", "Dashboardlar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"]] as const).map(([id, label]) => (
+        {([["users", "Foydalanuvchilar"], ["dashboards", "Dashboardlar"], ["chats", "Chatlar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap px-3 ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
@@ -221,8 +228,8 @@ const AdminPanel = () => {
                         <UserCog size={14} /> Rol
                       </button>
                       <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-elevated opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-10 min-w-[120px]">
-                        {(["admin", "moderator", "user"] as const).map((r) => (
-                          <button key={r} onClick={() => changeRole(p.user_id, r)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
+                        {(["admin", "doctor", "user", "patient"] as const).map((r) => (
+                          <button key={r} onClick={() => changeRole(p.user_id, r as any)} className="block w-full px-4 py-2 text-sm text-left hover:bg-secondary text-foreground capitalize">{r}</button>
                         ))}
                       </div>
                     </div>
@@ -379,6 +386,50 @@ const AdminPanel = () => {
             className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold flex items-center gap-2 disabled:opacity-60 shadow-glow">
             <Send size={16} /> {sendingNotify ? "Yuborilmoqda..." : "Yuborish"}
           </button>
+        </div>
+      )}
+
+      {tab === "chats" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={() => setChatFilterUser(null)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!chatFilterUser ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+              Barcha chatlar
+            </button>
+            {profiles.slice(0, 10).map(p => (
+              <button key={p.user_id} onClick={() => setChatFilterUser(p.user_id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${chatFilterUser === p.user_id ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                {p.full_name || "Nomsiz"}
+              </button>
+            ))}
+          </div>
+          <div className="bg-card rounded-2xl p-6 border border-border space-y-3">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-4">
+              <MessageCircle size={18} className="text-primary" /> Chat xabarlari
+            </h3>
+            {(chatFilterUser ? allChats.filter(c => c.sender_id === chatFilterUser || c.receiver_id === chatFilterUser) : allChats).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Chat xabarlari topilmadi</p>
+            ) : (
+              (chatFilterUser ? allChats.filter(c => c.sender_id === chatFilterUser || c.receiver_id === chatFilterUser) : allChats)
+                .slice(0, 50).map((msg: any) => (
+                  <div key={msg.id} className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                      {getUserName(msg.sender_id)?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-foreground">{getUserName(msg.sender_id)}</span>
+                        <span className="text-[10px] text-muted-foreground">→</span>
+                        <span className="text-xs font-semibold text-foreground">{getUserName(msg.receiver_id)}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(msg.created_at), "dd.MM.yyyy HH:mm")}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-0.5 truncate">{msg.is_deleted ? "🗑 O'chirilgan" : msg.message || "📎 Fayl"}</p>
+                      {msg.image_url && !msg.is_deleted && <img src={msg.image_url} alt="" className="w-16 h-16 rounded-lg mt-1 object-cover" />}
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
         </div>
       )}
     </motion.div>

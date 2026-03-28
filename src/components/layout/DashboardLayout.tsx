@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, LogOut, User, Users, Moon, Sun
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
@@ -21,10 +21,11 @@ interface DashboardLayoutProps {
 }
 
 const allNavItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
   { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
   { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
   { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "chat", label: "Chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient"] },
   { id: "patients", label: "Bemorlar", icon: <Users size={20} />, roles: ["admin", "doctor"] },
   { id: "admin", label: "Admin Panel", icon: <Shield size={20} />, roles: ["admin"] },
 ];
@@ -42,6 +43,8 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       if (isAdmin) { setUserRole("admin"); return; }
       const { data: isDoctor } = await supabase.rpc("has_role", { _user_id: user.id, _role: "doctor" as any });
       if (isDoctor) { setUserRole("doctor"); return; }
+      const { data: isPatient } = await supabase.rpc("has_role", { _user_id: user.id, _role: "patient" as any });
+      if (isPatient) { setUserRole("patient"); return; }
       setUserRole("user");
     };
     checkRoles();
