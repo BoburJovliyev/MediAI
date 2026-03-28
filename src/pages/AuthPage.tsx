@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck } from "lucide-react";
+import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
+import logo from "@/assets/logo.png";
 
 interface AuthPageProps {
   onAuth: (mode: "login" | "signup", email: string, password: string, fullName?: string, role?: string) => Promise<{ error: Error | null }>;
