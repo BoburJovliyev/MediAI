@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare, FileImage, Brain, Eye } from "lucide-react";
+import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare, FileImage, Brain, Eye, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
