@@ -175,7 +175,7 @@ const AdminPanel = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {statsCards.map((s) => (
           <div key={s.label} className="bg-card rounded-xl p-4 border border-border">
             <div className={`w-8 h-8 rounded-lg ${s.color} flex items-center justify-center mb-2`}>{s.icon}</div>
