@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
