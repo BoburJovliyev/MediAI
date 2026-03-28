@@ -22,15 +22,32 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Load doctors for patient registration
+  useEffect(() => {
+    if (mode === "signup" && role === "patient") {
+      supabase.from("profiles").select("user_id, full_name").eq("role", "doctor")
+        .then(({ data }) => setDoctors(data || []));
+    }
+  }, [mode, role]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    if (mode === "signup" && role === "patient" && !selectedDoctor) {
+      setError("Iltimos, doktor tanlang");
+      return;
+    }
     setLoading(true);
     const result = await onAuth(mode, email, password, fullName, role);
     if (result.error) {
       setError(result.error.message);
     } else if (mode === "signup") {
+      // If patient, save doctor relationship after signup
+      if (role === "patient" && selectedDoctor) {
+        // We'll handle this after email confirmation via a listener
+        localStorage.setItem("pending_doctor_id", selectedDoctor);
+      }
       setSuccess("Ro'yxatdan o'tdingiz! Email manzilingizni tasdiqlang.");
     }
     setLoading(false);
