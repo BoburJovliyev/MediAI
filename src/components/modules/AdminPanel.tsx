@@ -388,6 +388,50 @@ const AdminPanel = () => {
           </button>
         </div>
       )}
+
+      {tab === "chats" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={() => setChatFilterUser(null)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!chatFilterUser ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+              Barcha chatlar
+            </button>
+            {profiles.slice(0, 10).map(p => (
+              <button key={p.user_id} onClick={() => setChatFilterUser(p.user_id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${chatFilterUser === p.user_id ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                {p.full_name || "Nomsiz"}
+              </button>
+            ))}
+          </div>
+          <div className="bg-card rounded-2xl p-6 border border-border space-y-3">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-4">
+              <MessageCircle size={18} className="text-primary" /> Chat xabarlari
+            </h3>
+            {(chatFilterUser ? allChats.filter(c => c.sender_id === chatFilterUser || c.receiver_id === chatFilterUser) : allChats).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Chat xabarlari topilmadi</p>
+            ) : (
+              (chatFilterUser ? allChats.filter(c => c.sender_id === chatFilterUser || c.receiver_id === chatFilterUser) : allChats)
+                .slice(0, 50).map((msg: any) => (
+                  <div key={msg.id} className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                      {getUserName(msg.sender_id)?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-foreground">{getUserName(msg.sender_id)}</span>
+                        <span className="text-[10px] text-muted-foreground">→</span>
+                        <span className="text-xs font-semibold text-foreground">{getUserName(msg.receiver_id)}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(msg.created_at), "dd.MM.yyyy HH:mm")}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-0.5 truncate">{msg.is_deleted ? "🗑 O'chirilgan" : msg.message || "📎 Fayl"}</p>
+                      {msg.image_url && !msg.is_deleted && <img src={msg.image_url} alt="" className="w-16 h-16 rounded-lg mt-1 object-cover" />}
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
