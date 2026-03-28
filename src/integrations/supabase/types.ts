@@ -44,6 +44,72 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          forwarded_from: string | null
+          id: string
+          image_url: string | null
+          is_deleted: boolean
+          is_edited: boolean
+          is_read: boolean
+          message: string | null
+          receiver_id: string
+          reply_to: string | null
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          forwarded_from?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          is_edited?: boolean
+          is_read?: boolean
+          message?: string | null
+          receiver_id: string
+          reply_to?: string | null
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          forwarded_from?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          is_edited?: boolean
+          is_read?: boolean
+          message?: string | null
+          receiver_id?: string
+          reply_to?: string | null
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_forwarded_from_fkey"
+            columns: ["forwarded_from"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnoses: {
         Row: {
           ai_model: string | null
@@ -99,6 +165,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      doctor_patients: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          patient_id: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          patient_id: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          patient_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -331,7 +418,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "doctor"
+      app_role: "admin" | "moderator" | "user" | "doctor" | "patient"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -459,7 +546,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "doctor"],
+      app_role: ["admin", "moderator", "user", "doctor", "patient"],
     },
   },
 } as const
