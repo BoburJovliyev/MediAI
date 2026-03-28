@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,10 +8,12 @@ import SmartMedicalAdvisor from "@/components/modules/SmartMedicalAdvisor";
 import TeleRehab from "@/components/modules/TeleRehab";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
+import ChatModule from "@/components/modules/ChatModule";
 import AuthPage from "./AuthPage";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
