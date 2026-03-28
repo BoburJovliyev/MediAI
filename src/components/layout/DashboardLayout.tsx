@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, Heart, LogOut, User, Users, Moon, Sun
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import logo from "@/assets/logo.png";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin";
 
@@ -17,27 +20,41 @@ interface DashboardLayoutProps {
   userName?: string;
 }
 
-const navItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-  { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} /> },
-  { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} /> },
-  { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} /> },
-  { id: "patients", label: "Bemorlar", icon: <Users size={20} /> },
-  { id: "admin", label: "Admin Panel", icon: <Shield size={20} /> },
+const allNavItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+  { id: "patients", label: "Bemorlar", icon: <Users size={20} />, roles: ["admin", "doctor"] },
+  { id: "admin", label: "Admin Panel", icon: <Shield size={20} />, roles: ["admin"] },
 ];
 
 const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName }: DashboardLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string>("user");
+
+  useEffect(() => {
+    if (!user) return;
+    const checkRoles = async () => {
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" as any });
+      if (isAdmin) { setUserRole("admin"); return; }
+      const { data: isDoctor } = await supabase.rpc("has_role", { _user_id: user.id, _role: "doctor" as any });
+      if (isDoctor) { setUserRole("doctor"); return; }
+      setUserRole("user");
+    };
+    checkRoles();
+  }, [user]);
+
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex w-72 flex-col border-r border-border bg-card p-6 fixed h-screen">
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <Heart size={20} className="text-primary-foreground" />
-          </div>
+          <img src={logo} alt="Medi AI" className="w-10 h-10 rounded-xl object-cover" />
           <div>
             <h1 className="text-lg font-display font-bold text-foreground">Medi AI</h1>
             <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
@@ -91,9 +108,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <Heart size={16} className="text-primary-foreground" />
-          </div>
+          <img src={logo} alt="Medi AI" className="w-8 h-8 rounded-lg object-cover" />
           <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
         <div className="flex items-center gap-1">
