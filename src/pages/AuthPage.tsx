@@ -13,7 +13,9 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"doctor" | "user">("doctor");
+  const [role, setRole] = useState<"doctor" | "user" | "patient">("doctor");
+  const [doctors, setDoctors] = useState<{ user_id: string; full_name: string | null }[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
