@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare } from "lucide-react";
+import { Shield, Users, Activity, UserCog, Search, Bell, Ban, CheckCircle2, Filter, Calendar, Send, MessageSquare, FileImage, Brain, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ const AdminPanel = () => {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"users" | "activity" | "stats" | "notify">("users");
+  const [tab, setTab] = useState<"users" | "activity" | "notify" | "dashboards">("users");
   const [notifyTarget, setNotifyTarget] = useState("");
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
@@ -38,6 +38,9 @@ const AdminPanel = () => {
   const [sendingNotify, setSendingNotify] = useState(false);
   const [globalStats, setGlobalStats] = useState({ users: 0, scans: 0, diagnoses: 0, rehabs: 0, patients: 0 });
   const [activityFilter, setActivityFilter] = useState({ type: "", dateFrom: "", dateTo: "" });
+  const [allScans, setAllScans] = useState<any[]>([]);
+  const [allDiagnoses, setAllDiagnoses] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -59,16 +62,20 @@ const AdminPanel = () => {
   }, [isAdmin]);
 
   const loadData = async () => {
-    const [profs, acts, scansC, diagC, rehabC, patsC] = await Promise.all([
+    const [profs, acts, scansC, diagC, rehabC, patsC, recentScans, recentDiag] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("scan_analyses").select("id", { count: "exact", head: true }),
       supabase.from("diagnoses").select("id", { count: "exact", head: true }),
       supabase.from("rehab_sessions").select("id", { count: "exact", head: true }),
       supabase.from("patients").select("id", { count: "exact", head: true }),
+      supabase.from("scan_analyses").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("diagnoses").select("*").order("created_at", { ascending: false }).limit(50),
     ]);
     setProfiles(profs.data as ProfileRow[] || []);
     setActivities(acts.data || []);
+    setAllScans(recentScans.data || []);
+    setAllDiagnoses(recentDiag.data || []);
     setGlobalStats({
       users: profs.data?.length || 0,
       scans: scansC.count || 0,
@@ -83,15 +90,10 @@ const AdminPanel = () => {
     const { error } = await supabase.from("profiles").update({ is_blocked: newBlocked } as any).eq("id", profile.id);
     if (error) { toast.error("Xatolik: " + error.message); return; }
     toast.success(newBlocked ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi");
-    
-    // Log activity
     if (user) {
       await supabase.from("activity_log").insert({
-        user_id: user.id,
-        action: newBlocked ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi",
-        entity_type: "user",
-        entity_id: profile.user_id as any,
-        details: { target_name: profile.full_name } as any,
+        user_id: user.id, action: newBlocked ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi",
+        entity_type: "user", entity_id: profile.user_id as any, details: { target_name: profile.full_name } as any,
       });
     }
     loadData();
@@ -100,13 +102,9 @@ const AdminPanel = () => {
   const changeRole = async (userId: string, newRole: "admin" | "moderator" | "user") => {
     await supabase.from("user_roles" as any).delete().eq("user_id", userId);
     await supabase.from("user_roles" as any).insert({ user_id: userId, role: newRole });
-    
     if (user) {
       await supabase.from("activity_log").insert({
-        user_id: user.id,
-        action: `Rol o'zgartirildi: ${newRole}`,
-        entity_type: "user",
-        entity_id: userId as any,
+        user_id: user.id, action: `Rol o'zgartirildi: ${newRole}`, entity_type: "user", entity_id: userId as any,
       });
     }
     toast.success("Rol yangilandi");
@@ -139,13 +137,17 @@ const AdminPanel = () => {
   );
 
   const filteredProfiles = profiles.filter((p) => p.full_name?.toLowerCase().includes(search.toLowerCase()));
-
   const filteredActivities = activities.filter((a) => {
     if (activityFilter.type && !a.action.toLowerCase().includes(activityFilter.type.toLowerCase()) && !a.entity_type?.toLowerCase().includes(activityFilter.type.toLowerCase())) return false;
     if (activityFilter.dateFrom && new Date(a.created_at) < new Date(activityFilter.dateFrom)) return false;
     if (activityFilter.dateTo && new Date(a.created_at) > new Date(activityFilter.dateTo + "T23:59:59")) return false;
     return true;
   });
+
+  const getUserName = (userId: string) => profiles.find(p => p.user_id === userId)?.full_name || "Nomsiz";
+
+  const userScans = selectedUserId ? allScans.filter(s => s.user_id === selectedUserId) : allScans;
+  const userDiagnoses = selectedUserId ? allDiagnoses.filter(d => d.user_id === selectedUserId) : allDiagnoses;
 
   const statsCards = [
     { label: "Foydalanuvchilar", value: globalStats.users, icon: <Users size={20} />, color: "bg-medical-blue-light text-medical-blue" },
@@ -177,10 +179,10 @@ const AdminPanel = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-secondary rounded-xl p-1">
-        {([["users", "Foydalanuvchilar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"], ["stats", "Statistika"]] as const).map(([id, label]) => (
+      <div className="flex gap-2 bg-secondary rounded-xl p-1 overflow-x-auto">
+        {([["users", "Foydalanuvchilar"], ["dashboards", "Dashboardlar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap px-3 ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
           </button>
         ))}
@@ -205,13 +207,15 @@ const AdminPanel = () => {
                     <p className="text-xs text-muted-foreground">{format(new Date(p.created_at), "dd.MM.yyyy")} • {p.role || "user"}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Block/Unblock */}
+                    <button onClick={() => { setSelectedUserId(p.user_id); setTab("dashboards"); }}
+                      className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Dashboardni ko'rish">
+                      <Eye size={16} />
+                    </button>
                     <button onClick={() => toggleBlock(p)}
                       className={`p-2 rounded-lg transition-colors ${p.is_blocked ? "bg-medical-green-light text-medical-green hover:bg-medical-green/20" : "bg-destructive/10 text-destructive hover:bg-destructive/20"}`}
                       title={p.is_blocked ? "Blokdan chiqarish" : "Bloklash"}>
                       {p.is_blocked ? <CheckCircle2 size={16} /> : <Ban size={16} />}
                     </button>
-                    {/* Role dropdown */}
                     <div className="relative group">
                       <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary text-sm text-foreground">
                         <UserCog size={14} /> Rol
@@ -230,9 +234,78 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {tab === "dashboards" && (
+        <div className="space-y-6">
+          {/* User filter */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={() => setSelectedUserId(null)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!selectedUserId ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+              Barcha foydalanuvchilar
+            </button>
+            {profiles.slice(0, 10).map(p => (
+              <button key={p.user_id} onClick={() => setSelectedUserId(p.user_id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedUserId === p.user_id ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                {p.full_name || "Nomsiz"}
+              </button>
+            ))}
+          </div>
+
+          {selectedUserId && (
+            <div className="bg-card rounded-xl p-4 border border-border">
+              <p className="text-sm text-muted-foreground">Tanlangan foydalanuvchi: <span className="font-semibold text-foreground">{getUserName(selectedUserId)}</span></p>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="text-center p-3 rounded-lg bg-secondary">
+                  <p className="text-lg font-bold text-foreground">{userScans.length}</p>
+                  <p className="text-xs text-muted-foreground">Skanlar</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-secondary">
+                  <p className="text-lg font-bold text-foreground">{userDiagnoses.length}</p>
+                  <p className="text-xs text-muted-foreground">Tashxislar</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Scans */}
+          <div className="bg-card rounded-2xl p-6 border border-border">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-4"><FileImage size={18} className="text-primary" /> So'nggi skanlar</h3>
+            {userScans.length === 0 ? <p className="text-sm text-muted-foreground">Skan topilmadi</p> : (
+              <div className="space-y-3">
+                {userScans.slice(0, 10).map((s: any) => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                    <div className={`w-2 h-2 rounded-full ${s.severity === "critical" ? "bg-destructive" : s.severity === "moderate" ? "bg-yellow-500" : "bg-medical-green"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{s.scan_type?.toUpperCase() || "Skan"} — {s.severity || "normal"}</p>
+                      <p className="text-xs text-muted-foreground">{getUserName(s.user_id)} • {format(new Date(s.created_at), "dd.MM.yyyy HH:mm")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Diagnoses */}
+          <div className="bg-card rounded-2xl p-6 border border-border">
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-4"><Brain size={18} className="text-accent" /> So'nggi tashxislar</h3>
+            {userDiagnoses.length === 0 ? <p className="text-sm text-muted-foreground">Tashxis topilmadi</p> : (
+              <div className="space-y-3">
+                {userDiagnoses.slice(0, 10).map((d: any) => (
+                  <div key={d.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
+                    <div className={`w-2 h-2 rounded-full ${(d.confidence || 0) > 80 ? "bg-medical-green" : "bg-yellow-500"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{d.condition_name || "Noma'lum"} — {d.confidence ? `${d.confidence}%` : ""}</p>
+                      <p className="text-xs text-muted-foreground">{getUserName(d.user_id)} • {format(new Date(d.created_at), "dd.MM.yyyy HH:mm")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {tab === "activity" && (
         <div className="space-y-4">
-          {/* Filters */}
           <div className="bg-card rounded-xl p-4 border border-border">
             <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground"><Filter size={16} /> Filtrlash</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -253,7 +326,6 @@ const AdminPanel = () => {
               </div>
             </div>
           </div>
-
           <div className="space-y-2">
             {filteredActivities.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">Faoliyat topilmadi</div>
@@ -307,20 +379,6 @@ const AdminPanel = () => {
             className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold flex items-center gap-2 disabled:opacity-60 shadow-glow">
             <Send size={16} /> {sendingNotify ? "Yuborilmoqda..." : "Yuborish"}
           </button>
-        </div>
-      )}
-
-      {tab === "stats" && (
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <h3 className="font-display font-bold text-foreground mb-4">Umumiy statistika</h3>
-          <div className="space-y-3">
-            {statsCards.map((s) => (
-              <div key={s.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <span className="text-sm text-foreground">{s.label}</span>
-                <span className="font-display font-bold text-foreground">{s.value}</span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </motion.div>
