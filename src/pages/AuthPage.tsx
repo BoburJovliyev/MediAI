@@ -116,23 +116,54 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">Rolni tanlang</label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <button type="button" onClick={() => setRole("doctor")}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                         role === "doctor" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
                       }`}>
-                      <Stethoscope size={24} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
-                      <span className={`text-sm font-semibold ${role === "doctor" ? "text-primary" : "text-muted-foreground"}`}>Doktor</span>
+                      <Stethoscope size={22} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
+                      <span className={`text-xs font-semibold ${role === "doctor" ? "text-primary" : "text-muted-foreground"}`}>Doktor</span>
                     </button>
                     <button type="button" onClick={() => setRole("user")}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                         role === "user" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
                       }`}>
-                      <UserCheck size={24} className={role === "user" ? "text-primary" : "text-muted-foreground"} />
-                      <span className={`text-sm font-semibold ${role === "user" ? "text-primary" : "text-muted-foreground"}`}>Foydalanuvchi</span>
+                      <UserCheck size={22} className={role === "user" ? "text-primary" : "text-muted-foreground"} />
+                      <span className={`text-xs font-semibold ${role === "user" ? "text-primary" : "text-muted-foreground"}`}>Foydalanuvchi</span>
+                    </button>
+                    <button type="button" onClick={() => setRole("patient")}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                        role === "patient" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
+                      }`}>
+                      <HeartPulse size={22} className={role === "patient" ? "text-primary" : "text-muted-foreground"} />
+                      <span className={`text-xs font-semibold ${role === "patient" ? "text-primary" : "text-muted-foreground"}`}>Bemor</span>
                     </button>
                   </div>
                 </div>
+                {role === "patient" && (
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Doktorni tanlang</label>
+                    {doctors.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Hozircha ro'yxatdan o'tgan doktorlar yo'q</p>
+                    ) : (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {doctors.map(d => (
+                          <button key={d.user_id} type="button" onClick={() => setSelectedDoctor(d.user_id)}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              selectedDoctor === d.user_id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"
+                            }`}>
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Stethoscope size={16} className="text-primary" />
+                            </div>
+                            <span className={`text-sm font-medium ${selectedDoctor === d.user_id ? "text-primary" : "text-foreground"}`}>
+                              {d.full_name || "Doktor"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
             <div>
