@@ -31,12 +31,29 @@ const AppContent = () => {
     return (
       <AuthPage
         onAuth={async (mode, email, password, fullName, role) => {
-          if (mode === "signup") return signUp(email, password, fullName || "", role);
+          if (mode === "signup") {
+            const result = await signUp(email, password, fullName || "", role);
+            return result;
+          }
           return signIn(email, password);
         }}
       />
     );
   }
+
+  // Handle pending doctor relationship after login
+  useEffect(() => {
+    if (!user) return;
+    const pendingDoctor = localStorage.getItem("pending_doctor_id");
+    if (pendingDoctor) {
+      supabase.from("doctor_patients").insert({
+        doctor_id: pendingDoctor,
+        patient_id: user.id,
+      }).then(() => {
+        localStorage.removeItem("pending_doctor_id");
+      });
+    }
+  }, [user]);
 
   const renderContent = () => {
     switch (activeTab) {
