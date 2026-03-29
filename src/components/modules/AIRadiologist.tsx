@@ -5,6 +5,9 @@ import MedicalDisclaimer from "../shared/MedicalDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import sampleXray from "@/assets/sample-xray.jpg";
+import sampleUzi from "@/assets/sample-uzi.jpg";
+import sampleMrt from "@/assets/sample-mrt.jpg";
 
 interface AnalysisResult {
   findings: string[];
@@ -26,6 +29,12 @@ const scanTypeLabels: Record<ScanType, string> = {
   xray: "Rentgen",
   uzi: "UZI (Ultratovush)",
   mrt: "MRT",
+};
+
+const sampleImages: Record<ScanType, { src: string; label: string; desc: string }> = {
+  xray: { src: sampleXray, label: "Rentgen tasviri", desc: "Ko'krak qafasi rentgeni — o'pka va suyaklarni tekshirish" },
+  uzi: { src: sampleUzi, label: "UZI tasviri", desc: "Ultratovush tekshiruvi — ichki a'zolarni vizualizatsiya qilish" },
+  mrt: { src: sampleMrt, label: "MRT tasviri", desc: "Magnit-rezonans tomografiya — yumshoq to'qimalarni tahlil qilish" },
 };
 
 const AIRadiologist = () => {
@@ -169,6 +178,27 @@ const AIRadiologist = () => {
             ))}
           </div>
 
+          {/* Sample image preview for selected scan type */}
+          <motion.div
+            key={scanType}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card border border-border rounded-2xl p-4 flex gap-4 items-center"
+          >
+            <img
+              src={sampleImages[scanType].src}
+              alt={sampleImages[scanType].label}
+              className="w-20 h-20 rounded-xl object-cover"
+              loading="lazy"
+              width={80}
+              height={80}
+            />
+            <div className="flex-1">
+              <h4 className="font-semibold text-foreground text-sm">{sampleImages[scanType].label}</h4>
+              <p className="text-xs text-muted-foreground mt-1">{sampleImages[scanType].desc}</p>
+            </div>
+          </motion.div>
+
           {/* Camera / Upload toggle buttons */}
           <div className="flex gap-3">
             <button
@@ -199,7 +229,7 @@ const AIRadiologist = () => {
                 autoPlay
                 playsInline
                 muted
-                className="w-full rounded-2xl"
+                className="w-full min-h-[280px] rounded-2xl bg-black object-cover"
               />
               {/* Capture button */}
               <div className="absolute bottom-4 left-0 right-0 flex justify-center">
