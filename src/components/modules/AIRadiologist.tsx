@@ -20,6 +20,14 @@ const severityConfig = {
   severe: { label: "Jiddiy", color: "bg-medical-red-light text-medical-red" },
 };
 
+type ScanType = "xray" | "uzi" | "mrt";
+
+const scanTypeLabels: Record<ScanType, string> = {
+  xray: "Rentgen",
+  uzi: "UZI (Ultratovush)",
+  mrt: "MRT",
+};
+
 const AIRadiologist = () => {
   const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
@@ -27,6 +35,7 @@ const AIRadiologist = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [scanType, setScanType] = useState<ScanType>("xray");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -88,7 +97,7 @@ const AIRadiologist = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-scan", {
-        body: { imageBase64: image, scanType: "xray" },
+        body: { imageBase64: image, scanType },
       });
 
       if (error) throw error;
@@ -105,7 +114,7 @@ const AIRadiologist = () => {
       if (user) {
         await supabase.from("scan_analyses").insert({
           user_id: user.id,
-          scan_type: "xray",
+          scan_type: scanType,
           findings: data.findings,
           severity: data.severity,
           recommendation: data.recommendation,
@@ -120,7 +129,7 @@ const AIRadiologist = () => {
     } finally {
       setAnalyzing(false);
     }
-  }, [image, user]);
+  }, [image, user, scanType]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -138,11 +147,28 @@ const AIRadiologist = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
         <h2 className="text-2xl font-display font-bold text-foreground">AI Radiologist</h2>
-        <p className="text-muted-foreground mt-1">MRT va Rentgen tasvirlarini sun'iy intellekt yordamida tahlil qiling</p>
+        <p className="text-muted-foreground mt-1">Rentgen, UZI va MRT tasvirlarini sun'iy intellekt yordamida tahlil qiling</p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-4">
+          {/* Scan type selector */}
+          <div className="flex gap-2">
+            {(["xray", "uzi", "mrt"] as ScanType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setScanType(type)}
+                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  scanType === type
+                    ? "gradient-primary text-primary-foreground shadow-glow"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {scanTypeLabels[type]}
+              </button>
+            ))}
+          </div>
+
           {/* Camera / Upload toggle buttons */}
           <div className="flex gap-3">
             <button

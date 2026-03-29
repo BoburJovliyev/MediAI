@@ -13,7 +13,14 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `Sen tajribali radiologsan. Berilgan tibbiy tasvir (${scanType || "rentgen"}) haqida batafsil tahlil ber.
+    const scanLabels: Record<string, string> = {
+      xray: "rentgen",
+      uzi: "UZI (ultratovush)",
+      mrt: "MRT (magnit-rezonans tomografiya)",
+    };
+    const scanLabel = scanLabels[scanType] || scanType || "rentgen";
+
+    const systemPrompt = `Sen tajribali radiologsan. Berilgan tibbiy tasvir (${scanLabel}) haqida batafsil tahlil ber.
 
 Javobni quyidagi JSON formatda ber:
 {
@@ -34,7 +41,7 @@ Muhim: Faqat JSON qaytar, boshqa hech narsa qo'shma.`;
         role: "user",
         content: [
           { type: "image_url", image_url: { url: imageBase64 } },
-          { type: "text", text: `Bu ${scanType || "rentgen"} tasvirini tahlil qil. Patologiyalar, o'smalar va boshqa anomaliyalarni aniqla.` },
+          { type: "text", text: `Bu ${scanLabel} tasvirini tahlil qil. Patologiyalar, o'smalar va boshqa anomaliyalarni aniqla.` },
         ],
       });
     } else {
