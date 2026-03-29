@@ -52,11 +52,15 @@ const ChatModule = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [uploading, setUploading] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [emailSearch, setEmailSearch] = useState("");
+  const [emailResults, setEmailResults] = useState<any[]>([]);
+  const [emailSearching, setEmailSearching] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Load contacts (doctor-patient relationships)
+  // Load contacts (all users who have chatted with current user + doctor-patient relationships)
   useEffect(() => {
     if (!user) return;
     loadContacts();
@@ -65,17 +69,33 @@ const ChatModule = () => {
   const loadContacts = async () => {
     if (!user) return;
     
-    // Get relationships
+    // Get all unique user IDs from chat messages
+    const { data: sentMsgs } = await supabase
+      .from("chat_messages")
+      .select("receiver_id")
+      .eq("sender_id", user.id);
+    const { data: receivedMsgs } = await supabase
+      .from("chat_messages")
+      .select("sender_id")
+      .eq("receiver_id", user.id);
+
+    // Get doctor-patient relationships too
     const { data: rels } = await supabase
       .from("doctor_patients")
       .select("*")
       .or(`doctor_id.eq.${user.id},patient_id.eq.${user.id}`);
 
-    if (!rels || rels.length === 0) { setContacts([]); return; }
+    const chatUserIds = new Set<string>();
+    sentMsgs?.forEach(m => chatUserIds.add(m.receiver_id));
+    receivedMsgs?.forEach(m => chatUserIds.add(m.sender_id));
+    rels?.forEach(r => {
+      chatUserIds.add(r.doctor_id === user.id ? r.patient_id : r.doctor_id);
+    });
+    chatUserIds.delete(user.id);
 
-    const contactIds = rels.map(r => r.doctor_id === user.id ? r.patient_id : r.doctor_id);
-    const uniqueIds = [...new Set(contactIds)];
+    if (chatUserIds.size === 0) { setContacts([]); return; }
 
+    const uniqueIds = [...chatUserIds];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, role, avatar_url")
@@ -115,6 +135,44 @@ const ChatModule = () => {
     });
 
     setContacts(contactsList);
+  };
+
+  // Search users by email
+  const searchByEmail = async () => {
+    if (!emailSearch.trim() || emailSearch.trim().length < 3) {
+      setEmailResults([]);
+      return;
+    }
+    setEmailSearching(true);
+    const { data, error } = await supabase.rpc("search_users_by_email", { search_email: emailSearch.trim() });
+    if (!error && data) {
+      setEmailResults(data.filter((p: any) => p.user_id !== user?.id));
+    }
+    setEmailSearching(false);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => { searchByEmail(); }, 400);
+    return () => clearTimeout(timer);
+  }, [emailSearch]);
+
+  const startChatWithUser = (profile: any) => {
+    const contact: ChatContact = {
+      user_id: profile.user_id,
+      full_name: profile.full_name || profile.email || "Nomsiz",
+      role: profile.role,
+      avatar_url: profile.avatar_url,
+    };
+    // Add to contacts if not already there
+    setContacts(prev => {
+      if (prev.find(c => c.user_id === profile.user_id)) return prev;
+      return [contact, ...prev];
+    });
+    setSelectedContact(contact);
+    setShowNewChat(false);
+    setEmailSearch("");
+    setEmailResults([]);
+    setShowMobileChat(true);
   };
 
   // Load messages for selected contact
