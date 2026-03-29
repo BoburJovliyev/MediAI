@@ -229,7 +229,7 @@ const AIRadiologist = () => {
                 autoPlay
                 playsInline
                 muted
-                className="w-full rounded-2xl"
+                className="w-full min-h-[280px] rounded-2xl bg-black object-cover"
               />
               {/* Capture button */}
               <div className="absolute bottom-4 left-0 right-0 flex justify-center">
