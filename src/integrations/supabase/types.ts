@@ -260,6 +260,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           is_blocked: boolean
@@ -270,6 +271,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean
@@ -280,6 +282,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean
@@ -415,6 +418,26 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_users_by_email: {
+        Args: { search_email: string }
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          is_blocked: boolean
+          role: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {
