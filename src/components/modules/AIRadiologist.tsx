@@ -5,6 +5,9 @@ import MedicalDisclaimer from "../shared/MedicalDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import sampleXray from "@/assets/sample-xray.jpg";
+import sampleUzi from "@/assets/sample-uzi.jpg";
+import sampleMrt from "@/assets/sample-mrt.jpg";
 
 interface AnalysisResult {
   findings: string[];
