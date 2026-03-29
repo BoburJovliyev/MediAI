@@ -20,6 +20,14 @@ const severityConfig = {
   severe: { label: "Jiddiy", color: "bg-medical-red-light text-medical-red" },
 };
 
+type ScanType = "xray" | "uzi" | "mrt";
+
+const scanTypeLabels: Record<ScanType, string> = {
+  xray: "Rentgen",
+  uzi: "UZI (Ultratovush)",
+  mrt: "MRT",
+};
+
 const AIRadiologist = () => {
   const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
@@ -27,6 +35,7 @@ const AIRadiologist = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [scanType, setScanType] = useState<ScanType>("xray");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
