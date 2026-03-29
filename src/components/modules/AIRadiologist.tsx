@@ -114,7 +114,7 @@ const AIRadiologist = () => {
       if (user) {
         await supabase.from("scan_analyses").insert({
           user_id: user.id,
-          scan_type: "xray",
+          scan_type: scanType,
           findings: data.findings,
           severity: data.severity,
           recommendation: data.recommendation,
