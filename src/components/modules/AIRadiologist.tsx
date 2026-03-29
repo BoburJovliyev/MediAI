@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, Camera, CameraOff, CircleDot } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,52 @@ const AIRadiologist = () => {
   const [fileName, setFileName] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setCameraActive(true);
+      setImage(null);
+      setResult(null);
+      setFileName("");
+    } catch (err) {
+      console.error("Camera error:", err);
+      toast.error("Kameraga ruxsat berilmadi yoki kamera topilmadi");
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  }, []);
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL("image/png");
+    setImage(dataUrl);
+    setFileName("camera-capture.png");
+    setResult(null);
+    stopCamera();
+    toast.success("Rasm muvaffaqiyatli olindi!");
+  }, [stopCamera]);
 
   const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,7 +102,6 @@ const AIRadiologist = () => {
       };
       setResult(analysisResult);
 
-      // Save to database
       if (user) {
         await supabase.from("scan_analyses").insert({
           user_id: user.id,
@@ -98,29 +143,85 @@ const AIRadiologist = () => {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-            className="bg-card border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors"
-          >
-            {image ? (
-              <div className="space-y-4">
-                <img src={image} alt="Uploaded scan" className="max-h-64 mx-auto rounded-xl object-contain" />
-                <p className="text-sm text-muted-foreground">{fileName}</p>
-              </div>
-            ) : (
-              <label className="cursor-pointer block">
-                <div className="w-16 h-16 rounded-2xl bg-medical-teal-light mx-auto flex items-center justify-center mb-4">
-                  <Upload size={28} className="text-medical-teal" />
-                </div>
-                <p className="font-medium text-foreground mb-1">Tasvirni yuklang</p>
-                <p className="text-sm text-muted-foreground">DICOM, JPG, PNG formatlarini qo'llab-quvvatlaydi</p>
-                <input type="file" accept="image/*,.dcm" onChange={handleUpload} className="hidden" />
-              </label>
-            )}
+          {/* Camera / Upload toggle buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={cameraActive ? stopCamera : startCamera}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
+                cameraActive
+                  ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                  : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+              }`}
+            >
+              {cameraActive ? (
+                <><CameraOff size={20} /> Kamerani o'chirish</>
+              ) : (
+                <><Camera size={20} /> Kamera bilan olish</>
+              )}
+            </button>
           </div>
 
-          {image && (
+          {/* Camera view */}
+          {cameraActive && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative bg-card border border-border rounded-2xl overflow-hidden"
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full rounded-2xl"
+              />
+              {/* Capture button */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={capturePhoto}
+                  className="w-16 h-16 rounded-full bg-white/90 border-4 border-primary flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                >
+                  <CircleDot size={32} className="text-primary" />
+                </motion.button>
+              </div>
+              {/* Overlay frame */}
+              <div className="absolute inset-4 border-2 border-dashed border-white/30 rounded-xl pointer-events-none" />
+            </motion.div>
+          )}
+
+          {/* Upload area (hidden when camera is active) */}
+          {!cameraActive && (
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              className="bg-card border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors"
+            >
+              {image ? (
+                <div className="space-y-4">
+                  <img src={image} alt="Uploaded scan" className="max-h-64 mx-auto rounded-xl object-contain" />
+                  <p className="text-sm text-muted-foreground">{fileName}</p>
+                  <button
+                    onClick={() => { setImage(null); setFileName(""); setResult(null); }}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Boshqa rasm yuklash
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer block">
+                  <div className="w-16 h-16 rounded-2xl bg-medical-teal-light mx-auto flex items-center justify-center mb-4">
+                    <Upload size={28} className="text-medical-teal" />
+                  </div>
+                  <p className="font-medium text-foreground mb-1">Tasvirni yuklang</p>
+                  <p className="text-sm text-muted-foreground">DICOM, JPG, PNG formatlarini qo'llab-quvvatlaydi</p>
+                  <input type="file" accept="image/*,.dcm" onChange={handleUpload} className="hidden" />
+                </label>
+              )}
+            </div>
+          )}
+
+          {image && !cameraActive && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
