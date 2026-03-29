@@ -41,7 +41,7 @@ Muhim: Faqat JSON qaytar, boshqa hech narsa qo'shma.`;
         role: "user",
         content: [
           { type: "image_url", image_url: { url: imageBase64 } },
-          { type: "text", text: `Bu ${scanType || "rentgen"} tasvirini tahlil qil. Patologiyalar, o'smalar va boshqa anomaliyalarni aniqla.` },
+          { type: "text", text: `Bu ${scanLabel} tasvirini tahlil qil. Patologiyalar, o'smalar va boshqa anomaliyalarni aniqla.` },
         ],
       });
     } else {
