@@ -31,6 +31,12 @@ const scanTypeLabels: Record<ScanType, string> = {
   mrt: "MRT",
 };
 
+const sampleImages: Record<ScanType, { src: string; label: string; desc: string }> = {
+  xray: { src: sampleXray, label: "Rentgen tasviri", desc: "Ko'krak qafasi rentgeni — o'pka va suyaklarni tekshirish" },
+  uzi: { src: sampleUzi, label: "UZI tasviri", desc: "Ultratovush tekshiruvi — ichki a'zolarni vizualizatsiya qilish" },
+  mrt: { src: sampleMrt, label: "MRT tasviri", desc: "Magnit-rezonans tomografiya — yumshoq to'qimalarni tahlil qilish" },
+};
+
 const AIRadiologist = () => {
   const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
