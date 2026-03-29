@@ -303,38 +303,90 @@ const ChatModule = () => {
       {/* Contacts sidebar */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-border">
-          <h3 className="font-display font-bold text-foreground text-lg mb-3 flex items-center gap-2">
-            <MessageCircle size={20} className="text-primary" /> Chatlar
-          </h3>
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Qidirish..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-bold text-foreground text-lg flex items-center gap-2">
+              <MessageCircle size={20} className="text-primary" /> Chatlar
+            </h3>
+            <button onClick={() => setShowNewChat(!showNewChat)}
+              className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Yangi chat">
+              <UserPlus size={18} />
+            </button>
           </div>
+          {showNewChat ? (
+            <div className="space-y-2">
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input value={emailSearch} onChange={e => setEmailSearch(e.target.value)}
+                  placeholder="Email orqali foydalanuvchi qidiring..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <button onClick={() => { setShowNewChat(false); setEmailSearch(""); setEmailResults([]); }}
+                className="text-xs text-muted-foreground hover:text-foreground">← Kontaktlarga qaytish</button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Kontaktlardan qidirish..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
-          {filteredContacts.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">Kontaktlar topilmadi</div>
-          ) : filteredContacts.map(c => (
-            <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
-              className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                {c.full_name?.charAt(0)?.toUpperCase() || "?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
-                  {c.lastMessageTime && <span className="text-[10px] text-muted-foreground">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
+          {showNewChat ? (
+            <>
+              {emailSearching && <div className="text-center py-4 text-muted-foreground text-sm">Qidirilmoqda...</div>}
+              {!emailSearching && emailSearch.length >= 3 && emailResults.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">Foydalanuvchi topilmadi</div>
+              )}
+              {!emailSearching && emailSearch.length > 0 && emailSearch.length < 3 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">Kamida 3 ta belgi kiriting</div>
+              )}
+              {emailResults.map((p: any) => (
+                <button key={p.user_id} onClick={() => startChatWithUser(p)}
+                  className="w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {p.full_name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Nomsiz"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                    <p className="text-[10px] text-primary capitalize">{p.role || "user"}</p>
+                  </div>
+                </button>
+              ))}
+              {!emailSearching && emailSearch.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  <Mail size={32} className="mx-auto mb-2 opacity-30" />
+                  <p>Email manzilini kiriting</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "Xabar yo'q"}</p>
-                  {(c.unreadCount || 0) > 0 && (
-                    <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
+              )}
+            </>
+          ) : (
+            <>
+              {filteredContacts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">Kontaktlar topilmadi</div>
+              ) : filteredContacts.map(c => (
+                <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
+                  className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {c.full_name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
+                      {c.lastMessageTime && <span className="text-[10px] text-muted-foreground">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "Xabar yo'q"}</p>
+                      {(c.unreadCount || 0) > 0 && (
+                        <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
