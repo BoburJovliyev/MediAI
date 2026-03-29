@@ -129,7 +129,7 @@ const AIRadiologist = () => {
     } finally {
       setAnalyzing(false);
     }
-  }, [image, user]);
+  }, [image, user, scanType]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
