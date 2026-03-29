@@ -97,7 +97,7 @@ const AIRadiologist = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-scan", {
-        body: { imageBase64: image, scanType: "xray" },
+        body: { imageBase64: image, scanType },
       });
 
       if (error) throw error;
