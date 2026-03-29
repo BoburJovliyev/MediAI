@@ -147,11 +147,28 @@ const AIRadiologist = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
         <h2 className="text-2xl font-display font-bold text-foreground">AI Radiologist</h2>
-        <p className="text-muted-foreground mt-1">MRT va Rentgen tasvirlarini sun'iy intellekt yordamida tahlil qiling</p>
+        <p className="text-muted-foreground mt-1">Rentgen, UZI va MRT tasvirlarini sun'iy intellekt yordamida tahlil qiling</p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-4">
+          {/* Scan type selector */}
+          <div className="flex gap-2">
+            {(["xray", "uzi", "mrt"] as ScanType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setScanType(type)}
+                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  scanType === type
+                    ? "gradient-primary text-primary-foreground shadow-glow"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {scanTypeLabels[type]}
+              </button>
+            ))}
+          </div>
+
           {/* Camera / Upload toggle buttons */}
           <div className="flex gap-3">
             <button
