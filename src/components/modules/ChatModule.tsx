@@ -59,6 +59,72 @@ const ChatModule = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        await uploadVoiceMessage(blob);
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch { toast.error("Mikrofonga ruxsat bering"); }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
+  };
+
+  const uploadVoiceMessage = async (blob: Blob) => {
+    if (!user || !selectedContact) return;
+    setUploading(true);
+    const path = `${user.id}/voice_${Date.now()}.webm`;
+    const { error } = await supabase.storage.from("chat-files").upload(path, blob, { contentType: "audio/webm" });
+    if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: selectedContact.user_id,
+      message: "🎤 Ovozli xabar",
+      file_url: urlData.publicUrl,
+      file_name: "voice_message.webm",
+    });
+    setUploading(false);
+    loadContacts();
+  };
+
+  const toggleAudioPlay = (msgId: string, url: string) => {
+    if (playingAudioId === msgId) {
+      audioRefs.current[msgId]?.pause();
+      setPlayingAudioId(null);
+    } else {
+      if (playingAudioId && audioRefs.current[playingAudioId]) audioRefs.current[playingAudioId].pause();
+      if (!audioRefs.current[msgId]) {
+        const audio = new Audio(url);
+        audio.onended = () => setPlayingAudioId(null);
+        audioRefs.current[msgId] = audio;
+      }
+      audioRefs.current[msgId].play();
+      setPlayingAudioId(msgId);
+    }
+  };
 
   // Load contacts (all users who have chatted with current user + doctor-patient relationships)
   useEffect(() => {
