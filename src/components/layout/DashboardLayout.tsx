@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Globe
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
@@ -20,21 +21,23 @@ interface DashboardLayoutProps {
   userName?: string;
 }
 
-const allNavItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
-  { id: "radiologist", label: "AI Radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
-  { id: "advisor", label: "Medical Advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
-  { id: "rehab", label: "Tele-Rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
-  { id: "chat", label: "Chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient"] },
-  { id: "patients", label: "Bemorlar", icon: <Users size={20} />, roles: ["admin", "doctor"] },
-  { id: "admin", label: "Admin Panel", icon: <Shield size={20} />, roles: ["admin"] },
-];
-
 const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName }: DashboardLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
+  const { t, lang, setLang } = useLanguage();
   const [userRole, setUserRole] = useState<string>("user");
+
+  const allNavItems: { id: Tab; labelKey: string; icon: React.ReactNode; roles: string[] }[] = [
+    { id: "dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
+    { id: "radiologist", labelKey: "nav.radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+    { id: "advisor", labelKey: "nav.advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+    { id: "rehab", labelKey: "nav.rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "moderator"] },
+    { id: "chat", labelKey: "nav.chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient"] },
+    { id: "patients", labelKey: "nav.patients", icon: <Users size={20} />, roles: ["admin", "doctor"] },
+    { id: "admin", labelKey: "nav.admin", icon: <Shield size={20} />, roles: ["admin"] },
+    { id: "profile", labelKey: "nav.profile", icon: <User size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
+  ];
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +54,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
   }, [user]);
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
+
+  const langLabel = lang === "uz" ? "UZ" : lang === "ru" ? "RU" : "EN";
+  const nextLang = lang === "uz" ? "ru" : lang === "ru" ? "en" : "uz";
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -76,7 +82,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
               }`}
             >
               {item.icon}
-              {item.label}
+              {t(item.labelKey)}
             </button>
           ))}
         </nav>
@@ -91,10 +97,15 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
             )}
             <NotificationBell />
           </div>
-          <button onClick={toggle} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            {theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={toggle} className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
+            </button>
+            <button onClick={() => setLang(nextLang as any)} className="px-3 py-2.5 rounded-xl text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all flex items-center gap-1">
+              <Globe size={14} /> {langLabel}
+            </button>
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield size={14} />
             <span>HIPAA Compliant • Encrypted</span>
@@ -102,7 +113,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           {onSignOut && (
             <button onClick={onSignOut} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
               <LogOut size={18} />
-              Chiqish
+              {t("nav.signout")}
             </button>
           )}
         </div>
@@ -115,6 +126,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
         <div className="flex items-center gap-1">
+          <button onClick={() => setLang(nextLang as any)} className="text-xs font-bold text-primary px-2 py-1 rounded-lg bg-primary/10">
+            {langLabel}
+          </button>
           <NotificationBell />
           <button onClick={toggle} className="text-foreground p-1">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
@@ -145,7 +159,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
                 }`}
               >
                 {item.icon}
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </motion.div>
