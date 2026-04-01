@@ -502,11 +502,20 @@ const ChatModule = () => {
                         {msg.image_url && !msg.is_deleted && (
                           <img src={msg.image_url} alt="" className="rounded-xl max-w-[240px] mb-1 cursor-pointer" onClick={() => window.open(msg.image_url!, "_blank")} />
                         )}
-                        {msg.file_url && !msg.is_deleted && (
+                        {msg.file_url && !msg.is_deleted && msg.file_name?.endsWith(".webm") ? (
+                          <div className="flex items-center gap-2 mb-1">
+                            <button onClick={() => toggleAudioPlay(msg.id, msg.file_url!)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center ${isMine ? "bg-white/20" : "bg-primary/10"}`}>
+                              {playingAudioId === msg.id ? <Pause size={14} /> : <Play size={14} />}
+                            </button>
+                            <div className="flex-1 h-1 rounded-full bg-current opacity-30" />
+                            <span className="text-[10px] opacity-70">🎤</span>
+                          </div>
+                        ) : msg.file_url && !msg.is_deleted ? (
                           <a href={msg.file_url} target="_blank" rel="noopener" className="flex items-center gap-2 underline mb-1">
                             <Paperclip size={14} /> {msg.file_name}
                           </a>
-                        )}
+                        ) : null}
                         <p>{msg.message}</p>
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
