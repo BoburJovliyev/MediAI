@@ -570,40 +570,62 @@ const ChatModule = () => {
 
             {/* Input */}
             <div className="p-4 border-t border-border">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                    <Smile size={20} />
+              {isRecording ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                    <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
+                    <span className="text-sm text-destructive font-medium">
+                      {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, "0")}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Yozilmoqda...</span>
+                  </div>
+                  <button onClick={stopRecording} className="p-2.5 rounded-xl bg-destructive text-destructive-foreground shadow-glow">
+                    <Square size={20} />
                   </button>
-                  {showEmoji && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
-                      {EMOJI_LIST.map(e => (
-                        <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
-                          className="text-lg hover:bg-secondary rounded p-1">{e}</button>
-                      ))}
-                    </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                      <Smile size={20} />
+                    </button>
+                    {showEmoji && (
+                      <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
+                        {EMOJI_LIST.map(e => (
+                          <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
+                            className="text-lg hover:bg-secondary rounded p-1">{e}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
+                  <button onClick={() => imageInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Image size={20} />
+                  </button>
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "file")} />
+                  <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Paperclip size={20} />
+                  </button>
+                  <input
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
+                    placeholder="Xabar yozing..."
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {newMessage.trim() || forwardMessage ? (
+                    <button onClick={sendMsg} disabled={uploading}
+                      className="p-2.5 rounded-xl gradient-primary text-primary-foreground disabled:opacity-40 shadow-glow">
+                      <Send size={20} />
+                    </button>
+                  ) : (
+                    <button onClick={startRecording} disabled={uploading}
+                      className="p-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40">
+                      <Mic size={20} />
+                    </button>
                   )}
                 </div>
-                <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
-                <button onClick={() => imageInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Image size={20} />
-                </button>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "file")} />
-                <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Paperclip size={20} />
-                </button>
-                <input
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
-                  placeholder="Xabar yozing..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <button onClick={sendMsg} disabled={uploading || (!newMessage.trim() && !forwardMessage)}
-                  className="p-2.5 rounded-xl gradient-primary text-primary-foreground disabled:opacity-40 shadow-glow">
-                  <Send size={20} />
-                </button>
-              </div>
+              )}
             </div>
           </>
         )}
