@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +59,72 @@ const ChatModule = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        await uploadVoiceMessage(blob);
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch { toast.error("Mikrofonga ruxsat bering"); }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
+  };
+
+  const uploadVoiceMessage = async (blob: Blob) => {
+    if (!user || !selectedContact) return;
+    setUploading(true);
+    const path = `${user.id}/voice_${Date.now()}.webm`;
+    const { error } = await supabase.storage.from("chat-files").upload(path, blob, { contentType: "audio/webm" });
+    if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: selectedContact.user_id,
+      message: "🎤 Ovozli xabar",
+      file_url: urlData.publicUrl,
+      file_name: "voice_message.webm",
+    });
+    setUploading(false);
+    loadContacts();
+  };
+
+  const toggleAudioPlay = (msgId: string, url: string) => {
+    if (playingAudioId === msgId) {
+      audioRefs.current[msgId]?.pause();
+      setPlayingAudioId(null);
+    } else {
+      if (playingAudioId && audioRefs.current[playingAudioId]) audioRefs.current[playingAudioId].pause();
+      if (!audioRefs.current[msgId]) {
+        const audio = new Audio(url);
+        audio.onended = () => setPlayingAudioId(null);
+        audioRefs.current[msgId] = audio;
+      }
+      audioRefs.current[msgId].play();
+      setPlayingAudioId(msgId);
+    }
+  };
 
   // Load contacts (all users who have chatted with current user + doctor-patient relationships)
   useEffect(() => {
@@ -436,11 +502,20 @@ const ChatModule = () => {
                         {msg.image_url && !msg.is_deleted && (
                           <img src={msg.image_url} alt="" className="rounded-xl max-w-[240px] mb-1 cursor-pointer" onClick={() => window.open(msg.image_url!, "_blank")} />
                         )}
-                        {msg.file_url && !msg.is_deleted && (
+                        {msg.file_url && !msg.is_deleted && msg.file_name?.endsWith(".webm") ? (
+                          <div className="flex items-center gap-2 mb-1">
+                            <button onClick={() => toggleAudioPlay(msg.id, msg.file_url!)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center ${isMine ? "bg-white/20" : "bg-primary/10"}`}>
+                              {playingAudioId === msg.id ? <Pause size={14} /> : <Play size={14} />}
+                            </button>
+                            <div className="flex-1 h-1 rounded-full bg-current opacity-30" />
+                            <span className="text-[10px] opacity-70">🎤</span>
+                          </div>
+                        ) : msg.file_url && !msg.is_deleted ? (
                           <a href={msg.file_url} target="_blank" rel="noopener" className="flex items-center gap-2 underline mb-1">
                             <Paperclip size={14} /> {msg.file_name}
                           </a>
-                        )}
+                        ) : null}
                         <p>{msg.message}</p>
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -495,40 +570,62 @@ const ChatModule = () => {
 
             {/* Input */}
             <div className="p-4 border-t border-border">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                    <Smile size={20} />
+              {isRecording ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                    <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
+                    <span className="text-sm text-destructive font-medium">
+                      {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, "0")}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Yozilmoqda...</span>
+                  </div>
+                  <button onClick={stopRecording} className="p-2.5 rounded-xl bg-destructive text-destructive-foreground shadow-glow">
+                    <Square size={20} />
                   </button>
-                  {showEmoji && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
-                      {EMOJI_LIST.map(e => (
-                        <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
-                          className="text-lg hover:bg-secondary rounded p-1">{e}</button>
-                      ))}
-                    </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                      <Smile size={20} />
+                    </button>
+                    {showEmoji && (
+                      <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
+                        {EMOJI_LIST.map(e => (
+                          <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
+                            className="text-lg hover:bg-secondary rounded p-1">{e}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
+                  <button onClick={() => imageInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Image size={20} />
+                  </button>
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "file")} />
+                  <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Paperclip size={20} />
+                  </button>
+                  <input
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
+                    placeholder="Xabar yozing..."
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {newMessage.trim() || forwardMessage ? (
+                    <button onClick={sendMsg} disabled={uploading}
+                      className="p-2.5 rounded-xl gradient-primary text-primary-foreground disabled:opacity-40 shadow-glow">
+                      <Send size={20} />
+                    </button>
+                  ) : (
+                    <button onClick={startRecording} disabled={uploading}
+                      className="p-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40">
+                      <Mic size={20} />
+                    </button>
                   )}
                 </div>
-                <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
-                <button onClick={() => imageInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Image size={20} />
-                </button>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "file")} />
-                <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Paperclip size={20} />
-                </button>
-                <input
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
-                  placeholder="Xabar yozing..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <button onClick={sendMsg} disabled={uploading || (!newMessage.trim() && !forwardMessage)}
-                  className="p-2.5 rounded-xl gradient-primary text-primary-foreground disabled:opacity-40 shadow-glow">
-                  <Send size={20} />
-                </button>
-              </div>
+              )}
             </div>
           </>
         )}

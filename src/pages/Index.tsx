@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
@@ -9,17 +10,17 @@ import TeleRehab from "@/components/modules/TeleRehab";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
+import ProfilePage from "@/components/modules/ProfilePage";
 import AuthPage from "./AuthPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
-  // Handle pending doctor relationship after login
   useEffect(() => {
     if (!user) return;
     const pendingDoctor = localStorage.getItem("pending_doctor_id");
@@ -44,8 +45,19 @@ const AppContent = () => {
   if (!user) {
     return (
       <AuthPage
-        onAuth={async (mode, email, password, fullName, role) => {
-          if (mode === "signup") return signUp(email, password, fullName || "", role);
+        onAuth={async (mode, email, password, fullName, role, extra) => {
+          if (mode === "signup") {
+            // Pass extra metadata
+            const { error } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                data: { full_name: fullName, user_role: role || "user", ...extra },
+                emailRedirectTo: window.location.origin,
+              },
+            });
+            return { error: error as Error | null };
+          }
           return signIn(email, password);
         }}
       />
@@ -61,6 +73,7 @@ const AppContent = () => {
       case "patients": return <PatientsManager />;
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
+      case "profile": return <ProfilePage />;
     }
   };
 
@@ -73,9 +86,11 @@ const AppContent = () => {
 
 const Index = () => (
   <ThemeProvider>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   </ThemeProvider>
 );
 
