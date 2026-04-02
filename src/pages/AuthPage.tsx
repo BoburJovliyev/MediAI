@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse } from "lucide-react";
+import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse, ArrowLeft } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
 interface AuthPageProps {
   onAuth: (mode: "login" | "signup", email: string, password: string, fullName?: string, role?: string, extra?: Record<string, string>) => Promise<{ error: Error | null }>;
+  onBack?: () => void;
 }
 
 const SPECIALTIES = [
