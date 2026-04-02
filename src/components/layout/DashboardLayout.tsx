@@ -102,9 +102,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
             </button>
-            <button onClick={() => setLang(nextLang as any)} className="px-3 py-2.5 rounded-xl text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all flex items-center gap-1">
-              <Globe size={14} /> {langLabel}
-            </button>
+            <LanguageSwitcher compact />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield size={14} />
