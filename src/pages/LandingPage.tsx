@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, FileImage, Dumbbell, MessageCircle, Shield, Activity } from "lucide-react";
+import { ArrowRight, Brain, FileImage, Dumbbell, MessageCircle, Shield, Activity, Search, Moon, Sun, Phone, Building2, Users, Info } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/hooks/useTheme";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
