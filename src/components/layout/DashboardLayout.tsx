@@ -124,9 +124,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setLang(nextLang as any)} className="text-xs font-bold text-primary px-2 py-1 rounded-lg bg-primary/10">
-            {langLabel}
-          </button>
+          <LanguageSwitcher compact />
           <NotificationBell />
           <button onClick={toggle} className="text-foreground p-1">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
