@@ -1,20 +1,22 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse } from "lucide-react";
+import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse, ArrowLeft } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
 interface AuthPageProps {
   onAuth: (mode: "login" | "signup", email: string, password: string, fullName?: string, role?: string, extra?: Record<string, string>) => Promise<{ error: Error | null }>;
+  onBack?: () => void;
 }
 
 const SPECIALTIES = [
   "general", "cardiology", "neurology", "orthopedics", "pediatrics", "radiology", "surgery", "dermatology", "other"
 ];
 
-const AuthPage = ({ onAuth }: AuthPageProps) => {
+const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const { t, lang, setLang } = useLanguage();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -82,14 +84,15 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        {/* Language switcher */}
-        <div className="flex justify-center gap-2 mb-4">
-          {(["uz", "ru", "en"] as const).map(l => (
-            <button key={l} onClick={() => setLang(l)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${lang === l ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
-              {l === "uz" ? "O'zbek" : l === "ru" ? "Русский" : "English"}
+        {/* Language switcher + Back */}
+        <div className="flex items-center justify-between mb-4">
+          {onBack ? (
+            <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft size={16} />
+              {t("landing.login") === "Kirish" ? "Orqaga" : t("landing.login") === "Войти" ? "Назад" : "Back"}
             </button>
-          ))}
+          ) : <div />}
+          <LanguageSwitcher compact />
         </div>
 
         <div className="text-center mb-8">

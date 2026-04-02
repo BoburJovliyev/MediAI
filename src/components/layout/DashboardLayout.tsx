@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Globe
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
@@ -55,8 +56,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
-  const langLabel = lang === "uz" ? "UZ" : lang === "ru" ? "RU" : "EN";
-  const nextLang = lang === "uz" ? "ru" : lang === "ru" ? "en" : "uz";
+  
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -102,9 +102,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
             </button>
-            <button onClick={() => setLang(nextLang as any)} className="px-3 py-2.5 rounded-xl text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all flex items-center gap-1">
-              <Globe size={14} /> {langLabel}
-            </button>
+            <LanguageSwitcher compact />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield size={14} />
@@ -126,9 +124,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <span className="font-display font-bold text-foreground">Medi AI</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setLang(nextLang as any)} className="text-xs font-bold text-primary px-2 py-1 rounded-lg bg-primary/10">
-            {langLabel}
-          </button>
+          <LanguageSwitcher compact />
           <NotificationBell />
           <button onClick={toggle} className="text-foreground p-1">
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}

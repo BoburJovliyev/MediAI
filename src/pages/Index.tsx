@@ -12,6 +12,7 @@ import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
 import ProfilePage from "@/components/modules/ProfilePage";
 import AuthPage from "./AuthPage";
+import LandingPage from "./LandingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -20,6 +21,7 @@ type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "adm
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -42,12 +44,16 @@ const AppContent = () => {
     );
   }
 
+  if (!user && !showAuth) {
+    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+  }
+
   if (!user) {
     return (
       <AuthPage
+        onBack={() => setShowAuth(false)}
         onAuth={async (mode, email, password, fullName, role, extra) => {
           if (mode === "signup") {
-            // Pass extra metadata
             const { error } = await supabase.auth.signUp({
               email,
               password,
