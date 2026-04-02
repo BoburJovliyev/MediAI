@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
