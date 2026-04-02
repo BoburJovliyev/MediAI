@@ -12,6 +12,7 @@ import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
 import ProfilePage from "@/components/modules/ProfilePage";
 import AuthPage from "./AuthPage";
+import LandingPage from "./LandingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
