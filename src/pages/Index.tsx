@@ -21,6 +21,7 @@ type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "adm
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     if (!user) return;
