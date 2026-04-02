@@ -16,7 +16,7 @@ const SPECIALTIES = [
   "general", "cardiology", "neurology", "orthopedics", "pediatrics", "radiology", "surgery", "dermatology", "other"
 ];
 
-const AuthPage = ({ onAuth }: AuthPageProps) => {
+const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const { t, lang, setLang } = useLanguage();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
