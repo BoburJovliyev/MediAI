@@ -103,6 +103,20 @@ export const translations: Record<Lang, Record<string, string>> = {
     "general.save": "Saqlash",
     "general.cancel": "Bekor qilish",
     "general.doctor": "Doktor",
+
+    // Landing
+    "landing.login": "Kirish",
+    "landing.badge": "AI diagnostika platformasi",
+    "landing.hero.title": "Sun'iy intellekt bilan tibbiyotning kelajagi",
+    "landing.hero.subtitle": "MRT, rentgen va UZI tahlili, AI tashxis, reabilitatsiya va xavfsiz chat — barchasi bir platformada.",
+    "landing.getStarted": "Boshlash",
+    "landing.feat.radiology": "MRT, rentgen va UZI tasvirlarini AI yordamida tahlil qiling.",
+    "landing.feat.advisor": "Shikoyatlar asosida AI tashxis va dori tavsiyalari.",
+    "landing.feat.rehab": "Kamera orqali mashqlarni nazorat qiling.",
+    "landing.feat.chat": "Bemor va doktor o'rtasida xavfsiz chat.",
+    "landing.feat.analytics": "Tahlillar va statistikalarni real vaqtda kuzating.",
+    "landing.feat.security": "Ma'lumotlar shifrlangan va himoyalangan.",
+    "landing.footer": "Barcha huquqlar himoyalangan.",
   },
   ru: {
     "auth.login": "Вход",
