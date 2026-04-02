@@ -84,14 +84,15 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        {/* Language switcher */}
-        <div className="flex justify-center gap-2 mb-4">
-          {(["uz", "ru", "en"] as const).map(l => (
-            <button key={l} onClick={() => setLang(l)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${lang === l ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
-              {l === "uz" ? "O'zbek" : l === "ru" ? "Русский" : "English"}
+        {/* Language switcher + Back */}
+        <div className="flex items-center justify-between mb-4">
+          {onBack ? (
+            <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft size={16} />
+              {t("landing.login") === "Kirish" ? "Orqaga" : t("landing.login") === "Войти" ? "Назад" : "Back"}
             </button>
-          ))}
+          ) : <div />}
+          <LanguageSwitcher compact />
         </div>
 
         <div className="text-center mb-8">
