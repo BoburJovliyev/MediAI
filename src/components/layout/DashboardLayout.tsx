@@ -56,8 +56,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
-  const langLabel = lang === "uz" ? "UZ" : lang === "ru" ? "RU" : "EN";
-  const nextLang = lang === "uz" ? "ru" : lang === "ru" ? "en" : "uz";
+  
 
   return (
     <div className="min-h-screen bg-background flex">
