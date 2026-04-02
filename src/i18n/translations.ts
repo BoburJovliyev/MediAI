@@ -324,5 +324,18 @@ export const translations: Record<Lang, Record<string, string>> = {
     "general.save": "Save",
     "general.cancel": "Cancel",
     "general.doctor": "Doctor",
+
+    "landing.login": "Sign In",
+    "landing.badge": "AI Diagnostics Platform",
+    "landing.hero.title": "The Future of Medicine with AI",
+    "landing.hero.subtitle": "MRI, X-ray & Ultrasound analysis, AI diagnosis, rehabilitation and secure chat — all in one platform.",
+    "landing.getStarted": "Get Started",
+    "landing.feat.radiology": "Analyze MRI, X-ray and Ultrasound images with AI.",
+    "landing.feat.advisor": "AI-powered diagnosis and treatment recommendations.",
+    "landing.feat.rehab": "Monitor exercises through camera in real-time.",
+    "landing.feat.chat": "Secure chat between doctor and patient.",
+    "landing.feat.analytics": "Track analytics and statistics in real-time.",
+    "landing.feat.security": "Data encrypted and protected.",
+    "landing.footer": "All rights reserved.",
   },
 };
