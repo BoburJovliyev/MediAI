@@ -44,12 +44,16 @@ const AppContent = () => {
     );
   }
 
+  if (!user && !showAuth) {
+    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+  }
+
   if (!user) {
     return (
       <AuthPage
+        onBack={() => setShowAuth(false)}
         onAuth={async (mode, email, password, fullName, role, extra) => {
           if (mode === "signup") {
-            // Pass extra metadata
             const { error } = await supabase.auth.signUp({
               email,
               password,
