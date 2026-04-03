@@ -47,6 +47,12 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
+      <TestimonialsSection />
+      
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
       <ContactSection />
 
       {/* Footer */}
