@@ -144,6 +144,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.contact.email": "Email",
     "landing.contact.message": "Xabaringiz...",
     "landing.contact.send": "Yuborish",
+    "landing.contact.sent": "Xabar muvaffaqiyatli yuborildi!",
+    "landing.contact.sendAnother": "Yana xabar yuborish",
   },
   ru: {
     "auth.login": "Вход",
