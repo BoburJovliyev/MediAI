@@ -58,9 +58,9 @@ const TestimonialsSection = () => {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-            {title[lang]}
+            {title[currentLang]}
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">{subtitle[lang]}</p>
+          <p className="text-muted-foreground max-w-2xl mx-auto">{subtitle[currentLang]}</p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -82,7 +82,7 @@ const TestimonialsSection = () => {
                 />
                 <div>
                   <h4 className="font-semibold text-foreground text-sm">{t.name}</h4>
-                  <p className="text-xs text-muted-foreground">{t.role[lang]}</p>
+                  <p className="text-xs text-muted-foreground">{t.role[currentLang]}</p>
                 </div>
               </div>
               <div className="flex gap-0.5 mb-3">
@@ -94,7 +94,7 @@ const TestimonialsSection = () => {
                   />
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">"{t.text[lang]}"</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">"{t.text[currentLang]}"</p>
             </motion.div>
           ))}
         </div>
