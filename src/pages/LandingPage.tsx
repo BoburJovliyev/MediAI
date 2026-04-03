@@ -8,6 +8,7 @@ import AboutSection from "@/components/landing/AboutSection";
 import DepartmentsSection from "@/components/landing/DepartmentsSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import ContactSection from "@/components/landing/ContactSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
 
 interface LandingPageProps {
   onGetStarted: () => void;
