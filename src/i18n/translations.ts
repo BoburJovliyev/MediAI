@@ -144,6 +144,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.contact.email": "Email",
     "landing.contact.message": "Xabaringiz...",
     "landing.contact.send": "Yuborish",
+    "landing.contact.sent": "Xabar muvaffaqiyatli yuborildi!",
+    "landing.contact.sendAnother": "Yana xabar yuborish",
   },
   ru: {
     "auth.login": "Вход",
@@ -281,6 +283,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.contact.email": "Email",
     "landing.contact.message": "Ваше сообщение...",
     "landing.contact.send": "Отправить",
+    "landing.contact.sent": "Сообщение успешно отправлено!",
+    "landing.contact.sendAnother": "Отправить ещё",
   },
   en: {
     "auth.login": "Sign In",
@@ -418,5 +422,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.contact.email": "Email",
     "landing.contact.message": "Your message...",
     "landing.contact.send": "Send",
+    "landing.contact.sent": "Message sent successfully!",
+    "landing.contact.sendAnother": "Send another message",
   },
 };
