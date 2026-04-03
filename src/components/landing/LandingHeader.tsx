@@ -49,9 +49,9 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
                   key={link.href}
                   href={link.href}
                   whileHover={{ y: -2 }}
-                  className={`px-4 py-2 text-sm font-medium rounded-xl transition-all ${
+                  className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
                     i === 0
-                      ? "text-primary bg-primary/10"
+                      ? "text-foreground bg-foreground/10 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
