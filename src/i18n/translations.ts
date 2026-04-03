@@ -422,5 +422,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.contact.email": "Email",
     "landing.contact.message": "Your message...",
     "landing.contact.send": "Send",
+    "landing.contact.sent": "Message sent successfully!",
+    "landing.contact.sendAnother": "Send another message",
   },
 };
