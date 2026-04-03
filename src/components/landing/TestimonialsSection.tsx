@@ -39,7 +39,7 @@ const testimonials = [
 ];
 
 const TestimonialsSection = () => {
-  const { language } = useLanguage();
+  const { lang } = useLanguage();
   const lang = language as "uz" | "ru" | "en";
 
   const title = { uz: "Foydalanuvchi sharhlari", ru: "Отзывы пользователей", en: "User Testimonials" };
