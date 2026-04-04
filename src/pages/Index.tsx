@@ -17,7 +17,7 @@ import LandingPage from "./LandingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile" | "doctors";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
