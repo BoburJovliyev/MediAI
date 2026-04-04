@@ -292,6 +292,7 @@ export type Database = {
           id: string
           is_blocked: boolean
           role: string | null
+          specialty: string | null
           updated_at: string
           user_id: string
         }
@@ -303,6 +304,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           role?: string | null
+          specialty?: string | null
           updated_at?: string
           user_id: string
         }
@@ -314,6 +316,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           role?: string | null
+          specialty?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -456,6 +459,7 @@ export type Database = {
           id: string
           is_blocked: boolean
           role: string | null
+          specialty: string | null
           updated_at: string
           user_id: string
         }[]
