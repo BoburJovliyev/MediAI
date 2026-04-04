@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
 import SmartMedicalAdvisor from "@/components/modules/SmartMedicalAdvisor";
+import DoctorsListing from "@/components/modules/DoctorsListing";
 import TeleRehab from "@/components/modules/TeleRehab";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
@@ -16,7 +17,7 @@ import LandingPage from "./LandingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile" | "doctors";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -80,6 +81,7 @@ const AppContent = () => {
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
       case "profile": return <ProfilePage />;
+      case "doctors": return <DoctorsListing />;
     }
   };
 

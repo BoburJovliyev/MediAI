@@ -22,14 +22,37 @@ interface Diagnosis {
   lifestyle: string[];
 }
 
+const DAILY_LIMIT = 5;
+
 const SmartMedicalAdvisor = () => {
   const { user } = useAuth();
   const [data, setData] = useState<PatientData>({ complaint: "", bloodResults: "", mriSummary: "", age: "", gender: "" });
   const [loading, setLoading] = useState(false);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [dailyCount, setDailyCount] = useState(0);
+
+  // Check daily usage on mount
+  useState(() => {
+    if (!user) return;
+    supabase.from("profiles").select("daily_ai_count, daily_ai_date").eq("user_id", user.id).single()
+      .then(({ data: p }) => {
+        if (p) {
+          const today = new Date().toISOString().split("T")[0];
+          if (p.daily_ai_date === today) {
+            setDailyCount(p.daily_ai_count || 0);
+          } else {
+            setDailyCount(0);
+          }
+        }
+      });
+  });
 
   const handleSubmit = async () => {
     if (!data.complaint) return;
+    if (dailyCount >= DAILY_LIMIT) {
+      toast.error("Kunlik AI so'rovlar limiti tugadi (5/5). Ertaga qayta urinib ko'ring!");
+      return;
+    }
     setLoading(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("diagnose", {
@@ -63,6 +86,15 @@ const SmartMedicalAdvisor = () => {
           ai_model: "gemini-2.5-flash",
         });
       }
+
+      // Update daily count
+      const today = new Date().toISOString().split("T")[0];
+      const newCount = dailyCount + 1;
+      setDailyCount(newCount);
+      await supabase.from("profiles").update({
+        daily_ai_count: newCount,
+        daily_ai_date: today,
+      } as any).eq("user_id", user!.id);
 
       toast.success("Tashxis muvaffaqiyatli yakunlandi!");
     } catch (err: any) {
@@ -119,7 +151,13 @@ const SmartMedicalAdvisor = () => {
               </div>
             ))}
 
-            <button onClick={handleSubmit} disabled={loading || !data.complaint}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+              <span>Kunlik limit: {dailyCount}/{DAILY_LIMIT}</span>
+              <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(dailyCount / DAILY_LIMIT) * 100}%` }} />
+              </div>
+            </div>
+            <button onClick={handleSubmit} disabled={loading || !data.complaint || dailyCount >= DAILY_LIMIT}
               className="w-full gradient-accent text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <><Loader2 size={20} className="animate-spin" /> AI Tahlil qilmoqda...</> : <><Brain size={20} /> Tashxis va Tavsiya Olish</>}
             </button>

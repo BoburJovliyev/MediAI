@@ -287,33 +287,42 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          daily_ai_count: number
+          daily_ai_date: string
           email: string | null
           full_name: string | null
           id: string
           is_blocked: boolean
           role: string | null
+          specialty: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          daily_ai_count?: number
+          daily_ai_date?: string
           email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean
           role?: string | null
+          specialty?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          daily_ai_count?: number
+          daily_ai_date?: string
           email?: string | null
           full_name?: string | null
           id?: string
           is_blocked?: boolean
           role?: string | null
+          specialty?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -451,11 +460,14 @@ export type Database = {
         Returns: {
           avatar_url: string | null
           created_at: string
+          daily_ai_count: number
+          daily_ai_date: string
           email: string | null
           full_name: string | null
           id: string
           is_blocked: boolean
           role: string | null
+          specialty: string | null
           updated_at: string
           user_id: string
         }[]
