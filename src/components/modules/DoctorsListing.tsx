@@ -197,6 +197,12 @@ const DoctorsListing = () => {
                   </div>
                 )}
               </div>
+              {doc.email && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <Mail size={14} />
+                  <span className="truncate">{doc.email}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Users size={14} />
                 <span>{doc.patient_count} {patientsLabel[lang]}</span>
