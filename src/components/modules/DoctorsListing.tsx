@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Stethoscope, Users, Search, Star } from "lucide-react";
+import { Stethoscope, Users, Search, Star, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ interface DoctorProfile {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  email: string | null;
   specialty: string | null;
   patient_count: number;
 }
@@ -38,10 +39,10 @@ const DoctorsListing = () => {
 
   const loadDoctors = async () => {
     setLoading(true);
-    // Get all doctor profiles
+    // Get all doctor profiles (exclude admins)
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, avatar_url, specialty")
+      .select("user_id, full_name, avatar_url, specialty, email")
       .eq("role", "doctor")
       .eq("is_blocked", false);
 
@@ -51,8 +52,21 @@ const DoctorsListing = () => {
       return;
     }
 
+    // Filter out admin users
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin" as any);
+    const adminIds = new Set((adminRoles || []).map(r => r.user_id));
+    const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
+
     // Get patient counts for each doctor
-    const doctorIds = profiles.map(p => p.user_id);
+    const doctorIds = filteredProfiles.map(p => p.user_id);
+    if (doctorIds.length === 0) {
+      setDoctors([]);
+      setLoading(false);
+      return;
+    }
     const { data: relations } = await supabase
       .from("doctor_patients")
       .select("doctor_id")
@@ -63,10 +77,11 @@ const DoctorsListing = () => {
       countMap[r.doctor_id] = (countMap[r.doctor_id] || 0) + 1;
     });
 
-    const result: DoctorProfile[] = profiles.map(p => ({
+    const result: DoctorProfile[] = filteredProfiles.map(p => ({
       user_id: p.user_id,
       full_name: p.full_name,
       avatar_url: p.avatar_url,
+      email: p.email,
       specialty: p.specialty,
       patient_count: countMap[p.user_id] || 0,
     }));
@@ -182,6 +197,12 @@ const DoctorsListing = () => {
                   </div>
                 )}
               </div>
+              {doc.email && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <Mail size={14} />
+                  <span className="truncate">{doc.email}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Users size={14} />
                 <span>{doc.patient_count} {patientsLabel[lang]}</span>
