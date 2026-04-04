@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Stethoscope, Users, Search, Star } from "lucide-react";
+import { Stethoscope, Users, Search, Star, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Loader2 } from "lucide-react";
