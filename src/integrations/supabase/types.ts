@@ -287,6 +287,8 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          daily_ai_count: number
+          daily_ai_date: string
           email: string | null
           full_name: string | null
           id: string
@@ -299,6 +301,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          daily_ai_count?: number
+          daily_ai_date?: string
           email?: string | null
           full_name?: string | null
           id?: string
@@ -311,6 +315,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          daily_ai_count?: number
+          daily_ai_date?: string
           email?: string | null
           full_name?: string | null
           id?: string
@@ -454,6 +460,8 @@ export type Database = {
         Returns: {
           avatar_url: string | null
           created_at: string
+          daily_ai_count: number
+          daily_ai_date: string
           email: string | null
           full_name: string | null
           id: string
