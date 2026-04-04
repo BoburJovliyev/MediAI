@@ -61,7 +61,12 @@ const DoctorsListing = () => {
     const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
 
     // Get patient counts for each doctor
-    const doctorIds = profiles.map(p => p.user_id);
+    const doctorIds = filteredProfiles.map(p => p.user_id);
+    if (doctorIds.length === 0) {
+      setDoctors([]);
+      setLoading(false);
+      return;
+    }
     const { data: relations } = await supabase
       .from("doctor_patients")
       .select("doctor_id")
@@ -72,10 +77,11 @@ const DoctorsListing = () => {
       countMap[r.doctor_id] = (countMap[r.doctor_id] || 0) + 1;
     });
 
-    const result: DoctorProfile[] = profiles.map(p => ({
+    const result: DoctorProfile[] = filteredProfiles.map(p => ({
       user_id: p.user_id,
       full_name: p.full_name,
       avatar_url: p.avatar_url,
+      email: p.email,
       specialty: p.specialty,
       patient_count: countMap[p.user_id] || 0,
     }));
