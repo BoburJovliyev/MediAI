@@ -22,14 +22,37 @@ interface Diagnosis {
   lifestyle: string[];
 }
 
+const DAILY_LIMIT = 5;
+
 const SmartMedicalAdvisor = () => {
   const { user } = useAuth();
   const [data, setData] = useState<PatientData>({ complaint: "", bloodResults: "", mriSummary: "", age: "", gender: "" });
   const [loading, setLoading] = useState(false);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [dailyCount, setDailyCount] = useState(0);
+
+  // Check daily usage on mount
+  useState(() => {
+    if (!user) return;
+    supabase.from("profiles").select("daily_ai_count, daily_ai_date").eq("user_id", user.id).single()
+      .then(({ data: p }) => {
+        if (p) {
+          const today = new Date().toISOString().split("T")[0];
+          if (p.daily_ai_date === today) {
+            setDailyCount(p.daily_ai_count || 0);
+          } else {
+            setDailyCount(0);
+          }
+        }
+      });
+  });
 
   const handleSubmit = async () => {
     if (!data.complaint) return;
+    if (dailyCount >= DAILY_LIMIT) {
+      toast.error("Kunlik AI so'rovlar limiti tugadi (5/5). Ertaga qayta urinib ko'ring!");
+      return;
+    }
     setLoading(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("diagnose", {
