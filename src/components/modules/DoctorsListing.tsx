@@ -39,10 +39,10 @@ const DoctorsListing = () => {
 
   const loadDoctors = async () => {
     setLoading(true);
-    // Get all doctor profiles
+    // Get all doctor profiles (exclude admins)
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, avatar_url, specialty")
+      .select("user_id, full_name, avatar_url, specialty, email")
       .eq("role", "doctor")
       .eq("is_blocked", false);
 
@@ -51,6 +51,14 @@ const DoctorsListing = () => {
       setLoading(false);
       return;
     }
+
+    // Filter out admin users
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin" as any);
+    const adminIds = new Set((adminRoles || []).map(r => r.user_id));
+    const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
 
     // Get patient counts for each doctor
     const doctorIds = profiles.map(p => p.user_id);
