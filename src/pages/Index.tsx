@@ -81,6 +81,7 @@ const AppContent = () => {
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
       case "profile": return <ProfilePage />;
+      case "doctors": return <DoctorsListing />;
     }
   };
 
