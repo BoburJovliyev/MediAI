@@ -87,6 +87,15 @@ const SmartMedicalAdvisor = () => {
         });
       }
 
+      // Update daily count
+      const today = new Date().toISOString().split("T")[0];
+      const newCount = dailyCount + 1;
+      setDailyCount(newCount);
+      await supabase.from("profiles").update({
+        daily_ai_count: newCount,
+        daily_ai_date: today,
+      } as any).eq("user_id", user!.id);
+
       toast.success("Tashxis muvaffaqiyatli yakunlandi!");
     } catch (err: any) {
       console.error("Diagnosis error:", err);
