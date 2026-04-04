@@ -151,7 +151,13 @@ const SmartMedicalAdvisor = () => {
               </div>
             ))}
 
-            <button onClick={handleSubmit} disabled={loading || !data.complaint}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+              <span>Kunlik limit: {dailyCount}/{DAILY_LIMIT}</span>
+              <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(dailyCount / DAILY_LIMIT) * 100}%` }} />
+              </div>
+            </div>
+            <button onClick={handleSubmit} disabled={loading || !data.complaint || dailyCount >= DAILY_LIMIT}
               className="w-full gradient-accent text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <><Loader2 size={20} className="animate-spin" /> AI Tahlil qilmoqda...</> : <><Brain size={20} /> Tashxis va Tavsiya Olish</>}
             </button>
