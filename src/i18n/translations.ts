@@ -186,6 +186,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "nav.rehab": "Теле-Реабилитация",
     "nav.chat": "Чат",
     "nav.patients": "Пациенты",
+    "nav.doctors": "Врачи",
     "nav.admin": "Админ панель",
     "nav.profile": "Профиль",
     "nav.signout": "Выход",
