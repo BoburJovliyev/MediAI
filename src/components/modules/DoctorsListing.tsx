@@ -9,6 +9,7 @@ interface DoctorProfile {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  email: string | null;
   specialty: string | null;
   patient_count: number;
 }
