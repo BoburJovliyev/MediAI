@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Loader2, ArrowRight, Stethoscope, UserCheck, HeartPulse, ArrowLeft } from "lucide-react";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
@@ -29,7 +28,6 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [doctors, setDoctors] = useState<{ user_id: string; full_name: string | null }[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -69,15 +67,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
     setLoading(false);
   };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError("");
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) setError(result.error.message);
-    setGoogleLoading(false);
-  };
+
 
   const showDoctorList = mode === "signup" && (role === "patient" || role === "user");
 
