@@ -9,6 +9,7 @@ import DepartmentsSection from "@/components/landing/DepartmentsSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import ContactSection from "@/components/landing/ContactSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import FAQSection from "@/components/landing/FAQSection";
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -48,6 +49,12 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </div>
 
       <TestimonialsSection />
+      
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      <FAQSection />
       
       <div className="max-w-5xl mx-auto px-4">
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
