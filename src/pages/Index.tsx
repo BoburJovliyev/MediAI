@@ -55,15 +55,7 @@ const AppContent = () => {
         onBack={() => setShowAuth(false)}
         onAuth={async (mode, email, password, fullName, role, extra) => {
           if (mode === "signup") {
-            const { error } = await supabase.auth.signUp({
-              email,
-              password,
-              options: {
-                data: { full_name: fullName, user_role: role || "user", ...extra },
-                emailRedirectTo: window.location.origin,
-              },
-            });
-            return { error: error as Error | null };
+            return signUp(email, password, fullName || "", role, extra);
           }
           return signIn(email, password);
         }}
