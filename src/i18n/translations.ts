@@ -37,7 +37,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Nav
     "nav.dashboard": "Dashboard",
     "nav.radiologist": "AI Radiologist",
-    "nav.advisor": "Medical Advisor",
+    "nav.advisor": "AI Assistant",
     "nav.rehab": "Tele-Rehab",
     "nav.chat": "Chat",
     "nav.patients": "Bemorlar",
@@ -182,7 +182,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     "nav.dashboard": "Панель",
     "nav.radiologist": "AI Рентгенолог",
-    "nav.advisor": "Мед. Консультант",
+    "nav.advisor": "AI Ассистент",
     "nav.rehab": "Теле-Реабилитация",
     "nav.chat": "Чат",
     "nav.patients": "Пациенты",
@@ -322,7 +322,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     "nav.dashboard": "Dashboard",
     "nav.radiologist": "AI Radiologist",
-    "nav.advisor": "Medical Advisor",
+    "nav.advisor": "AI Assistant",
     "nav.rehab": "Tele-Rehab",
     "nav.chat": "Chat",
     "nav.patients": "Patients",
