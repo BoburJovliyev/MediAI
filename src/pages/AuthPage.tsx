@@ -21,7 +21,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"doctor" | "user" | "patient">("doctor");
+  const [role, setRole] = useState<"doctor" | "user">("doctor");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -134,7 +134,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">{t("auth.selectRole")}</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => { setRole("doctor"); setSelectedDoctor(""); }}
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "doctor" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
                       <Stethoscope size={22} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
@@ -144,11 +144,6 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "user" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
                       <UserCheck size={22} className={role === "user" ? "text-primary" : "text-muted-foreground"} />
                       <span className={`text-xs font-semibold ${role === "user" ? "text-primary" : "text-muted-foreground"}`}>{t("auth.user")}</span>
-                    </button>
-                    <button type="button" onClick={() => setRole("patient")}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "patient" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
-                      <HeartPulse size={22} className={role === "patient" ? "text-primary" : "text-muted-foreground"} />
-                      <span className={`text-xs font-semibold ${role === "patient" ? "text-primary" : "text-muted-foreground"}`}>{t("auth.patient")}</span>
                     </button>
                   </div>
                 </div>
