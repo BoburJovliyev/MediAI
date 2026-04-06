@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Moon, Sun } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
+import { useNavigate, useLocation } from "react-router-dom";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
@@ -14,12 +15,14 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
   const { t } = useLanguage();
   const { theme, toggle } = useTheme();
   const [searchOpen, setSearchOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navLinks = [
-    { label: t("landing.nav.home"), href: "#home" },
-    { label: t("landing.nav.about"), href: "#about" },
-    { label: t("landing.nav.departments"), href: "#departments" },
-    { label: t("landing.nav.contact"), href: "#contact" },
+    { label: t("landing.nav.home"), href: "/" },
+    { label: t("landing.nav.about"), href: "/about" },
+    { label: t("landing.nav.departments"), href: "/departments" },
+    { label: t("landing.nav.contact"), href: "/contact" },
   ];
 
   return (
@@ -44,19 +47,19 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
             </div>
 
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link, i) => (
-                <motion.a
+              {navLinks.map((link) => (
+                <motion.button
                   key={link.href}
-                  href={link.href}
+                  onClick={() => navigate(link.href)}
                   whileHover={{ y: -2 }}
                   className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
-                    i === 0
+                    location.pathname === link.href
                       ? "text-foreground bg-foreground/10 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
                   {link.label}
-                </motion.a>
+                </motion.button>
               ))}
             </nav>
 
