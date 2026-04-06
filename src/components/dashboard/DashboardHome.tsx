@@ -159,7 +159,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
       </motion.div>
 
-      <motion.div variants={item} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div variants={item} className={`grid md:grid-cols-2 ${modules.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6`}>
         {modules.map((m) => (
           <motion.button key={m.id} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => onNavigate(m.id)}
             className="bg-card rounded-2xl p-6 shadow-card border border-border text-left hover:shadow-elevated transition-shadow group">
