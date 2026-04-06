@@ -4,16 +4,22 @@ import FloatingObjects from "@/components/landing/FloatingObjects";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsSection from "@/components/landing/StatsSection";
-import AboutSection from "@/components/landing/AboutSection";
-import DepartmentsSection from "@/components/landing/DepartmentsSection";
+import ShowcaseSlider from "@/components/landing/ShowcaseSlider";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import ContactSection from "@/components/landing/ContactSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import PartnersSection from "@/components/landing/PartnersSection";
 import FAQSection from "@/components/landing/FAQSection";
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
+
+const Divider = () => (
+  <div className="max-w-5xl mx-auto px-4">
+    <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+  </div>
+);
 
 const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   const { t } = useLanguage();
@@ -24,43 +30,18 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <LandingHeader onGetStarted={onGetStarted} />
       <HeroSection onGetStarted={onGetStarted} />
       <StatsSection />
-      
-      {/* Divider */}
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      <AboutSection />
-      
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      <DepartmentsSection />
-      
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
+      <Divider />
+      <ShowcaseSlider />
+      <Divider />
+      <HowItWorksSection />
+      <Divider />
       <FeaturesSection />
-      
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
+      <Divider />
       <TestimonialsSection />
-      
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
+      <Divider />
+      <PartnersSection />
+      <Divider />
       <FAQSection />
-      
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      <ContactSection />
 
       {/* Footer */}
       <motion.footer
