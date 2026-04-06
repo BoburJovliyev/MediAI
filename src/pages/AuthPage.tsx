@@ -32,7 +32,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (mode === "signup" && (role === "patient" || role === "user")) {
+    if (mode === "signup" && role === "user") {
       supabase.from("profiles").select("user_id, full_name").eq("role", "doctor")
         .then(({ data }) => setDoctors(data || []));
     }
@@ -42,7 +42,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (mode === "signup" && role === "patient" && !selectedDoctor) {
+    if (mode === "signup" && role === "user" && !selectedDoctor) {
       setError(t("auth.selectDoctorError"));
       return;
     }
@@ -53,13 +53,13 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
     if (role === "doctor" && specialty) extra.specialty = specialty;
     
     // If user selects a doctor, treat them also as patient
-    const finalRole = (role === "user" && selectedDoctor) ? "patient" : role;
+    const finalRole = selectedDoctor ? "patient" : role;
     
     const result = await onAuth(mode, email, password, fullName, finalRole, extra);
     if (result.error) {
       setError(result.error.message);
     } else if (mode === "signup") {
-      if ((role === "patient" || (role === "user" && selectedDoctor)) && selectedDoctor) {
+      if (selectedDoctor) {
         localStorage.setItem("pending_doctor_id", selectedDoctor);
       }
       setSuccess(t("auth.success"));
@@ -69,7 +69,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
 
 
 
-  const showDoctorList = mode === "signup" && (role === "patient" || role === "user");
+  const showDoctorList = mode === "signup" && role === "user";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
