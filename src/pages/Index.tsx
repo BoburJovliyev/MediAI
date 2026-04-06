@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { ThemeProvider } from "@/hooks/useTheme";
-import { LanguageProvider } from "@/hooks/useLanguage";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
@@ -16,6 +14,7 @@ import AuthPage from "./AuthPage";
 import LandingPage from "./LandingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile" | "doctors";
 
@@ -23,6 +22,13 @@ const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [showAuth, setShowAuth] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("auth") === "1") {
+      setShowAuth(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;
@@ -85,13 +91,9 @@ const AppContent = () => {
 };
 
 const Index = () => (
-  <ThemeProvider>
-    <LanguageProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </LanguageProvider>
-  </ThemeProvider>
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
 );
 
 export default Index;

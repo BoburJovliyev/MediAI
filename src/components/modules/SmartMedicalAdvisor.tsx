@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Pill, Stethoscope, TestTube, Loader2, User } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import AdvisorHistory from "./AdvisorHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -120,6 +121,7 @@ const SmartMedicalAdvisor = () => {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-4">
+          <AdvisorHistory />
           <div className="bg-card rounded-2xl p-6 shadow-card border border-border space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>

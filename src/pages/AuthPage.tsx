@@ -21,7 +21,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"doctor" | "user" | "patient">("doctor");
+  const [role, setRole] = useState<"doctor" | "user">("doctor");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -32,7 +32,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (mode === "signup" && (role === "patient" || role === "user")) {
+    if (mode === "signup" && role === "user") {
       supabase.from("profiles").select("user_id, full_name").eq("role", "doctor")
         .then(({ data }) => setDoctors(data || []));
     }
@@ -42,7 +42,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (mode === "signup" && role === "patient" && !selectedDoctor) {
+    if (mode === "signup" && role === "user" && !selectedDoctor) {
       setError(t("auth.selectDoctorError"));
       return;
     }
@@ -53,13 +53,13 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
     if (role === "doctor" && specialty) extra.specialty = specialty;
     
     // If user selects a doctor, treat them also as patient
-    const finalRole = (role === "user" && selectedDoctor) ? "patient" : role;
+    const finalRole = selectedDoctor ? "patient" : role;
     
     const result = await onAuth(mode, email, password, fullName, finalRole, extra);
     if (result.error) {
       setError(result.error.message);
     } else if (mode === "signup") {
-      if ((role === "patient" || (role === "user" && selectedDoctor)) && selectedDoctor) {
+      if (selectedDoctor) {
         localStorage.setItem("pending_doctor_id", selectedDoctor);
       }
       setSuccess(t("auth.success"));
@@ -69,7 +69,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
 
 
 
-  const showDoctorList = mode === "signup" && (role === "patient" || role === "user");
+  const showDoctorList = mode === "signup" && role === "user";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -134,7 +134,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">{t("auth.selectRole")}</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => { setRole("doctor"); setSelectedDoctor(""); }}
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "doctor" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
                       <Stethoscope size={22} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
@@ -144,11 +144,6 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "user" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
                       <UserCheck size={22} className={role === "user" ? "text-primary" : "text-muted-foreground"} />
                       <span className={`text-xs font-semibold ${role === "user" ? "text-primary" : "text-muted-foreground"}`}>{t("auth.user")}</span>
-                    </button>
-                    <button type="button" onClick={() => setRole("patient")}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "patient" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
-                      <HeartPulse size={22} className={role === "patient" ? "text-primary" : "text-muted-foreground"} />
-                      <span className={`text-xs font-semibold ${role === "patient" ? "text-primary" : "text-muted-foreground"}`}>{t("auth.patient")}</span>
                     </button>
                   </div>
                 </div>
