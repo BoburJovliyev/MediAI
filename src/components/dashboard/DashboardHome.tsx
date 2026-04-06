@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight } from "lucide-react";
+import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight, Stethoscope, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardCharts from "./DashboardCharts";
 import { format } from "date-fns";
 
 interface DashboardHomeProps {
-  onNavigate: (tab: "radiologist" | "advisor" | "rehab" | "patients") => void;
+  onNavigate: (tab: any) => void;
 }
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
@@ -15,6 +15,7 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string>("user");
   const [stats, setStats] = useState([
     { label: "Tahlillar", value: "—", icon: <Activity size={20} />, color: "bg-medical-teal-light text-medical-teal" },
     { label: "Tashxislar", value: "—", icon: <TrendingUp size={20} />, color: "bg-medical-green-light text-medical-green" },
@@ -24,6 +25,20 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
   const [recentDiagnoses, setRecentDiagnoses] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const checkRole = async () => {
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" as any });
+      if (isAdmin) { setUserRole("admin"); return; }
+      const { data: isDoctor } = await supabase.rpc("has_role", { _user_id: user.id, _role: "doctor" as any });
+      if (isDoctor) { setUserRole("doctor"); return; }
+      const { data: isPatient } = await supabase.rpc("has_role", { _user_id: user.id, _role: "patient" as any });
+      if (isPatient) { setUserRole("patient"); return; }
+      setUserRole("user");
+    };
+    checkRole();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -46,22 +61,50 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     load();
   }, [user]);
 
-  const modules = [
-    { id: "radiologist" as const, title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini AI yordamida tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
-    { id: "advisor" as const, title: "Smart Medical Advisor", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
-    { id: "rehab" as const, title: "Tele-Rehab AI", description: "Kamera orqali mashqlarni nazorat qilish", icon: <Dumbbell size={28} />, gradient: "gradient-warm" },
-    { id: "patients" as const, title: "Bemorlar", description: "Bemorlar ro'yxati va tarix", icon: <Users size={28} />, gradient: "gradient-primary" },
-  ];
+  const greeting = userRole === "doctor" || userRole === "admin" ? "Xush kelibsiz, Doktor" : "Xush kelibsiz";
+
+  // Role-specific modules
+  const getModules = () => {
+    if (userRole === "admin") {
+      return [
+        { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini AI yordamida tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
+        { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
+        { id: "rehab", title: "Tele-Rehab AI", description: "Kamera orqali mashqlarni nazorat qilish", icon: <Dumbbell size={28} />, gradient: "gradient-warm" },
+        { id: "patients", title: "Bemorlar", description: "Bemorlar ro'yxati va tarix", icon: <Users size={28} />, gradient: "gradient-primary" },
+      ];
+    }
+    if (userRole === "doctor") {
+      return [
+        { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
+        { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
+        { id: "rehab", title: "Tele-Rehab AI", description: "Mashqlarni nazorat qilish", icon: <Dumbbell size={28} />, gradient: "gradient-warm" },
+        { id: "patients", title: "Bemorlar", description: "Bemorlaringiz ro'yxati", icon: <Users size={28} />, gradient: "gradient-primary" },
+      ];
+    }
+    // user / patient
+    return [
+      { id: "advisor", title: "AI Assistant", description: "AI tashxis va maslahat oling", icon: <Brain size={28} />, gradient: "gradient-accent" },
+      { id: "doctors", title: "Shifokorlar", description: "Shifokor tanlang va bog'laning", icon: <Stethoscope size={28} />, gradient: "gradient-primary" },
+      { id: "chat", title: "Chat", description: "Shifokoringiz bilan yozishing", icon: <MessageCircle size={28} />, gradient: "gradient-warm" },
+    ];
+  };
+
+  const modules = getModules();
+
+  // Role-specific stats
+  const displayStats = (userRole === "user" || userRole === "patient") 
+    ? stats.filter(s => s.label !== "Bemorlar" && s.label !== "Reab. seanslar")
+    : stats;
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
       <motion.div variants={item}>
-        <h2 className="text-3xl font-display font-bold text-foreground">Xush kelibsiz, Doktor</h2>
+        <h2 className="text-3xl font-display font-bold text-foreground">{greeting}</h2>
         <p className="text-muted-foreground mt-1">Medi AI diagnostika platformasi</p>
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
+      <motion.div variants={item} className={`grid grid-cols-2 ${displayStats.length > 2 ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}>
+        {displayStats.map((s) => (
           <div key={s.label} className="bg-card rounded-2xl p-5 shadow-card border border-border">
             <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center mb-3`}>{s.icon}</div>
             <p className="text-2xl font-display font-bold text-foreground">{s.value}</p>
