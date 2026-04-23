@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -362,6 +362,59 @@ const ChatModule = () => {
   const getReplyMessage = (replyId: string) => messages.find(m => m.id === replyId);
   const getContactName = (userId: string) => userId === user?.id ? "Siz" : selectedContact?.full_name || "Nomsiz";
 
+  // Parse invitation payload from message
+  const parseInvitation = (message: string | null) => {
+    if (!message) return null;
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.type === "patient_invitation") return parsed;
+    } catch { }
+    return null;
+  };
+
+  const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
+
+  const handleInvitationResponse = async (msg: ChatMessage, accept: boolean) => {
+    if (!user) return;
+    setRespondingInvite(msg.id);
+    try {
+      const inv = parseInvitation(msg.message);
+      if (!inv) return;
+
+      // Update invitation status
+      await supabase
+        .from("patient_invitations")
+        .update({ status: accept ? "accepted" : "declined", updated_at: new Date().toISOString() })
+        .eq("doctor_id", inv.doctor_id)
+        .eq("patient_user_id", user.id);
+
+      if (accept) {
+        // Create doctor_patients relation
+        await supabase.from("doctor_patients").upsert({
+          doctor_id: inv.doctor_id,
+          patient_id: user.id,
+        }, { onConflict: "doctor_id,patient_id" });
+        toast.success("Doktorning taklifini qabul qildingiz!");
+        // Mark message edited so card updates
+        await supabase.from("chat_messages").update({
+          message: JSON.stringify({ ...inv, status: "accepted" }),
+          is_edited: true,
+        }).eq("id", msg.id);
+      } else {
+        toast.info("Taklif rad etildi.");
+        await supabase.from("chat_messages").update({
+          message: JSON.stringify({ ...inv, status: "declined" }),
+          is_edited: true,
+        }).eq("id", msg.id);
+      }
+      loadContacts();
+    } catch (err: any) {
+      toast.error(err.message || "Xatolik yuz berdi");
+    } finally {
+      setRespondingInvite(null);
+    }
+  };
+
   const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
@@ -482,15 +535,53 @@ const ChatModule = () => {
               {messages.map(msg => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
-                return (
+                return (() => {
+                  const inv = parseInvitation(msg.message);
+                  if (inv) {
+                    const isDone = inv.status === "accepted" || inv.status === "declined";
+                    return (
+                      <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                        <div className="bg-card border border-primary/30 rounded-2xl p-4 min-w-[240px] max-w-[75%] shadow-card">
+                          <div className="flex items-center gap-2 mb-2">
+                            <UserCheck size={18} className="text-primary" />
+                            <p className="font-semibold text-foreground text-sm">Bemor taklifi</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            {isMine
+                              ? (isDone ? (inv.status === "accepted" ? "✅ Qabul qilindi" : "❌ Rad etildi") : "Taklif yuborildi. Bemor javobini kutmoqda...")
+                              : "Doktor sizni bemori sifatida qo'shmoqchi. Qabul qilasizmi?"}
+                          </p>
+                          {!isMine && !isDone && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleInvitationResponse(msg, true)}
+                                disabled={respondingInvite === msg.id}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-semibold shadow-glow disabled:opacity-50"
+                              >
+                                <UserCheck size={14} /> Qabul qilish
+                              </button>
+                              <button
+                                onClick={() => handleInvitationResponse(msg, false)}
+                                disabled={respondingInvite === msg.id}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-semibold disabled:opacity-50"
+                              >
+                                <UserX size={14} /> Rad etish
+                              </button>
+                            </div>
+                          )}
+                          {!isMine && isDone && (
+                            <p className="text-xs font-semibold text-center">
+                              {inv.status === "accepted" ? "✅ Qabul qilindi" : "❌ Rad etildi"}
+                            </p>
+                          )}
+                          <span className="text-[10px] text-muted-foreground block mt-2 text-right">{format(new Date(msg.created_at), "HH:mm")}</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
                   <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`relative max-w-[75%] group ${isMine ? "order-1" : ""}`}>
-                      {/* Reply preview */}
-                      {replyMsg && (
-                        <div className="text-[11px] px-3 py-1 mb-0.5 rounded-t-xl bg-primary/5 border-l-2 border-primary text-muted-foreground truncate">
-                          ↩ {getContactName(replyMsg.sender_id)}: {replyMsg.message?.slice(0, 50)}
-                        </div>
-                      )}
                       {msg.forwarded_from && (
                         <div className="text-[10px] px-3 py-0.5 text-muted-foreground italic">↗ Yo'naltirilgan xabar</div>
                       )}
@@ -550,7 +641,8 @@ const ChatModule = () => {
                       )}
                     </div>
                   </div>
-                );
+                ); // close regular message return
+                })(); // invoke IIFE
               })}
               <div ref={messagesEndRef} />
             </div>

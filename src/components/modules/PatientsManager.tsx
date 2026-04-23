@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell, Download, Loader2 } from "lucide-react";
+import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell, Download, Loader2, Mail, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -37,6 +37,11 @@ const PatientsManager = () => {
   const [history, setHistory] = useState<{ scans: any[]; diagnoses: any[]; rehabs: any[] }>({ scans: [], diagnoses: [], rehabs: [] });
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteResults, setInviteResults] = useState<any[]>([]);
+  const [inviteSearching, setInviteSearching] = useState(false);
+  const [inviteSending, setInviteSending] = useState(false);
 
   const loadPatients = useCallback(async () => {
     if (!user) return;
@@ -46,6 +51,55 @@ const PatientsManager = () => {
   }, [user]);
 
   useEffect(() => { loadPatients(); }, [loadPatients]);
+
+  // Search users by email for invitation
+  const searchInviteUser = async (email: string) => {
+    if (email.trim().length < 3) { setInviteResults([]); return; }
+    setInviteSearching(true);
+    const { data, error } = await supabase.rpc("search_users_by_email", { search_email: email.trim() });
+    if (!error && data) setInviteResults(data.filter((p: any) => p.user_id !== user?.id));
+    setInviteSearching(false);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => searchInviteUser(inviteEmail), 400);
+    return () => clearTimeout(t);
+  }, [inviteEmail]);
+
+  const sendInvitation = async (targetUser: any) => {
+    if (!user) return;
+    setInviteSending(true);
+    try {
+      // Create invitation record
+      const { error: invErr } = await supabase.from("patient_invitations").upsert({
+        doctor_id: user.id,
+        patient_user_id: targetUser.user_id,
+        status: "pending",
+      }, { onConflict: "doctor_id,patient_user_id" });
+      if (invErr) throw invErr;
+
+      // Send special chat message so patient sees it in Chat
+      const invitePayload = JSON.stringify({
+        type: "patient_invitation",
+        doctor_id: user.id,
+        patient_user_id: targetUser.user_id,
+      });
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: targetUser.user_id,
+        message: invitePayload,
+      });
+
+      toast.success(`${targetUser.full_name || targetUser.email} ga taklif yuborildi!`);
+      setShowInvite(false);
+      setInviteEmail("");
+      setInviteResults([]);
+    } catch (err: any) {
+      toast.error(err.message || "Taklif yuborishda xatolik");
+    } finally {
+      setInviteSending(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user || !form.full_name.trim()) return;
@@ -231,10 +285,16 @@ ${history.rehabs.length > 0 ? `
           <h2 className="text-2xl font-display font-bold text-foreground">Bemorlar</h2>
           <p className="text-muted-foreground mt-1">Bemorlarni boshqarish va tarixni ko'rish</p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }}
-          className="gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm shadow-glow">
-          <Plus size={18} /> Yangi bemor
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => { setShowInvite(true); setShowForm(false); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80">
+            <Mail size={18} /> Taklif yuborish
+          </button>
+          <button onClick={() => { setShowForm(true); setShowInvite(false); setEditingId(null); setForm(emptyForm); }}
+            className="gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm shadow-glow">
+            <Plus size={18} /> Yangi bemor
+          </button>
+        </div>
       </div>
 
       <div className="relative">
@@ -324,6 +384,45 @@ ${history.rehabs.length > 0 ? `
       </div>
 
       <AnimatePresence>
+        {/* Invite Panel */}
+        {showInvite && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-card rounded-2xl p-6 w-full max-w-md shadow-elevated border border-border">
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="font-display font-bold text-foreground flex items-center gap-2"><UserCheck size={20} className="text-primary" /> Bemor taklif qilish</h3>
+                <button onClick={() => { setShowInvite(false); setInviteEmail(""); setInviteResults([]); }} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Ro'yxatdan o'tgan foydalanuvchini email orqali bemor sifatida taklif qiling. U chatda ruxsatnoma xabarini oladi.</p>
+              <div className="relative mb-3">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+                  placeholder="Email orqali foydalanuvchi qidiring..." autoFocus
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              {inviteSearching && <div className="text-center py-4 text-muted-foreground text-sm">Qidirilmoqda...</div>}
+              {!inviteSearching && inviteEmail.length >= 3 && inviteResults.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">Foydalanuvchi topilmadi</div>
+              )}
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {inviteResults.map((p: any) => (
+                  <div key={p.user_id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {p.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Nomsiz"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                    </div>
+                    <button onClick={() => sendInvitation(p)} disabled={inviteSending}
+                      className="px-3 py-1.5 rounded-lg gradient-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 shadow-glow">
+                      {inviteSending ? <Loader2 size={14} className="animate-spin" /> : "Taklif"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showForm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-card rounded-2xl p-6 w-full max-w-md shadow-elevated border border-border">

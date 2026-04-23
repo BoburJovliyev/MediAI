@@ -9,6 +9,7 @@ import TeleRehab from "@/components/modules/TeleRehab";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
+import AIChatModule from "@/components/modules/AIChatModule";
 import ProfilePage from "@/components/modules/ProfilePage";
 import AuthPage from "./AuthPage";
 import LandingPage from "./LandingPage";
@@ -16,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "profile" | "doctors";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -78,6 +79,7 @@ const AppContent = () => {
       case "patients": return <PatientsManager />;
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
+      case "aichat": return <AIChatModule />;
       case "profile": return <ProfilePage />;
       case "doctors": return <DoctorsListing />;
     }
