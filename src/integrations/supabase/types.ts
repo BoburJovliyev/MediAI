@@ -247,6 +247,33 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_invitations: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          patient_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          patient_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          patient_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           age: number | null
