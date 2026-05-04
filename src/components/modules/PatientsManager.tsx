@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell, Download, Loader2, Mail, UserCheck } from "lucide-react";
+import { Users, Plus, Search, Edit2, Trash2, X, ChevronRight, FileImage, Brain, Dumbbell, Download, Loader2, Mail, UserCheck, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import PatientInvitations from "./PatientInvitations";
 
 interface Patient {
   id: string;
@@ -42,6 +43,20 @@ const PatientsManager = () => {
   const [inviteResults, setInviteResults] = useState<any[]>([]);
   const [inviteSearching, setInviteSearching] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
+  const [showInvitationsPage, setShowInvitationsPage] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadPending = async () => {
+      const { count } = await supabase.from("patient_invitations")
+        .select("id", { count: "exact", head: true })
+        .eq("patient_user_id", user.id)
+        .eq("status", "pending");
+      setPendingCount(count || 0);
+    };
+    loadPending();
+  }, [user, showInvitationsPage]);
 
   const loadPatients = useCallback(async () => {
     if (!user) return;
@@ -278,14 +293,27 @@ ${history.rehabs.length > 0 ? `
 
   const filtered = patients.filter((p) => p.full_name.toLowerCase().includes(search.toLowerCase()));
 
+  if (showInvitationsPage) {
+    return <PatientInvitations onBack={() => setShowInvitationsPage(false)} />;
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Bemorlar</h2>
           <p className="text-muted-foreground mt-1">Bemorlarni boshqarish va tarixni ko'rish</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setShowInvitationsPage(true)}
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80">
+            <Inbox size={18} /> Takliflar
+            {pendingCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-medical-red text-white text-[10px] font-bold flex items-center justify-center">
+                {pendingCount}
+              </span>
+            )}
+          </button>
           <button onClick={() => { setShowInvite(true); setShowForm(false); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80">
             <Mail size={18} /> Taklif yuborish
