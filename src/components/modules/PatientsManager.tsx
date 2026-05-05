@@ -56,6 +56,16 @@ const PatientsManager = () => {
       setPendingCount(count || 0);
     };
     loadPending();
+
+    // Realtime: keep pending badge in sync
+    const channel = supabase
+      .channel(`pm-invitations-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "patient_invitations" }, (payload) => {
+        const row: any = payload.new || payload.old;
+        if (row && row.patient_user_id === user.id) loadPending();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user, showInvitationsPage]);
 
   const loadPatients = useCallback(async () => {
