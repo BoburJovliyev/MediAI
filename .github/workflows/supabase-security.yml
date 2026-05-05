@@ -1,0 +1,21 @@
+name: Supabase Security Lint
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "scripts/supabase-security-check.mjs"
+      - ".github/workflows/supabase-security.yml"
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run Supabase security guard
+        run: node scripts/supabase-security-check.mjs
