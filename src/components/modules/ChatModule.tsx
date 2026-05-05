@@ -713,8 +713,8 @@ const ChatModule = () => {
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
                           {msg.is_edited && <span className="text-[10px] opacity-50" title={msg.edited_at ? format(new Date(msg.edited_at), "dd MMM HH:mm") : ""}>tahrirlangan</span>}
                           {isMine && (msg.is_read
-                            ? <CheckCheck size={12} className="opacity-70" aria-label="O'qildi" titleAccess={msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}><title>{msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}</title></CheckCheck>
-                            : <Check size={12} className="opacity-50" aria-label="Yuborildi"><title>Yuborildi</title></Check>)}
+                            ? <span title={msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}><CheckCheck size={12} className="opacity-70" /></span>
+                            : <span title="Yuborildi"><Check size={12} className="opacity-50" /></span>)}
                         </div>
                       </div>
                       {/* Context menu */}
