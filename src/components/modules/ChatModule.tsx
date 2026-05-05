@@ -614,12 +614,24 @@ const ChatModule = () => {
                 return (() => {
                   const activity = parseActivity(msg.message);
                   if (activity) {
-                    const accepted = activity.status === "accepted";
+                    let label = "";
+                    let cls = "bg-secondary text-muted-foreground";
+                    if (activity.type === "invitation_activity") {
+                      const accepted = activity.status === "accepted";
+                      label = accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi";
+                      cls = accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red";
+                    } else if (activity.type === "edit_activity") {
+                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni tahrirladi`;
+                      cls = "bg-primary/10 text-primary";
+                    } else if (activity.type === "delete_activity") {
+                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni o'chirdi`;
+                      cls = "bg-destructive/10 text-destructive";
+                    }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
-                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red"}`}>
+                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${cls}`}>
                           <Info size={12} />
-                          {accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi"}
+                          {label}
                           <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
                         </div>
                       </div>
@@ -699,8 +711,10 @@ const ChatModule = () => {
                         <p>{msg.message}</p>
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
-                          {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
-                          {isMine && (msg.is_read ? <CheckCheck size={12} className="opacity-70" /> : <Check size={12} className="opacity-50" />)}
+                          {msg.is_edited && <span className="text-[10px] opacity-50" title={msg.edited_at ? format(new Date(msg.edited_at), "dd MMM HH:mm") : ""}>tahrirlangan</span>}
+                          {isMine && (msg.is_read
+                            ? <CheckCheck size={12} className="opacity-70" aria-label="O'qildi" titleAccess={msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}><title>{msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}</title></CheckCheck>
+                            : <Check size={12} className="opacity-50" aria-label="Yuborildi"><title>Yuborildi</title></Check>)}
                         </div>
                       </div>
                       {/* Context menu */}
