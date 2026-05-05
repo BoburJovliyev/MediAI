@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,6 +66,10 @@ const ChatModule = () => {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(0);
 
   const startRecording = async () => {
     try {
@@ -283,9 +287,31 @@ const ChatModule = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedContact, user]);
 
+  // Typing presence channel
+  useEffect(() => {
+    if (!user || !selectedContact) return;
+    const key = [user.id, selectedContact.user_id].sort().join("-");
+    const channel = supabase.channel(`typing-${key}`, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "typing" }, (payload: any) => {
+      if (payload.payload?.from === selectedContact.user_id) {
+        setOtherTyping(true);
+        setTimeout(() => setOtherTyping(false), 2500);
+      }
+    }).subscribe();
+    typingChannelRef.current = channel;
+    return () => { supabase.removeChannel(channel); typingChannelRef.current = null; setOtherTyping(false); };
+  }, [selectedContact, user]);
+
+  const broadcastTyping = () => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { from: user?.id } });
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, otherTyping]);
 
   const loadMessages = async () => {
     if (!user || !selectedContact) return;
@@ -370,6 +396,20 @@ const ChatModule = () => {
       if (parsed.type === "patient_invitation") return parsed;
     } catch { }
     return null;
+  };
+
+  const parseActivity = (message: string | null) => {
+    if (!message) return null;
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.type === "invitation_activity") return parsed;
+    } catch { }
+    return null;
+  };
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => toast.success("Nusxalandi"));
+    setMenuMessageId(null);
   };
 
   const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
@@ -536,6 +576,19 @@ const ChatModule = () => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
                 return (() => {
+                  const activity = parseActivity(msg.message);
+                  if (activity) {
+                    const accepted = activity.status === "accepted";
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red"}`}>
+                          <Info size={12} />
+                          {accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi"}
+                          <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
+                        </div>
+                      </div>
+                    );
+                  }
                   const inv = parseInvitation(msg.message);
                   if (inv) {
                     const isDone = inv.status === "accepted" || inv.status === "declined";
@@ -627,6 +680,10 @@ const ChatModule = () => {
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Reply size={12} /> Javob</button>
                               <button onClick={() => { setForwardMessage(msg); setMenuMessageId(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Forward size={12} /> Yo'naltirish</button>
+                              {msg.message && (
+                                <button onClick={() => copyText(msg.message!)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Copy size={12} /> Nusxalash</button>
+                              )}
                               {isMine && (
                                 <>
                                   <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
@@ -644,6 +701,16 @@ const ChatModule = () => {
                 ); // close regular message return
                 })(); // invoke IIFE
               })}
+              {otherTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-secondary rounded-2xl px-4 py-2 text-xs text-muted-foreground italic flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="ml-1">yozmoqda...</span>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -700,7 +767,7 @@ const ChatModule = () => {
                   </button>
                   <input
                     value={newMessage}
-                    onChange={e => setNewMessage(e.target.value)}
+                    onChange={e => { setNewMessage(e.target.value); broadcastTyping(); }}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
                     placeholder="Xabar yozing..."
                     className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
