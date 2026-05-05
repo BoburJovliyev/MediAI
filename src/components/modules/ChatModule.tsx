@@ -398,6 +398,20 @@ const ChatModule = () => {
     return null;
   };
 
+  const parseActivity = (message: string | null) => {
+    if (!message) return null;
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.type === "invitation_activity") return parsed;
+    } catch { }
+    return null;
+  };
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => toast.success("Nusxalandi"));
+    setMenuMessageId(null);
+  };
+
   const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
 
   const handleInvitationResponse = async (msg: ChatMessage, accept: boolean) => {
