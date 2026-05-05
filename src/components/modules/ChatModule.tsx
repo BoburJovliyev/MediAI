@@ -34,9 +34,13 @@ interface ChatMessage {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+  read_at?: string | null;
+  edited_at?: string | null;
 }
 
-const EMOJI_LIST = ["😀", "😂", "❤️", "👍", "👏", "🙏", "😊", "🎉", "💊", "🩺", "💉", "🏥", "✅", "⚠️", "📋", "🔬"];
+import EmojiPicker from "./EmojiPicker";
+
+const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
 const ChatModule = () => {
   const { user } = useAuth();
