@@ -47,6 +47,7 @@ export type Database = {
       chat_messages: {
         Row: {
           created_at: string
+          edited_at: string | null
           file_name: string | null
           file_url: string | null
           forwarded_from: string | null
@@ -56,6 +57,7 @@ export type Database = {
           is_edited: boolean
           is_read: boolean
           message: string | null
+          read_at: string | null
           receiver_id: string
           reply_to: string | null
           sender_id: string
@@ -63,6 +65,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          edited_at?: string | null
           file_name?: string | null
           file_url?: string | null
           forwarded_from?: string | null
@@ -72,6 +75,7 @@ export type Database = {
           is_edited?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           receiver_id: string
           reply_to?: string | null
           sender_id: string
@@ -79,6 +83,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          edited_at?: string | null
           file_name?: string | null
           file_url?: string | null
           forwarded_from?: string | null
@@ -88,6 +93,7 @@ export type Database = {
           is_edited?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           receiver_id?: string
           reply_to?: string | null
           sender_id?: string
