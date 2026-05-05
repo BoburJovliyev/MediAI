@@ -680,6 +680,10 @@ const ChatModule = () => {
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Reply size={12} /> Javob</button>
                               <button onClick={() => { setForwardMessage(msg); setMenuMessageId(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Forward size={12} /> Yo'naltirish</button>
+                              {msg.message && (
+                                <button onClick={() => copyText(msg.message!)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Copy size={12} /> Nusxalash</button>
+                              )}
                               {isMine && (
                                 <>
                                   <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
