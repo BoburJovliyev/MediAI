@@ -287,9 +287,31 @@ const ChatModule = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedContact, user]);
 
+  // Typing presence channel
+  useEffect(() => {
+    if (!user || !selectedContact) return;
+    const key = [user.id, selectedContact.user_id].sort().join("-");
+    const channel = supabase.channel(`typing-${key}`, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "typing" }, (payload: any) => {
+      if (payload.payload?.from === selectedContact.user_id) {
+        setOtherTyping(true);
+        setTimeout(() => setOtherTyping(false), 2500);
+      }
+    }).subscribe();
+    typingChannelRef.current = channel;
+    return () => { supabase.removeChannel(channel); typingChannelRef.current = null; setOtherTyping(false); };
+  }, [selectedContact, user]);
+
+  const broadcastTyping = () => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { from: user?.id } });
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, otherTyping]);
 
   const loadMessages = async () => {
     if (!user || !selectedContact) return;
