@@ -257,7 +257,7 @@ const ChatModule = () => {
     // Mark as read
     supabase
       .from("chat_messages")
-      .update({ is_read: true })
+      .update({ is_read: true, read_at: new Date().toISOString() })
       .eq("sender_id", selectedContact.user_id)
       .eq("receiver_id", user.id)
       .eq("is_read", false)
@@ -279,7 +279,7 @@ const ChatModule = () => {
           ) {
             setMessages(prev => [...prev, newMsg]);
             if (newMsg.sender_id === selectedContact.user_id) {
-              supabase.from("chat_messages").update({ is_read: true }).eq("id", newMsg.id).then();
+              supabase.from("chat_messages").update({ is_read: true, read_at: new Date().toISOString() }).eq("id", newMsg.id).then();
             }
           }
         } else if (payload.eventType === "UPDATE") {
@@ -403,8 +403,21 @@ const ChatModule = () => {
     loadContacts();
   };
 
-  const deleteMsg = async (id: string) => {
-    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", id);
+  const deleteMsg = async (msg: ChatMessage) => {
+    const ageMs = Date.now() - new Date(msg.created_at).getTime();
+    if (ageMs > EDIT_DELETE_WINDOW_MS) {
+      toast.error("10 daqiqadan keyin xabarni o'chirib bo'lmaydi");
+      setMenuMessageId(null);
+      return;
+    }
+    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", msg.id);
+    if (user && selectedContact) {
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: selectedContact.user_id,
+        message: JSON.stringify({ type: "delete_activity", from: user.id }),
+      });
+    }
     setMenuMessageId(null);
   };
 
