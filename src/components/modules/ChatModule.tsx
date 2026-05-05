@@ -331,7 +331,26 @@ const ChatModule = () => {
     if (!user || !selectedContact || (!newMessage.trim() && !forwardMessage)) return;
 
     if (editMessage) {
-      await supabase.from("chat_messages").update({ message: newMessage, is_edited: true, updated_at: new Date().toISOString() }).eq("id", editMessage.id);
+      const ageMs = Date.now() - new Date(editMessage.created_at).getTime();
+      if (ageMs > EDIT_DELETE_WINDOW_MS) {
+        toast.error("10 daqiqadan keyin xabarni tahrirlab bo'lmaydi");
+        setEditMessage(null);
+        setNewMessage("");
+        return;
+      }
+      const oldText = editMessage.message || "";
+      await supabase.from("chat_messages").update({
+        message: newMessage,
+        is_edited: true,
+        edited_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", editMessage.id);
+      // Activity message visible to both sides
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: selectedContact.user_id,
+        message: JSON.stringify({ type: "edit_activity", from: user.id, before: oldText.slice(0, 80), after: newMessage.slice(0, 80) }),
+      });
       setEditMessage(null);
       setNewMessage("");
       return;
