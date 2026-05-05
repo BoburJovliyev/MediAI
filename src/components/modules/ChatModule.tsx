@@ -757,7 +757,7 @@ const ChatModule = () => {
                   </button>
                   <input
                     value={newMessage}
-                    onChange={e => setNewMessage(e.target.value)}
+                    onChange={e => { setNewMessage(e.target.value); broadcastTyping(); }}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMsg())}
                     placeholder="Xabar yozing..."
                     className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
