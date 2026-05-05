@@ -724,7 +724,7 @@ const ChatModule = () => {
                                 <>
                                   <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
-                                  <button onClick={() => deleteMsg(msg.id)}
+                                  <button onClick={() => deleteMsg(msg)}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> O'chirish</button>
                                 </>
                               )}
@@ -785,12 +785,10 @@ const ChatModule = () => {
                       <Smile size={20} />
                     </button>
                     {showEmoji && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
-                        {EMOJI_LIST.map(e => (
-                          <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
-                            className="text-lg hover:bg-secondary rounded p-1">{e}</button>
-                        ))}
-                      </div>
+                      <EmojiPicker
+                        onSelect={(e) => setNewMessage(prev => prev + e)}
+                        onClose={() => setShowEmoji(false)}
+                      />
                     )}
                   </div>
                   <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
