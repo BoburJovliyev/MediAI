@@ -576,6 +576,19 @@ const ChatModule = () => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
                 return (() => {
+                  const activity = parseActivity(msg.message);
+                  if (activity) {
+                    const accepted = activity.status === "accepted";
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red"}`}>
+                          <Info size={12} />
+                          {accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi"}
+                          <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
+                        </div>
+                      </div>
+                    );
+                  }
                   const inv = parseInvitation(msg.message);
                   if (inv) {
                     const isDone = inv.status === "accepted" || inv.status === "declined";
