@@ -66,6 +66,10 @@ const ChatModule = () => {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(0);
 
   const startRecording = async () => {
     try {
