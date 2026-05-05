@@ -34,9 +34,13 @@ interface ChatMessage {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+  read_at?: string | null;
+  edited_at?: string | null;
 }
 
-const EMOJI_LIST = ["😀", "😂", "❤️", "👍", "👏", "🙏", "😊", "🎉", "💊", "🩺", "💉", "🏥", "✅", "⚠️", "📋", "🔬"];
+import EmojiPicker from "./EmojiPicker";
+
+const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
 const ChatModule = () => {
   const { user } = useAuth();
@@ -253,7 +257,7 @@ const ChatModule = () => {
     // Mark as read
     supabase
       .from("chat_messages")
-      .update({ is_read: true })
+      .update({ is_read: true, read_at: new Date().toISOString() })
       .eq("sender_id", selectedContact.user_id)
       .eq("receiver_id", user.id)
       .eq("is_read", false)
@@ -275,7 +279,7 @@ const ChatModule = () => {
           ) {
             setMessages(prev => [...prev, newMsg]);
             if (newMsg.sender_id === selectedContact.user_id) {
-              supabase.from("chat_messages").update({ is_read: true }).eq("id", newMsg.id).then();
+              supabase.from("chat_messages").update({ is_read: true, read_at: new Date().toISOString() }).eq("id", newMsg.id).then();
             }
           }
         } else if (payload.eventType === "UPDATE") {
@@ -327,7 +331,26 @@ const ChatModule = () => {
     if (!user || !selectedContact || (!newMessage.trim() && !forwardMessage)) return;
 
     if (editMessage) {
-      await supabase.from("chat_messages").update({ message: newMessage, is_edited: true, updated_at: new Date().toISOString() }).eq("id", editMessage.id);
+      const ageMs = Date.now() - new Date(editMessage.created_at).getTime();
+      if (ageMs > EDIT_DELETE_WINDOW_MS) {
+        toast.error("10 daqiqadan keyin xabarni tahrirlab bo'lmaydi");
+        setEditMessage(null);
+        setNewMessage("");
+        return;
+      }
+      const oldText = editMessage.message || "";
+      await supabase.from("chat_messages").update({
+        message: newMessage,
+        is_edited: true,
+        edited_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", editMessage.id);
+      // Activity message visible to both sides
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: selectedContact.user_id,
+        message: JSON.stringify({ type: "edit_activity", from: user.id, before: oldText.slice(0, 80), after: newMessage.slice(0, 80) }),
+      });
       setEditMessage(null);
       setNewMessage("");
       return;
@@ -380,8 +403,21 @@ const ChatModule = () => {
     loadContacts();
   };
 
-  const deleteMsg = async (id: string) => {
-    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", id);
+  const deleteMsg = async (msg: ChatMessage) => {
+    const ageMs = Date.now() - new Date(msg.created_at).getTime();
+    if (ageMs > EDIT_DELETE_WINDOW_MS) {
+      toast.error("10 daqiqadan keyin xabarni o'chirib bo'lmaydi");
+      setMenuMessageId(null);
+      return;
+    }
+    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", msg.id);
+    if (user && selectedContact) {
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: selectedContact.user_id,
+        message: JSON.stringify({ type: "delete_activity", from: user.id }),
+      });
+    }
     setMenuMessageId(null);
   };
 
@@ -402,7 +438,7 @@ const ChatModule = () => {
     if (!message) return null;
     try {
       const parsed = JSON.parse(message);
-      if (parsed.type === "invitation_activity") return parsed;
+      if (parsed.type === "invitation_activity" || parsed.type === "edit_activity" || parsed.type === "delete_activity") return parsed;
     } catch { }
     return null;
   };
@@ -578,12 +614,24 @@ const ChatModule = () => {
                 return (() => {
                   const activity = parseActivity(msg.message);
                   if (activity) {
-                    const accepted = activity.status === "accepted";
+                    let label = "";
+                    let cls = "bg-secondary text-muted-foreground";
+                    if (activity.type === "invitation_activity") {
+                      const accepted = activity.status === "accepted";
+                      label = accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi";
+                      cls = accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red";
+                    } else if (activity.type === "edit_activity") {
+                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni tahrirladi`;
+                      cls = "bg-primary/10 text-primary";
+                    } else if (activity.type === "delete_activity") {
+                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni o'chirdi`;
+                      cls = "bg-destructive/10 text-destructive";
+                    }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
-                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${accepted ? "bg-medical-green-light text-medical-green" : "bg-medical-red-light text-medical-red"}`}>
+                        <div className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${cls}`}>
                           <Info size={12} />
-                          {accepted ? "Bemor taklifi qabul qilindi" : "Bemor taklifi rad etildi"}
+                          {label}
                           <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
                         </div>
                       </div>
@@ -663,8 +711,10 @@ const ChatModule = () => {
                         <p>{msg.message}</p>
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
-                          {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
-                          {isMine && (msg.is_read ? <CheckCheck size={12} className="opacity-70" /> : <Check size={12} className="opacity-50" />)}
+                          {msg.is_edited && <span className="text-[10px] opacity-50" title={msg.edited_at ? format(new Date(msg.edited_at), "dd MMM HH:mm") : ""}>tahrirlangan</span>}
+                          {isMine && (msg.is_read
+                            ? <span title={msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}><CheckCheck size={12} className="opacity-70" /></span>
+                            : <span title="Yuborildi"><Check size={12} className="opacity-50" /></span>)}
                         </div>
                       </div>
                       {/* Context menu */}
@@ -688,7 +738,7 @@ const ChatModule = () => {
                                 <>
                                   <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
-                                  <button onClick={() => deleteMsg(msg.id)}
+                                  <button onClick={() => deleteMsg(msg)}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> O'chirish</button>
                                 </>
                               )}
@@ -749,12 +799,10 @@ const ChatModule = () => {
                       <Smile size={20} />
                     </button>
                     {showEmoji && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-xl p-2 shadow-elevated grid grid-cols-8 gap-1 z-20">
-                        {EMOJI_LIST.map(e => (
-                          <button key={e} onClick={() => { setNewMessage(prev => prev + e); setShowEmoji(false); }}
-                            className="text-lg hover:bg-secondary rounded p-1">{e}</button>
-                        ))}
-                      </div>
+                      <EmojiPicker
+                        onSelect={(e) => setNewMessage(prev => prev + e)}
+                        onClose={() => setShowEmoji(false)}
+                      />
                     )}
                   </div>
                   <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
