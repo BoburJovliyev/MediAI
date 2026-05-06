@@ -74,6 +74,43 @@ const ChatModule = () => {
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(0);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [analyzingMsgId, setAnalyzingMsgId] = useState<string | null>(null);
+
+  const analyzeAttachmentWithAI = async (msg: ChatMessage) => {
+    if (!user || !selectedContact) return;
+    setMenuMessageId(null);
+    setAnalyzingMsgId(msg.id);
+    try {
+      const isImage = !!msg.image_url;
+      const url = msg.image_url || msg.file_url;
+      const userPrompt = `Foydalanuvchi chatda ${isImage ? "rasm" : "fayl"} yubordi${msg.file_name ? ` (${msg.file_name})` : ""}. Iltimos, uni tibbiy nuqtai nazardan tahlil qiling va qisqa xulosa bering.`;
+      const { data, error } = await supabase.functions.invoke("ai-chat", {
+        body: {
+          userMessage: userPrompt,
+          attachmentUrl: url,
+          attachmentType: isImage ? "image" : "file",
+          fileName: msg.file_name,
+          messages: [],
+        },
+      });
+      if (error) throw error;
+      const aiText = data?.response || "AI javob bera olmadi.";
+      // Insert AI response as message from current user, referencing original
+      await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        receiver_id: selectedContact.user_id,
+        message: `🤖 **AI tahlili** (yuborilgan ${isImage ? "rasm" : "fayl"} bo'yicha):\n\n${aiText}`,
+        reply_to: msg.id,
+      });
+      toast.success("AI tahlili tayyor");
+      loadContacts();
+    } catch (e: any) {
+      toast.error(e.message || "AI tahlilida xatolik");
+    } finally {
+      setAnalyzingMsgId(null);
+    }
+  };
 
   const startRecording = async () => {
     try {
