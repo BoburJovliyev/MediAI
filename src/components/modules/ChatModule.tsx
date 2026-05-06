@@ -939,38 +939,37 @@ const ChatModule = () => {
         )}
       </div>
     </motion.div>
-  );
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+    {previewImage && (
+      <div
+        className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+        onClick={() => setPreviewImage(null)}
+      >
+        <button
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
           onClick={() => setPreviewImage(null)}
         >
-          <button
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
-            onClick={() => setPreviewImage(null)}
-          >
-            <X size={20} />
-          </button>
-          <a
-            href={previewImage}
-            download
-            target="_blank"
-            rel="noopener"
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-4 right-16 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
-            title="Yuklab olish"
-          >
-            <Download size={20} />
-          </a>
-          <img
-            src={previewImage}
-            alt="preview"
-            className="max-w-full max-h-full rounded-xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-    </motion.div>
+          <X size={20} />
+        </button>
+        <a
+          href={previewImage}
+          download
+          target="_blank"
+          rel="noopener"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 right-16 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
+          title="Yuklab olish"
+        >
+          <Download size={20} />
+        </a>
+        <img
+          src={previewImage}
+          alt="preview"
+          className="max-w-full max-h-full rounded-xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+    </>
   );
 };
 
