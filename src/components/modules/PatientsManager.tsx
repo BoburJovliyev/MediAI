@@ -15,6 +15,8 @@ interface Patient {
   phone: string | null;
   notes: string | null;
   created_at: string;
+  source?: "manual" | "invited";
+  patient_user_id?: string | null;
 }
 
 interface PatientForm {
