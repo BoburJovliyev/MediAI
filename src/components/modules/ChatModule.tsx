@@ -692,7 +692,25 @@ const ChatModule = () => {
                           : "bg-secondary text-foreground rounded-bl-md"
                       } ${msg.is_deleted ? "italic opacity-60" : ""}`}>
                         {msg.image_url && !msg.is_deleted && (
-                          <img src={msg.image_url} alt="" className="rounded-xl max-w-[240px] mb-1 cursor-pointer" onClick={() => window.open(msg.image_url!, "_blank")} />
+                          <div className="relative group/img mb-1">
+                            <img
+                              src={msg.image_url}
+                              alt=""
+                              className="rounded-xl max-w-[260px] max-h-[260px] object-cover cursor-zoom-in"
+                              onClick={() => setPreviewImage(msg.image_url!)}
+                            />
+                            <a
+                              href={msg.image_url}
+                              download
+                              target="_blank"
+                              rel="noopener"
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover/img:opacity-100 transition-opacity"
+                              title="Yuklab olish"
+                            >
+                              <Download size={14} />
+                            </a>
+                          </div>
                         )}
                         {msg.file_url && !msg.is_deleted && msg.file_name?.endsWith(".webm") ? (
                           <div className="flex items-center gap-2 mb-1">
@@ -704,17 +722,21 @@ const ChatModule = () => {
                             <span className="text-[10px] opacity-70">🎤</span>
                           </div>
                         ) : msg.file_url && !msg.is_deleted ? (
-                          <a href={msg.file_url} target="_blank" rel="noopener" className="flex items-center gap-2 underline mb-1">
-                            <Paperclip size={14} /> {msg.file_name}
-                          </a>
+                          <div className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg ${isMine ? "bg-white/10" : "bg-background/50"}`}>
+                            <Paperclip size={14} className="shrink-0" />
+                            <span className="flex-1 truncate text-xs">{msg.file_name}</span>
+                            <a href={msg.file_url} target="_blank" rel="noopener" download className="p-1 rounded hover:bg-white/20" title="Yuklab olish">
+                              <Download size={14} />
+                            </a>
+                          </div>
                         ) : null}
                         <p>{msg.message}</p>
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
-                          {msg.is_edited && <span className="text-[10px] opacity-50" title={msg.edited_at ? format(new Date(msg.edited_at), "dd MMM HH:mm") : ""}>tahrirlangan</span>}
+                          {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
                           {isMine && (msg.is_read
-                            ? <span title={msg.read_at ? `O'qildi: ${format(new Date(msg.read_at), "dd MMM HH:mm")}` : "O'qildi"}><CheckCheck size={12} className="opacity-70" /></span>
-                            : <span title="Yuborildi"><Check size={12} className="opacity-50" /></span>)}
+                            ? <CheckCheck size={12} className="opacity-70" />
+                            : <Check size={12} className="opacity-50" />)}
                         </div>
                       </div>
                       {/* Context menu */}
@@ -725,7 +747,28 @@ const ChatModule = () => {
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-elevated z-20 min-w-[140px] py-1">
+                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-elevated z-20 min-w-[200px] py-1">
+                              {isMine && (
+                                <div className="px-3 py-2 text-[11px] text-muted-foreground border-b border-border flex items-center gap-1.5">
+                                  {msg.is_read ? (
+                                    <>
+                                      <CheckCheck size={12} className="text-primary" />
+                                      <span>O'qildi: {msg.read_at ? format(new Date(msg.read_at), "dd MMM, HH:mm") : "—"}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check size={12} />
+                                      <span>Hali o'qilmagan</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                              {msg.is_edited && msg.edited_at && (
+                                <div className="px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border flex items-center gap-1.5">
+                                  <Edit2 size={11} />
+                                  <span>Tahrirlangan: {format(new Date(msg.edited_at), "dd MMM, HH:mm")}</span>
+                                </div>
+                              )}
                               <button onClick={() => { setReplyTo(msg); setMenuMessageId(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Reply size={12} /> Javob</button>
                               <button onClick={() => { setForwardMessage(msg); setMenuMessageId(null); }}
@@ -733,6 +776,27 @@ const ChatModule = () => {
                               {msg.message && (
                                 <button onClick={() => copyText(msg.message!)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Copy size={12} /> Nusxalash</button>
+                              )}
+                              {(msg.image_url || msg.file_url) && (
+                                <>
+                                  <a
+                                    href={(msg.image_url || msg.file_url) as string}
+                                    download
+                                    target="_blank"
+                                    rel="noopener"
+                                    onClick={() => setMenuMessageId(null)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"
+                                  >
+                                    <Download size={12} /> Yuklab olish
+                                  </a>
+                                  <button
+                                    onClick={() => analyzeAttachmentWithAI(msg)}
+                                    disabled={analyzingMsgId === msg.id}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-primary disabled:opacity-50"
+                                  >
+                                    <Sparkles size={12} /> {analyzingMsgId === msg.id ? "Tahlil qilinmoqda..." : "AI tahlil qilish"}
+                                  </button>
+                                </>
                               )}
                               {isMine && (
                                 <>
