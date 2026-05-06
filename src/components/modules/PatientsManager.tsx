@@ -15,6 +15,8 @@ interface Patient {
   phone: string | null;
   notes: string | null;
   created_at: string;
+  source?: "manual" | "invited";
+  patient_user_id?: string | null;
 }
 
 interface PatientForm {
@@ -70,12 +72,53 @@ const PatientsManager = () => {
 
   const loadPatients = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase.from("patients").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    setPatients(data || []);
+    const [manualRes, dpRes] = await Promise.all([
+      supabase.from("patients").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("doctor_patients").select("id, patient_id, created_at").eq("doctor_id", user.id).order("created_at", { ascending: false }),
+    ]);
+    const manual: Patient[] = (manualRes.data || []).map((p: any) => ({ ...p, source: "manual" as const }));
+
+    const patientIds = (dpRes.data || []).map((r: any) => r.patient_id);
+    let invited: Patient[] = [];
+    if (patientIds.length > 0) {
+      const { data: profs } = await supabase.from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", patientIds);
+      const profMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
+      invited = (dpRes.data || []).map((r: any) => {
+        const prof: any = profMap.get(r.patient_id);
+        return {
+          id: r.id,
+          full_name: prof?.full_name || prof?.email || "Nomsiz foydalanuvchi",
+          age: null,
+          gender: null,
+          phone: prof?.email || null,
+          notes: null,
+          created_at: r.created_at,
+          source: "invited" as const,
+          patient_user_id: r.patient_id,
+        } as Patient;
+      });
+    }
+
+    setPatients([...invited, ...manual]);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { loadPatients(); }, [loadPatients]);
+
+  // Realtime: refresh when invitations get accepted (doctor_patients row added)
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`pm-dp-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "doctor_patients" }, (payload: any) => {
+        const row = payload.new || payload.old;
+        if (row && row.doctor_id === user.id) loadPatients();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, loadPatients]);
 
   // Search users by email for invitation
   const searchInviteUser = async (email: string) => {
@@ -328,10 +371,6 @@ ${history.rehabs.length > 0 ? `
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80">
             <Mail size={18} /> Taklif yuborish
           </button>
-          <button onClick={() => { setShowForm(true); setShowInvite(false); setEditingId(null); setForm(emptyForm); }}
-            className="gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm shadow-glow">
-            <Plus size={18} /> Yangi bemor
-          </button>
         </div>
       </div>
 
@@ -351,14 +390,23 @@ ${history.rehabs.length > 0 ? `
             <motion.div key={p.id} layout className={`bg-card rounded-xl p-4 border transition-all cursor-pointer ${selectedPatient?.id === p.id ? "border-primary shadow-glow" : "border-border hover:border-primary/30"}`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1" onClick={() => viewHistory(p)}>
-                  <p className="font-medium text-foreground">{p.full_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{p.full_name}</p>
+                    {p.source === "invited" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-medical-green-light text-medical-green font-semibold">Qabul qilgan</span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {p.age ? `${p.age} yosh` : ""} {p.gender === "male" ? "• Erkak" : p.gender === "female" ? "• Ayol" : ""} {p.phone ? `• ${p.phone}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"><Trash2 size={16} /></button>
+                  {p.source !== "invited" && (
+                    <>
+                      <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><Edit2 size={16} /></button>
+                      <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"><Trash2 size={16} /></button>
+                    </>
+                  )}
                   <button onClick={() => viewHistory(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><ChevronRight size={16} /></button>
                 </div>
               </div>
