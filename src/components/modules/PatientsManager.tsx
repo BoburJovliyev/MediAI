@@ -72,12 +72,53 @@ const PatientsManager = () => {
 
   const loadPatients = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase.from("patients").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    setPatients(data || []);
+    const [manualRes, dpRes] = await Promise.all([
+      supabase.from("patients").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("doctor_patients").select("id, patient_id, created_at").eq("doctor_id", user.id).order("created_at", { ascending: false }),
+    ]);
+    const manual: Patient[] = (manualRes.data || []).map((p: any) => ({ ...p, source: "manual" as const }));
+
+    const patientIds = (dpRes.data || []).map((r: any) => r.patient_id);
+    let invited: Patient[] = [];
+    if (patientIds.length > 0) {
+      const { data: profs } = await supabase.from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", patientIds);
+      const profMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
+      invited = (dpRes.data || []).map((r: any) => {
+        const prof: any = profMap.get(r.patient_id);
+        return {
+          id: r.id,
+          full_name: prof?.full_name || prof?.email || "Nomsiz foydalanuvchi",
+          age: null,
+          gender: null,
+          phone: prof?.email || null,
+          notes: null,
+          created_at: r.created_at,
+          source: "invited" as const,
+          patient_user_id: r.patient_id,
+        } as Patient;
+      });
+    }
+
+    setPatients([...invited, ...manual]);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { loadPatients(); }, [loadPatients]);
+
+  // Realtime: refresh when invitations get accepted (doctor_patients row added)
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`pm-dp-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "doctor_patients" }, (payload: any) => {
+        const row = payload.new || payload.old;
+        if (row && row.doctor_id === user.id) loadPatients();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, loadPatients]);
 
   // Search users by email for invitation
   const searchInviteUser = async (email: string) => {
