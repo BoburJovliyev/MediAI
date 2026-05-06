@@ -390,14 +390,23 @@ ${history.rehabs.length > 0 ? `
             <motion.div key={p.id} layout className={`bg-card rounded-xl p-4 border transition-all cursor-pointer ${selectedPatient?.id === p.id ? "border-primary shadow-glow" : "border-border hover:border-primary/30"}`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1" onClick={() => viewHistory(p)}>
-                  <p className="font-medium text-foreground">{p.full_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{p.full_name}</p>
+                    {p.source === "invited" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-medical-green-light text-medical-green font-semibold">Qabul qilgan</span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {p.age ? `${p.age} yosh` : ""} {p.gender === "male" ? "• Erkak" : p.gender === "female" ? "• Ayol" : ""} {p.phone ? `• ${p.phone}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"><Trash2 size={16} /></button>
+                  {p.source !== "invited" && (
+                    <>
+                      <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><Edit2 size={16} /></button>
+                      <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"><Trash2 size={16} /></button>
+                    </>
+                  )}
                   <button onClick={() => viewHistory(p)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground"><ChevronRight size={16} /></button>
                 </div>
               </div>
