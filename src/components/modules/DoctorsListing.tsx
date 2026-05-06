@@ -60,21 +60,17 @@ const DoctorsListing = () => {
     const adminIds = new Set((adminRoles || []).map(r => r.user_id));
     const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
 
-    // Get patient counts for each doctor
+    // Get patient counts for each doctor (public aggregate via RPC)
     const doctorIds = filteredProfiles.map(p => p.user_id);
     if (doctorIds.length === 0) {
       setDoctors([]);
       setLoading(false);
       return;
     }
-    const { data: relations } = await supabase
-      .from("doctor_patients")
-      .select("doctor_id")
-      .in("doctor_id", doctorIds);
-
+    const { data: counts } = await supabase.rpc("get_doctor_patient_counts");
     const countMap: Record<string, number> = {};
-    (relations || []).forEach(r => {
-      countMap[r.doctor_id] = (countMap[r.doctor_id] || 0) + 1;
+    (counts || []).forEach((r: any) => {
+      countMap[r.doctor_id] = Number(r.patient_count) || 0;
     });
 
     const result: DoctorProfile[] = filteredProfiles.map(p => ({
