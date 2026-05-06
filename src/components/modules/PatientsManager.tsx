@@ -371,10 +371,6 @@ ${history.rehabs.length > 0 ? `
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80">
             <Mail size={18} /> Taklif yuborish
           </button>
-          <button onClick={() => { setShowForm(true); setShowInvite(false); setEditingId(null); setForm(emptyForm); }}
-            className="gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm shadow-glow">
-            <Plus size={18} /> Yangi bemor
-          </button>
         </div>
       </div>
 
