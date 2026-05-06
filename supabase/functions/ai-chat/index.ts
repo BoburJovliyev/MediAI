@@ -11,12 +11,13 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, userMessage } = await req.json();
+    const { messages, userMessage, attachmentUrl, attachmentType, fileName } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not set");
 
     const systemPrompt = `Sen Medi AI - professional tibbiy yordamchisan. Faqat sog'liq va tibbiyotga oid savollarga javob ber.
-O'zbek tilida, qisqa va tushunarli tilda javob ber (2-5 jumla). Markdown formatdan foydalan.
+O'zbek tilida, qisqa va tushunarli tilda javob ber (2-6 jumla). Markdown formatdan foydalan.
+Agar foydalanuvchi rasm yuborsa (X-ray, MRI, dori, jarohat va boshqalar), uni diqqat bilan tahlil qil va tibbiy nuqtai nazardan tushuntir.
 Jiddiy holatlarda albatta shifokorga murojaat qilishni tavsiya qil.
 Javob oxirida qisqa eslatma: "⚠️ Bu AI maslahati, professional tibbiy maslahat o'rnini bosmaydi."`;
 
@@ -24,6 +25,18 @@ Javob oxirida qisqa eslatma: "⚠️ Bu AI maslahati, professional tibbiy maslah
       .filter((m: any) => m.role && m.content)
       .slice(-10)
       .map((m: any) => ({ role: m.role, content: m.content }));
+
+    // Build user message: multimodal if image attached
+    let userContent: any = userMessage || "Iltimos, ushbu materialni tibbiy nuqtai nazardan tahlil qiling.";
+    const isImage = attachmentUrl && (attachmentType === "image" || /\.(png|jpe?g|webp|gif|bmp)$/i.test(attachmentUrl));
+    if (attachmentUrl && isImage) {
+      userContent = [
+        { type: "text", text: userMessage || "Ushbu rasmni tibbiy nuqtai nazardan tahlil qiling. Nima ko'rinmoqda va qanday tavsiyalar berasiz?" },
+        { type: "image_url", image_url: { url: attachmentUrl } },
+      ];
+    } else if (attachmentUrl) {
+      userContent = `${userMessage || "Quyidagi hujjatni tahlil qiling"}\n\nFayl: ${fileName || attachmentUrl}\nURL: ${attachmentUrl}`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -36,7 +49,7 @@ Javob oxirida qisqa eslatma: "⚠️ Bu AI maslahati, professional tibbiy maslah
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
-          { role: "user", content: userMessage },
+          { role: "user", content: userContent },
         ],
       }),
     });
