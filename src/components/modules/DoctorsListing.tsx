@@ -52,12 +52,9 @@ const DoctorsListing = () => {
       return;
     }
 
-    // Filter out admin users
-    const { data: adminRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin" as any);
-    const adminIds = new Set((adminRoles || []).map(r => r.user_id));
+    // Filter out admin users (Super Admin must be hidden everywhere)
+    const { data: adminRoles } = await supabase.rpc("get_admin_user_ids" as any);
+    const adminIds = new Set(((adminRoles as any[]) || []).map((r: any) => r.user_id));
     const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
 
     // Get patient counts for each doctor (public aggregate via RPC)
