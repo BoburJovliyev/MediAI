@@ -501,6 +501,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_user: { Args: { _user_id: string }; Returns: boolean }
+      log_admin_access_attempt: {
+        Args: { _details?: Json; _entity_id: string; _entity_type: string }
+        Returns: undefined
+      }
       search_users_by_email: {
         Args: { search_email: string }
         Returns: {
