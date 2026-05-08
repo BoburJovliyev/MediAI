@@ -207,12 +207,17 @@ const ChatModule = () => {
     if (chatUserIds.size === 0) { setContacts([]); return; }
 
     const uniqueIds = [...chatUserIds];
-    const { data: profiles } = await supabase
+    const { data: profilesRaw } = await supabase
       .from("profiles")
       .select("user_id, full_name, role, avatar_url")
       .in("user_id", uniqueIds);
 
-    if (!profiles) return;
+    if (!profilesRaw) return;
+
+    // Hide Super Admin accounts from all users
+    const { data: adminRoles } = await supabase.rpc("get_admin_user_ids" as any);
+    const adminIds = new Set(((adminRoles as any[]) || []).map((r: any) => r.user_id));
+    const profiles = profilesRaw.filter(p => !adminIds.has(p.user_id));
 
     // Get last messages and unread counts
     const contactsList: ChatContact[] = [];
