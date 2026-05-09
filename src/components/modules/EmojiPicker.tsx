@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Smile, Heart, Sun, Coffee, Plane, Trophy, Lightbulb, Hash } from "lucide-react";
 
 const CATEGORIES: Record<string, { icon: any; emojis: string[] }> = {
