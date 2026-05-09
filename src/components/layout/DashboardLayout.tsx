@@ -28,6 +28,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
   const { user } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const [userRole, setUserRole] = useState<string>("user");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const allNavItems: { id: Tab; labelKey: string; icon: React.ReactNode; roles: string[] }[] = [
     { id: "dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
@@ -54,6 +55,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       setUserRole("user");
     };
     checkRoles();
+    supabase.from("profiles").select("avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      setAvatarUrl((data as any)?.avatar_url ?? null);
+    });
   }, [user]);
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
@@ -92,8 +96,14 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         <div className="mt-auto pt-6 border-t border-border space-y-3">
           <div className="flex items-center justify-between">
             {userName && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <User size={16} className="text-muted-foreground" />
+              <div className="flex items-center gap-2 text-sm text-foreground min-w-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={userName} className="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <span className="truncate">{userName}</span>
               </div>
             )}
