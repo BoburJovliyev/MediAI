@@ -28,6 +28,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
   const { user } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const [userRole, setUserRole] = useState<string>("user");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const allNavItems: { id: Tab; labelKey: string; icon: React.ReactNode; roles: string[] }[] = [
     { id: "dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
