@@ -55,6 +55,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       setUserRole("user");
     };
     checkRoles();
+    supabase.from("profiles").select("avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      setAvatarUrl((data as any)?.avatar_url ?? null);
+    });
   }, [user]);
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
