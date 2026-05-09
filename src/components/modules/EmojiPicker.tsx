@@ -65,7 +65,7 @@ const EmojiPicker = ({ onSelect, onClose }: Props) => {
   }, [search, activeCat]);
 
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-[340px] h-[380px] bg-card border border-border rounded-2xl shadow-elevated z-30 flex flex-col overflow-hidden">
+    <div ref={containerRef} className="absolute bottom-full left-0 mb-2 w-[340px] h-[380px] bg-card border border-border rounded-2xl shadow-elevated z-30 flex flex-col overflow-hidden">
       {/* Search */}
       <div className="p-2 border-b border-border">
         <div className="relative">
