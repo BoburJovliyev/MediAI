@@ -834,7 +834,17 @@ const ChatModule = () => {
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-elevated z-20 min-w-[200px] py-1">
+                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[220px] py-1 overflow-hidden">
+                              {/* Quick reactions */}
+                              <div className="flex items-center justify-between px-2 py-2 border-b border-border bg-secondary/40">
+                                {["❤️","👍","👏","🔥","😂","😮","🙏"].map(em => (
+                                  <button
+                                    key={em}
+                                    onClick={() => sendQuickReaction(msg, em)}
+                                    className="text-lg hover:scale-125 transition-transform p-1"
+                                  >{em}</button>
+                                ))}
+                              </div>
                               {isMine && (
                                 <div className="px-3 py-2 text-[11px] text-muted-foreground border-b border-border flex items-center gap-1.5">
                                   {msg.is_read ? (
