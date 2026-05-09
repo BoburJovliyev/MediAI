@@ -96,8 +96,14 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         <div className="mt-auto pt-6 border-t border-border space-y-3">
           <div className="flex items-center justify-between">
             {userName && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <User size={16} className="text-muted-foreground" />
+              <div className="flex items-center gap-2 text-sm text-foreground min-w-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={userName} className="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <span className="truncate">{userName}</span>
               </div>
             )}
