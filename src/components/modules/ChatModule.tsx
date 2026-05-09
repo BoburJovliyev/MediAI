@@ -955,7 +955,7 @@ const ChatModule = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <button data-emoji-toggle onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                       <Smile size={20} />
                     </button>
                     {showEmoji && (
