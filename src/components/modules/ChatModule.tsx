@@ -629,9 +629,13 @@ const ChatModule = () => {
               ) : filteredContacts.map(c => (
                 <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
                   className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {c.full_name?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
+                  {c.avatar_url ? (
+                    <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {c.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
