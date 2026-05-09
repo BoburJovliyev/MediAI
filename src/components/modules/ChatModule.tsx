@@ -759,7 +759,16 @@ const ChatModule = () => {
                     );
                   }
                   return (
-                  <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
+                    {!isMine && (
+                      selectedContact?.avatar_url ? (
+                        <img src={selectedContact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
+                          {selectedContact?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                        </div>
+                      )
+                    )}
                     <div className={`relative max-w-[75%] group ${isMine ? "order-1" : ""}`}>
                       {msg.forwarded_from && (
                         <div className="text-[10px] px-3 py-0.5 text-muted-foreground italic">↗ Yo'naltirilgan xabar</div>
