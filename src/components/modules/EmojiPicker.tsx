@@ -44,6 +44,19 @@ interface Props {
 const EmojiPicker = ({ onSelect, onClose }: Props) => {
   const [activeCat, setActiveCat] = useState<string>("Smileys");
   const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        const t = e.target as HTMLElement;
+        if (t.closest('[data-emoji-toggle]')) return;
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return CATEGORIES[activeCat].emojis;
