@@ -76,6 +76,29 @@ const ChatModule = () => {
   const lastTypingSentRef = useRef(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [analyzingMsgId, setAnalyzingMsgId] = useState<string | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+  const [myFullName, setMyFullName] = useState<string>("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => {
+        setMyAvatarUrl((data as any)?.avatar_url || null);
+        setMyFullName((data as any)?.full_name || "");
+      });
+  }, [user]);
+
+  const sendQuickReaction = async (msg: ChatMessage, emoji: string) => {
+    if (!user || !selectedContact) return;
+    setMenuMessageId(null);
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: selectedContact.user_id,
+      message: emoji,
+      reply_to: msg.id,
+    });
+    loadContacts();
+  };
 
   const analyzeAttachmentWithAI = async (msg: ChatMessage) => {
     if (!user || !selectedContact) return;
@@ -582,9 +605,13 @@ const ChatModule = () => {
               {emailResults.map((p: any) => (
                 <button key={p.user_id} onClick={() => startChatWithUser(p)}
                   className="w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {p.full_name?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {p.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Nomsiz"}</p>
                     <p className="text-xs text-muted-foreground truncate">{p.email}</p>
@@ -606,9 +633,13 @@ const ChatModule = () => {
               ) : filteredContacts.map(c => (
                 <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
                   className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {c.full_name?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
+                  {c.avatar_url ? (
+                    <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {c.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
@@ -640,9 +671,13 @@ const ChatModule = () => {
             {/* Header */}
             <div className="p-4 border-b border-border flex items-center gap-3">
               <button onClick={() => setShowMobileChat(false)} className="md:hidden text-muted-foreground"><ArrowLeft size={20} /></button>
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                {selectedContact.full_name?.charAt(0)?.toUpperCase()}
-              </div>
+              {selectedContact.avatar_url ? (
+                <img src={selectedContact.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                  {selectedContact.full_name?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
               <div>
                 <p className="font-semibold text-foreground text-sm">{selectedContact.full_name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{selectedContact.role || "user"}</p>
@@ -724,7 +759,16 @@ const ChatModule = () => {
                     );
                   }
                   return (
-                  <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
+                    {!isMine && (
+                      selectedContact?.avatar_url ? (
+                        <img src={selectedContact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
+                          {selectedContact?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                        </div>
+                      )
+                    )}
                     <div className={`relative max-w-[75%] group ${isMine ? "order-1" : ""}`}>
                       {msg.forwarded_from && (
                         <div className="text-[10px] px-3 py-0.5 text-muted-foreground italic">↗ Yo'naltirilgan xabar</div>
@@ -790,7 +834,17 @@ const ChatModule = () => {
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-elevated z-20 min-w-[200px] py-1">
+                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[220px] py-1 overflow-hidden">
+                              {/* Quick reactions */}
+                              <div className="flex items-center justify-between px-2 py-2 border-b border-border bg-secondary/40">
+                                {["❤️","👍","👏","🔥","😂","😮","🙏"].map(em => (
+                                  <button
+                                    key={em}
+                                    onClick={() => sendQuickReaction(msg, em)}
+                                    className="text-lg hover:scale-125 transition-transform p-1"
+                                  >{em}</button>
+                                ))}
+                              </div>
                               {isMine && (
                                 <div className="px-3 py-2 text-[11px] text-muted-foreground border-b border-border flex items-center gap-1.5">
                                   {msg.is_read ? (
@@ -854,6 +908,15 @@ const ChatModule = () => {
                         </div>
                       )}
                     </div>
+                    {isMine && (
+                      myAvatarUrl ? (
+                        <img src={myAvatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 order-2" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[11px] font-bold shrink-0 order-2">
+                          {(myFullName || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )
+                    )}
                   </div>
                 ); // close regular message return
                 })(); // invoke IIFE
@@ -902,7 +965,7 @@ const ChatModule = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <button onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <button data-emoji-toggle onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                       <Smile size={20} />
                     </button>
                     {showEmoji && (

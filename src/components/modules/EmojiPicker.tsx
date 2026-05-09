@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Smile, Heart, Sun, Coffee, Plane, Trophy, Lightbulb, Hash } from "lucide-react";
 
 const CATEGORIES: Record<string, { icon: any; emojis: string[] }> = {
@@ -44,6 +44,19 @@ interface Props {
 const EmojiPicker = ({ onSelect, onClose }: Props) => {
   const [activeCat, setActiveCat] = useState<string>("Smileys");
   const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        const t = e.target as HTMLElement;
+        if (t.closest('[data-emoji-toggle]')) return;
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return CATEGORIES[activeCat].emojis;
@@ -52,7 +65,7 @@ const EmojiPicker = ({ onSelect, onClose }: Props) => {
   }, [search, activeCat]);
 
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-[340px] h-[380px] bg-card border border-border rounded-2xl shadow-elevated z-30 flex flex-col overflow-hidden">
+    <div ref={containerRef} className="absolute bottom-full left-0 mb-2 w-[340px] h-[380px] bg-card border border-border rounded-2xl shadow-elevated z-30 flex flex-col overflow-hidden">
       {/* Search */}
       <div className="p-2 border-b border-border">
         <div className="relative">
