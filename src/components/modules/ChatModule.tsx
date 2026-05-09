@@ -76,6 +76,29 @@ const ChatModule = () => {
   const lastTypingSentRef = useRef(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [analyzingMsgId, setAnalyzingMsgId] = useState<string | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+  const [myFullName, setMyFullName] = useState<string>("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => {
+        setMyAvatarUrl((data as any)?.avatar_url || null);
+        setMyFullName((data as any)?.full_name || "");
+      });
+  }, [user]);
+
+  const sendQuickReaction = async (msg: ChatMessage, emoji: string) => {
+    if (!user || !selectedContact) return;
+    setMenuMessageId(null);
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: selectedContact.user_id,
+      message: emoji,
+      reply_to: msg.id,
+    });
+    loadContacts();
+  };
 
   const analyzeAttachmentWithAI = async (msg: ChatMessage) => {
     if (!user || !selectedContact) return;
