@@ -605,9 +605,13 @@ const ChatModule = () => {
               {emailResults.map((p: any) => (
                 <button key={p.user_id} onClick={() => startChatWithUser(p)}
                   className="w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {p.full_name?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {p.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Nomsiz"}</p>
                     <p className="text-xs text-muted-foreground truncate">{p.email}</p>
