@@ -671,9 +671,13 @@ const ChatModule = () => {
             {/* Header */}
             <div className="p-4 border-b border-border flex items-center gap-3">
               <button onClick={() => setShowMobileChat(false)} className="md:hidden text-muted-foreground"><ArrowLeft size={20} /></button>
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                {selectedContact.full_name?.charAt(0)?.toUpperCase()}
-              </div>
+              {selectedContact.avatar_url ? (
+                <img src={selectedContact.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                  {selectedContact.full_name?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
               <div>
                 <p className="font-semibold text-foreground text-sm">{selectedContact.full_name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{selectedContact.role || "user"}</p>
