@@ -348,6 +348,8 @@ const ChatModule = () => {
   // Load messages for selected contact
   useEffect(() => {
     if (!user || !selectedContact) return;
+    setShowEmoji(false);
+    setMenuMessageId(null);
     loadMessages();
 
     // Mark as read
@@ -381,6 +383,25 @@ const ChatModule = () => {
         } else if (payload.eventType === "UPDATE") {
           setMessages(prev => prev.map(m => m.id === (payload.new as ChatMessage).id ? payload.new as ChatMessage : m));
         }
+      })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "message_reactions",
+      }, (payload: any) => {
+        const row = (payload.new || payload.old) as any;
+        if (!row?.message_id) return;
+        setReactions(prev => {
+          const list = prev[row.message_id] || [];
+          if (payload.eventType === "INSERT") {
+            if (list.some(r => r.user_id === row.user_id && r.emoji === row.emoji)) return prev;
+            return { ...prev, [row.message_id]: [...list, { emoji: row.emoji, user_id: row.user_id }] };
+          }
+          if (payload.eventType === "DELETE") {
+            return { ...prev, [row.message_id]: list.filter(r => !(r.user_id === row.user_id && r.emoji === row.emoji)) };
+          }
+          return prev;
+        });
       })
       .subscribe();
 
