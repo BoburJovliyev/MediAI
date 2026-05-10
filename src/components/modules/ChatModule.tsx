@@ -508,11 +508,11 @@ const ChatModule = () => {
     const msgData: any = { sender_id: user.id, receiver_id: selectedContact.user_id };
     if (type === "image") {
       msgData.image_url = urlData.publicUrl;
-      msgData.message = "📷 Rasm";
+      msgData.message = null;
     } else {
       msgData.file_url = urlData.publicUrl;
       msgData.file_name = file.name;
-      msgData.message = `📎 ${file.name}`;
+      msgData.message = null;
     }
     if (replyTo) msgData.reply_to = replyTo.id;
 
