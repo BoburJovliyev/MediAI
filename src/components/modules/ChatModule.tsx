@@ -78,6 +78,7 @@ const ChatModule = () => {
   const [analyzingMsgId, setAnalyzingMsgId] = useState<string | null>(null);
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   const [myFullName, setMyFullName] = useState<string>("");
+  const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
 
   useEffect(() => {
     if (!user) return;
