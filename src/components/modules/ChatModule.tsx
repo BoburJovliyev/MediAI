@@ -78,6 +78,7 @@ const ChatModule = () => {
   const [analyzingMsgId, setAnalyzingMsgId] = useState<string | null>(null);
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   const [myFullName, setMyFullName] = useState<string>("");
+  const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -88,16 +89,46 @@ const ChatModule = () => {
       });
   }, [user]);
 
-  const sendQuickReaction = async (msg: ChatMessage, emoji: string) => {
-    if (!user || !selectedContact) return;
+  const toggleReaction = async (msg: ChatMessage, emoji: string) => {
+    if (!user) return;
     setMenuMessageId(null);
-    await supabase.from("chat_messages").insert({
-      sender_id: user.id,
-      receiver_id: selectedContact.user_id,
-      message: emoji,
-      reply_to: msg.id,
+    const existing = (reactions[msg.id] || []).find(r => r.user_id === user.id && r.emoji === emoji);
+    if (existing) {
+      // optimistic remove
+      setReactions(prev => ({
+        ...prev,
+        [msg.id]: (prev[msg.id] || []).filter(r => !(r.user_id === user.id && r.emoji === emoji)),
+      }));
+      await (supabase.from("message_reactions" as any) as any)
+        .delete()
+        .eq("message_id", msg.id)
+        .eq("user_id", user.id)
+        .eq("emoji", emoji);
+    } else {
+      setReactions(prev => ({
+        ...prev,
+        [msg.id]: [...(prev[msg.id] || []), { emoji, user_id: user.id }],
+      }));
+      await (supabase.from("message_reactions" as any) as any).insert({
+        message_id: msg.id,
+        user_id: user.id,
+        emoji,
+      });
+    }
+  };
+
+  const sendQuickReaction = (msg: ChatMessage, emoji: string) => toggleReaction(msg, emoji);
+
+  const loadReactions = async (msgIds: string[]) => {
+    if (msgIds.length === 0) { setReactions({}); return; }
+    const { data } = await (supabase.from("message_reactions" as any) as any)
+      .select("message_id, emoji, user_id")
+      .in("message_id", msgIds);
+    const map: Record<string, { emoji: string; user_id: string }[]> = {};
+    (data || []).forEach((r: any) => {
+      (map[r.message_id] ||= []).push({ emoji: r.emoji, user_id: r.user_id });
     });
-    loadContacts();
+    setReactions(map);
   };
 
   const analyzeAttachmentWithAI = async (msg: ChatMessage) => {
@@ -317,6 +348,8 @@ const ChatModule = () => {
   // Load messages for selected contact
   useEffect(() => {
     if (!user || !selectedContact) return;
+    setShowEmoji(false);
+    setMenuMessageId(null);
     loadMessages();
 
     // Mark as read
@@ -350,6 +383,25 @@ const ChatModule = () => {
         } else if (payload.eventType === "UPDATE") {
           setMessages(prev => prev.map(m => m.id === (payload.new as ChatMessage).id ? payload.new as ChatMessage : m));
         }
+      })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "message_reactions",
+      }, (payload: any) => {
+        const row = (payload.new || payload.old) as any;
+        if (!row?.message_id) return;
+        setReactions(prev => {
+          const list = prev[row.message_id] || [];
+          if (payload.eventType === "INSERT") {
+            if (list.some(r => r.user_id === row.user_id && r.emoji === row.emoji)) return prev;
+            return { ...prev, [row.message_id]: [...list, { emoji: row.emoji, user_id: row.user_id }] };
+          }
+          if (payload.eventType === "DELETE") {
+            return { ...prev, [row.message_id]: list.filter(r => !(r.user_id === row.user_id && r.emoji === row.emoji)) };
+          }
+          return prev;
+        });
       })
       .subscribe();
 
@@ -389,7 +441,9 @@ const ChatModule = () => {
       .select("*")
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.user_id}),and(sender_id.eq.${selectedContact.user_id},receiver_id.eq.${user.id})`)
       .order("created_at", { ascending: true });
-    setMessages(data || []);
+    const msgs = data || [];
+    setMessages(msgs);
+    loadReactions(msgs.map((m: any) => m.id));
   };
 
   const sendMsg = async () => {
@@ -826,10 +880,36 @@ const ChatModule = () => {
                             : <Check size={12} className="opacity-50" />)}
                         </div>
                       </div>
+                      {/* Reactions display */}
+                      {(reactions[msg.id] && reactions[msg.id].length > 0) && (
+                        <div className={`flex flex-wrap gap-1 mt-1 ${isMine ? "justify-end" : "justify-start"}`}>
+                          {Object.entries(
+                            reactions[msg.id].reduce<Record<string, { count: number; mine: boolean }>>((acc, r) => {
+                              const cur = acc[r.emoji] || { count: 0, mine: false };
+                              acc[r.emoji] = { count: cur.count + 1, mine: cur.mine || r.user_id === user?.id };
+                              return acc;
+                            }, {})
+                          ).map(([emoji, info]) => (
+                            <button
+                              key={emoji}
+                              onClick={() => toggleReaction(msg, emoji)}
+                              className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 border transition-colors ${
+                                info.mine
+                                  ? "bg-primary/15 border-primary/40 text-primary"
+                                  : "bg-secondary border-border text-foreground hover:bg-secondary/70"
+                              }`}
+                              title={info.mine ? "Reaksiyani olib tashlash" : "Reaksiya qo'shish"}
+                            >
+                              <span>{emoji}</span>
+                              <span className="font-semibold">{info.count}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {/* Context menu */}
                       {!msg.is_deleted && (
                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setMenuMessageId(menuMessageId === msg.id ? null : msg.id)}
+                          <button onClick={() => { setShowEmoji(false); setMenuMessageId(menuMessageId === msg.id ? null : msg.id); }}
                             className="p-1 rounded-full bg-card/80 text-muted-foreground hover:text-foreground">
                             <MoreVertical size={14} />
                           </button>
@@ -965,7 +1045,7 @@ const ChatModule = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <button data-emoji-toggle onClick={() => setShowEmoji(!showEmoji)} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <button data-emoji-toggle onClick={() => { setMenuMessageId(null); setShowEmoji(!showEmoji); }} className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                       <Smile size={20} />
                     </button>
                     {showEmoji && (
