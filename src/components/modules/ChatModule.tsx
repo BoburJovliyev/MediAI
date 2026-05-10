@@ -89,16 +89,46 @@ const ChatModule = () => {
       });
   }, [user]);
 
-  const sendQuickReaction = async (msg: ChatMessage, emoji: string) => {
-    if (!user || !selectedContact) return;
+  const toggleReaction = async (msg: ChatMessage, emoji: string) => {
+    if (!user) return;
     setMenuMessageId(null);
-    await supabase.from("chat_messages").insert({
-      sender_id: user.id,
-      receiver_id: selectedContact.user_id,
-      message: emoji,
-      reply_to: msg.id,
+    const existing = (reactions[msg.id] || []).find(r => r.user_id === user.id && r.emoji === emoji);
+    if (existing) {
+      // optimistic remove
+      setReactions(prev => ({
+        ...prev,
+        [msg.id]: (prev[msg.id] || []).filter(r => !(r.user_id === user.id && r.emoji === emoji)),
+      }));
+      await (supabase.from("message_reactions" as any) as any)
+        .delete()
+        .eq("message_id", msg.id)
+        .eq("user_id", user.id)
+        .eq("emoji", emoji);
+    } else {
+      setReactions(prev => ({
+        ...prev,
+        [msg.id]: [...(prev[msg.id] || []), { emoji, user_id: user.id }],
+      }));
+      await (supabase.from("message_reactions" as any) as any).insert({
+        message_id: msg.id,
+        user_id: user.id,
+        emoji,
+      });
+    }
+  };
+
+  const sendQuickReaction = (msg: ChatMessage, emoji: string) => toggleReaction(msg, emoji);
+
+  const loadReactions = async (msgIds: string[]) => {
+    if (msgIds.length === 0) { setReactions({}); return; }
+    const { data } = await (supabase.from("message_reactions" as any) as any)
+      .select("message_id, emoji, user_id")
+      .in("message_id", msgIds);
+    const map: Record<string, { emoji: string; user_id: string }[]> = {};
+    (data || []).forEach((r: any) => {
+      (map[r.message_id] ||= []).push({ emoji: r.emoji, user_id: r.user_id });
     });
-    loadContacts();
+    setReactions(map);
   };
 
   const analyzeAttachmentWithAI = async (msg: ChatMessage) => {
