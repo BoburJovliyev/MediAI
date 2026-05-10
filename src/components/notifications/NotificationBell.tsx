@@ -127,7 +127,7 @@ const NotificationBell = () => {
                     return (
                       <div
                         key={n.id}
-                        onClick={() => !n.is_read && markRead(n.id)}
+                        onClick={() => handleClick(n)}
                         className={`p-3 flex items-start gap-3 cursor-pointer hover:bg-secondary/50 transition-colors ${
                           !n.is_read ? "bg-primary/5" : ""
                         }`}
