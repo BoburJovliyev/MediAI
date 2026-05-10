@@ -508,11 +508,11 @@ const ChatModule = () => {
     const msgData: any = { sender_id: user.id, receiver_id: selectedContact.user_id };
     if (type === "image") {
       msgData.image_url = urlData.publicUrl;
-      msgData.message = "📷 Rasm";
+      msgData.message = null;
     } else {
       msgData.file_url = urlData.publicUrl;
       msgData.file_name = file.name;
-      msgData.message = `📎 ${file.name}`;
+      msgData.message = null;
     }
     if (replyTo) msgData.reply_to = replyTo.id;
 
@@ -871,7 +871,9 @@ const ChatModule = () => {
                             </a>
                           </div>
                         ) : null}
-                        <p>{msg.message}</p>
+                        {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
+                          <p>{msg.message}</p>
+                        )}
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
                           {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
@@ -908,13 +910,13 @@ const ChatModule = () => {
                       )}
                       {/* Context menu */}
                       {!msg.is_deleted && (
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className={`absolute top-1 ${isMine ? "left-1" : "right-1"} opacity-0 group-hover:opacity-100 transition-opacity`}>
                           <button onClick={() => { setShowEmoji(false); setMenuMessageId(menuMessageId === msg.id ? null : msg.id); }}
                             className="p-1 rounded-full bg-card/80 text-muted-foreground hover:text-foreground">
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[220px] py-1 overflow-hidden">
+                            <div className={`absolute ${isMine ? "left-0" : "right-0"} top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[260px] py-1 overflow-hidden`}>
                               {/* Quick reactions */}
                               <div className="flex items-center justify-between px-2 py-2 border-b border-border bg-secondary/40">
                                 {["❤️","👍","👏","🔥","😂","😮","🙏"].map(em => (
