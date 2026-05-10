@@ -44,6 +44,16 @@ const AppContent = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const handler = (e: any) => {
+      const tab = e?.detail?.tab as Tab | undefined;
+      const valid: Tab[] = ["dashboard","radiologist","advisor","rehab","patients","admin","chat","aichat","profile","doctors"];
+      if (tab && valid.includes(tab)) setActiveTab(tab);
+    };
+    window.addEventListener("app:navigate", handler);
+    return () => window.removeEventListener("app:navigate", handler);
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
