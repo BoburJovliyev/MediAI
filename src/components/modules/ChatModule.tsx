@@ -871,7 +871,9 @@ const ChatModule = () => {
                             </a>
                           </div>
                         ) : null}
-                        <p>{msg.message}</p>
+                        {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
+                          <p>{msg.message}</p>
+                        )}
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
                           {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
