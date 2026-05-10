@@ -63,6 +63,14 @@ const NotificationBell = () => {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
   };
 
+  const handleClick = async (n: Notification) => {
+    if (!n.is_read) await markRead(n.id);
+    if (n.link) {
+      window.dispatchEvent(new CustomEvent("app:navigate", { detail: { tab: n.link } }));
+    }
+    setOpen(false);
+  };
+
   const markAllRead = async () => {
     if (!user) return;
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
