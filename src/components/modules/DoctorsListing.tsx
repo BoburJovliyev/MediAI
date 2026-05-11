@@ -167,7 +167,11 @@ const DoctorsListing = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card rounded-2xl p-5 border border-border shadow-card hover:shadow-lg transition-shadow"
+              onClick={() => {
+                localStorage.setItem("open_chat_with", doc.user_id);
+                window.dispatchEvent(new CustomEvent("app:navigate", { detail: { tab: "chat" } }));
+              }}
+              className="bg-card rounded-2xl p-5 border border-border shadow-card hover:shadow-lg hover:border-primary/40 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3 mb-3">
                 {doc.avatar_url ? (
