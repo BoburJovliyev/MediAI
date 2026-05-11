@@ -1178,7 +1178,7 @@ const ChatModule = () => {
         />
       </div>
     )}
-    </>
+    </div>
   );
 };
 
