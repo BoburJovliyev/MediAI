@@ -635,7 +635,8 @@ const ChatModule = () => {
     }
   };
 
-  const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const baseList = activeTab === "contacts" ? contacts.filter(c => c.lastMessageTime) : contacts;
+  const filteredContacts = baseList.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
   const totalUnread = contacts.reduce((s, c) => s + (c.unreadCount || 0), 0);
   const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
 
