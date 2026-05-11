@@ -232,6 +232,30 @@ const ChatModule = () => {
     loadContacts();
   }, [user]);
 
+  // Open chat with a specific user (e.g. from doctors listing)
+  useEffect(() => {
+    if (!user) return;
+    const targetId = localStorage.getItem("open_chat_with");
+    if (!targetId) return;
+    localStorage.removeItem("open_chat_with");
+    (async () => {
+      const { data: p } = await supabase.from("profiles")
+        .select("user_id, full_name, role, avatar_url")
+        .eq("user_id", targetId).maybeSingle();
+      if (!p) return;
+      const contact: ChatContact = {
+        user_id: p.user_id,
+        full_name: p.full_name || "Nomsiz",
+        role: p.role,
+        avatar_url: p.avatar_url,
+      };
+      setContacts(prev => prev.find(c => c.user_id === contact.user_id) ? prev : [contact, ...prev]);
+      setActiveTab("all");
+      setSelectedContact(contact);
+      setShowMobileChat(true);
+    })();
+  }, [user]);
+
   const loadContacts = async () => {
     if (!user) return;
     
