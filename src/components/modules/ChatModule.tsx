@@ -636,10 +636,43 @@ const ChatModule = () => {
   };
 
   const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const totalUnread = contacts.reduce((s, c) => s + (c.unreadCount || 0), 0);
+  const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
+
+  const TabBar = (
+    <div className="flex gap-2 mb-3">
+      {([
+        { key: "all", label: "All chats", icon: MessageCircle, badge: totalUnread },
+        { key: "contacts", label: "Contacts", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
+        { key: "groups", label: "Groups", icon: Megaphone, badge: 0 },
+      ] as const).map(t => (
+        <button key={t.key} onClick={() => setActiveTab(t.key)}
+          className={`flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-xl text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+          <div className="relative">
+            <t.icon size={18} />
+            {t.badge > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{t.badge}</span>
+            )}
+          </div>
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  if (activeTab === "groups") {
+    return (
+      <div className="space-y-3">
+        {TabBar}
+        <GroupsView />
+      </div>
+    );
+  }
 
   return (
-    <>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-8rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
+    <div className="space-y-3">
+    {TabBar}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-12rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
       {/* Contacts sidebar */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-border">
