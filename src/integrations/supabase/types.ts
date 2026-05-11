@@ -199,6 +199,39 @@ export type Database = {
           },
         ]
       }
+      doctor_groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          doctor_id: string
+          id: string
+          name: string
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          doctor_id: string
+          id?: string
+          name: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          doctor_id?: string
+          id?: string
+          name?: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_patients: {
         Row: {
           created_at: string
@@ -219,6 +252,82 @@ export type Database = {
           patient_id?: string
         }
         Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_messages: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          group_id: string
+          id: string
+          image_url: string | null
+          is_deleted: boolean
+          message: string | null
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          group_id: string
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          message?: string | null
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          group_id?: string
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          message?: string | null
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_reactions: {
         Row: {
@@ -526,6 +635,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_user: { Args: { _user_id: string }; Returns: boolean }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       log_admin_access_attempt: {
         Args: { _details?: Json; _entity_id: string; _entity_type: string }
         Returns: undefined

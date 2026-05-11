@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles, Users, Megaphone
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import GroupsView from "./GroupsView";
 
 interface ChatContact {
   user_id: string;
@@ -79,7 +80,7 @@ const ChatModule = () => {
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   const [myFullName, setMyFullName] = useState<string>("");
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
-
+  const [activeTab, setActiveTab] = useState<"all" | "contacts" | "groups">("all");
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
@@ -229,6 +230,30 @@ const ChatModule = () => {
   useEffect(() => {
     if (!user) return;
     loadContacts();
+  }, [user]);
+
+  // Open chat with a specific user (e.g. from doctors listing)
+  useEffect(() => {
+    if (!user) return;
+    const targetId = localStorage.getItem("open_chat_with");
+    if (!targetId) return;
+    localStorage.removeItem("open_chat_with");
+    (async () => {
+      const { data: p } = await supabase.from("profiles")
+        .select("user_id, full_name, role, avatar_url")
+        .eq("user_id", targetId).maybeSingle();
+      if (!p) return;
+      const contact: ChatContact = {
+        user_id: p.user_id,
+        full_name: p.full_name || "Nomsiz",
+        role: p.role,
+        avatar_url: p.avatar_url,
+      };
+      setContacts(prev => prev.find(c => c.user_id === contact.user_id) ? prev : [contact, ...prev]);
+      setActiveTab("all");
+      setSelectedContact(contact);
+      setShowMobileChat(true);
+    })();
   }, [user]);
 
   const loadContacts = async () => {
@@ -610,11 +635,45 @@ const ChatModule = () => {
     }
   };
 
-  const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const baseList = activeTab === "contacts" ? contacts.filter(c => c.lastMessageTime) : contacts;
+  const filteredContacts = baseList.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const totalUnread = contacts.reduce((s, c) => s + (c.unreadCount || 0), 0);
+  const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
+
+  const TabBar = (
+    <div className="flex gap-2 mb-3">
+      {([
+        { key: "all", label: "All chats", icon: MessageCircle, badge: totalUnread },
+        { key: "contacts", label: "Contacts", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
+        { key: "groups", label: "Groups", icon: Megaphone, badge: 0 },
+      ] as const).map(t => (
+        <button key={t.key} onClick={() => setActiveTab(t.key)}
+          className={`flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-xl text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+          <div className="relative">
+            <t.icon size={18} />
+            {t.badge > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{t.badge}</span>
+            )}
+          </div>
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  if (activeTab === "groups") {
+    return (
+      <div className="space-y-3">
+        {TabBar}
+        <GroupsView />
+      </div>
+    );
+  }
 
   return (
-    <>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-8rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
+    <div className="space-y-3">
+    {TabBar}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-12rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
       {/* Contacts sidebar */}
       <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-border">
@@ -1120,7 +1179,7 @@ const ChatModule = () => {
         />
       </div>
     )}
-    </>
+    </div>
   );
 };
 
