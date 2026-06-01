@@ -41,6 +41,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "nav.rehab": "Tele-Rehab",
     "nav.chat": "Chat",
     "nav.aichat": "AI Chat",
+    "nav.appointments": "Qabullar",
+    "nav.prescriptions": "Retseptlar",
     "nav.patients": "Bemorlar",
     "nav.doctors": "Shifokorlar",
     "nav.admin": "Admin Panel",
