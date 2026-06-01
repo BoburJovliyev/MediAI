@@ -1,63 +1,69 @@
-## Maqsad
-Telegram-kanal uslubidagi shifokor guruhlarini yaratish, chat moduli tablarini qayta tartiblash va shifokorlar ro'yxatidan to'g'ridan-to'g'ri chatga o'tish.
+# Medi AI — Mukammallashtirish rejasi
 
-## 1. Database (migration)
+Siz tanlagan to'rt yo'nalishni bosqichlarga ajratdim. Har bir bosqich mustaqil — ketma-ket yoki kerakligini tanlab amalga oshirsa bo'ladi.
 
-Yangi jadvallar:
-- **`doctor_groups`** — `id`, `doctor_id` (unique), `name`, `description`, `avatar_url`, `specialty`, `created_at`
-  - Har bir shifokor uchun bitta guruh (auto-yaratiladi trigger orqali profil shifokor bo'lganda yoki birinchi bemor qo'shilganda).
-  - Nom: `"Dr. {full_name} — {specialty}"` (rasmdagi formatga mos).
-- **`group_members`** — `id`, `group_id`, `user_id` (patient), `joined_at`, unique(group_id, user_id)
-  - Trigger: `doctor_patients` ga insert bo'lganda → `group_members` ga avtomatik qo'shadi.
-- **`group_messages`** — `id`, `group_id`, `sender_id` (faqat doctor), `message`, `image_url`, `file_url`, `file_name`, `created_at`, `is_deleted`
+---
 
-RLS policies:
-- `doctor_groups` SELECT: faqat group a'zolari (member yoki doctor egasi yoki admin) ko'radi → boshqa foydalanuvchilar topa olmaydi va kira olmaydi.
-- `group_members` SELECT: faqat o'sha guruh a'zolari va doctor egasi.
-- `group_messages` SELECT: faqat group_members yoki doctor.
-- `group_messages` INSERT: faqat `auth.uid() = group.doctor_id` (Telegram-kanal uslubi — bemorlar yoza olmaydi).
-- `group_messages` UPDATE/DELETE: faqat doctor.
-- Super admin barcha guruhlarni ko'radi (nazorat).
+## 1-bosqich — Shifokor/bemor oqimi (eng yuqori qiymat)
 
-Triggerlar:
-- `handle_new_doctor_patient`: `doctor_patients` ga insert bo'lganda guruhni topadi/yaratadi va patientni `group_members` ga qo'shadi.
-- `ensure_doctor_group_on_profile`: shifokor profili yaratilganda/yangilanganda guruh yaratadi.
+Hozir platformada chat va AI bor, lekin haqiqiy "klinika" oqimi yo'q. Eng katta foydani shu beradi.
 
-Realtime: `group_messages` jadvali uchun `ALTER PUBLICATION supabase_realtime ADD TABLE`, `REPLICA IDENTITY FULL`.
+- **Qabulga yozilish (Appointments):** bemor shifokorning bo'sh vaqtidan slot tanlaydi; shifokor tasdiqlaydi/bekor qiladi. Kalendar ko'rinishi.
+- **Retsept (Prescription):** shifokor dori nomi, doza, davomiylik bilan retsept yozadi; bemor profilida ko'rinadi va PDF qilib yuklab oladi.
+- **Eslatmalar:** qabul vaqti va dori ichish vaqti uchun avtomatik bildirishnomalar (mavjud notifications tizimi orqali).
+- **Video konsultatsiya:** chat ichidan video qo'ng'iroq tugmasi (WebRTC yoki tashqi xizmat).
 
-## 2. ChatModule UI qayta dizayni
+```text
+Bemor ──tanlaydi──> Bo'sh slot ──> Shifokor tasdiqlaydi ──> Eslatma + Chat/Video
+                                          └──> Retsept yoziladi ──> PDF
+```
 
-Tablar (rasm misolidagi kabi):
-1. **All chats** — barcha shaxsiy chatlar + guruh chatlari aralash (oxirgi xabar bo'yicha tartiblangan), o'qilmagan badgesi.
-2. **Contacts** — yozishgan shaxsiy foydalanuvchilar va shifokorlar.
-3. **Groups** — foydalanuvchi a'zo bo'lgan barcha doctor guruhlari (avatar + doctor ismi + specialty).
+## 2-bosqich — Chat va guruhlar
 
-Har bir tab ustida o'qilmagan xabarlar soni `Badge` orqali ko'rinadi.
+Mavjud Telegram uslubidagi chatni boyitamiz:
 
-Guruh ochilganda:
-- Doctor uchun: yozish input ko'rinadi, xabar yuborishi mumkin.
-- Bemor uchun: input o'rniga "Faqat shifokor xabar yozishi mumkin" matni (Telegram channel kabi).
-- Header: guruh avatar + nomi + a'zolar soni.
+- **Xabarlarni qidirish** (chat ichida matn bo'yicha).
+- **Typing indikatori** ("yozmoqda...") realtime orqali.
+- **Pinned (qadalgan) xabarlar** — shifokor muhim e'lonni tepaga qadaydi.
+- **Media albom** — suhbatdagi barcha rasm/fayllar bitta joyda.
+- **Ovozli/video qo'ng'iroq** tugmasi (1-bosqich bilan birlashtirilishi mumkin).
+- **Guruh e'lonlari** uchun reaksiya statistikasi va o'qilganlar soni.
 
-## 3. DoctorsListing'dan chatga o'tish
+## 3-bosqich — AI imkoniyatlari
 
-`DoctorsListing.tsx` — har bir shifokor kartasi `cursor-pointer` bo'ladi. Bosilganda:
-- `localStorage.setItem("open_chat_with", doctor.user_id)` 
-- `window.dispatchEvent(new CustomEvent("app:navigate", { detail: { tab: "chat" } }))`
+- **Ovozli AI yordamchi:** mikrofon orqali savol berish (speech-to-text) va javobni o'qib berish (text-to-speech).
+- **Streaming javoblar:** AI Assistant javobni token-token oqim bilan yozadi (hozir bir martada chiqadi).
+- **Tahlillarni taqqoslash:** bemorning oldingi va yangi rentgen/MRT natijalarini AI yonma-yon solishtirib o'zgarishni izohlaydi.
+- **Ko'p tilli AI:** javoblar foydalanuvchi tanlagan tilda (UZ/RU/EN) — i18n bilan bog'lanadi.
+- **Har bir AI javobidan keyin majburiy tibbiy ogohlantirish** (mavjud qoidaga muvofiq) saqlanadi.
 
-`ChatModule.tsx` mount bo'lganda `open_chat_with` ni o'qib, o'sha shifokor bilan chatni ochadi (Contacts tabini tanlab, profile ochiladi).
+## 4-bosqich — Hisobot va analitika
 
-## 4. Realtime va sinxronizatsiya
+- **Bemor progress grafiklari:** reab. seanslar, tahlil natijalari vaqt bo'yicha (Recharts).
+- **PDF/Excel eksport:** bemor kartasi, tashxislar, retseptlar, reab. tarixini hujjat qilib yuklash.
+- **Shifokor dashboard:** bemorlar soni, faol qabullar, oxirgi tahlillar bo'yicha yig'ma ko'rsatkichlar.
+- **Admin monitoring kengaytmasi:** faollik jurnali (activity_log) bo'yicha grafiklar va filtrlash.
 
-- `group_messages` realtime kanali — yangi xabar kelganda barcha a'zolar darhol ko'radi.
-- O'qilmagan xabarlar uchun `group_message_reads` keyinchalik (hozircha local state — bu MVP).
+---
 
-## Texnik tafsilotlar
+## Texnik tafsilotlar (ixtiyoriy o'qish)
 
-**Files yangilanadi:**
-- `supabase/migrations/<new>.sql` — jadvallar, RLS, triggerlar
-- `src/components/modules/ChatModule.tsx` — uch tab tizimi, group view
-- `src/components/modules/DoctorsListing.tsx` — kartaga onClick
-- `src/integrations/supabase/types.ts` — auto
+**Yangi jadvallar (migration kerak, to'liq RLS + GRANT bilan):**
+- `appointments` (doctor_id, patient_id, scheduled_at, status, notes) — bemor o'zinikini, shifokor o'zinikini ko'radi.
+- `doctor_availability` (doctor_id, weekday, start_time, end_time) — shifokor boshqaradi, bemorlar o'qiydi.
+- `prescriptions` (doctor_id, patient_id, medication, dosage, duration, notes) — tegishli taraflar ko'radi.
+- `pinned_messages` yoki `chat_messages`ga `is_pinned` ustuni.
 
-**Cheklov tasdiqlash:** Bemor doctorga ulanmagan bo'lsa → guruhni RLS qaytarmaydi (ko'rmaydi, topa olmaydi). Faqat `doctor_patients` orqali ulanish bor bo'lsa trigger uni `group_members` ga qo'shadi.
+**Realtime:** typing indikatori uchun Supabase broadcast/presence; appointments va prescriptions uchun postgres_changes.
+
+**AI:** mavjud `ai-chat` edge funksiyasini streaming'ga o'tkazish; ovoz uchun yangi `voice-transcribe` edge funksiyasi (Lovable AI orqali). Tahlil taqqoslash uchun `analyze-scan`ni kengaytirish.
+
+**Eksport:** mavjud PDF generatsiya patternidan (Patient Reporting) foydalanib retsept va progress hisobotlarini qo'shamiz.
+
+---
+
+## Tavsiya etilgan tartib
+
+1-bosqich (qabul + retsept) → eng katta amaliy qiymat. Keyin 4-bosqich (hisobot/eksport) bilan to'ldiramiz, so'ng 3-bosqich (AI streaming + ovoz) va 2-bosqich (chat boyitish).
+
+Qaysi bosqichdan boshlaymiz? "Implement plan" bosing yoki bitta bosqichni tanlang — men shu bo'yicha yarataman.
