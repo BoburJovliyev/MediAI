@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          patient_id: string
+          reason: string | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          patient_id: string
+          reason?: string | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          reason?: string | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -198,6 +237,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      doctor_availability: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          end_time: string
+          id: string
+          slot_minutes: number
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          end_time: string
+          id?: string
+          slot_minutes?: number
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          end_time?: string
+          id?: string
+          slot_minutes?: number
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: []
       }
       doctor_groups: {
         Row: {
@@ -449,6 +518,45 @@ export type Database = {
         }
         Relationships: []
       }
+      prescriptions: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          doctor_id: string
+          dosage: string | null
+          duration: string | null
+          id: string
+          instructions: string | null
+          medication: string
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          doctor_id: string
+          dosage?: string | null
+          duration?: string | null
+          id?: string
+          instructions?: string | null
+          medication: string
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          doctor_id?: string
+          dosage?: string | null
+          duration?: string | null
+          id?: string
+          instructions?: string | null
+          medication?: string
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -618,6 +726,13 @@ export type Database = {
         Args: never
         Returns: {
           user_id: string
+        }[]
+      }
+      get_booked_slots: {
+        Args: { _day: string; _doctor_id: string }
+        Returns: {
+          duration_minutes: number
+          scheduled_at: string
         }[]
       }
       get_doctor_patient_counts: {

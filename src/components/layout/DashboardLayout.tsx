@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Stethoscope, BotMessageSquare
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Stethoscope, BotMessageSquare, CalendarClock, Pill
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors";
+type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors" | "appointments" | "prescriptions";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
