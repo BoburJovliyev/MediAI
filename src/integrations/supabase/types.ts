@@ -728,6 +728,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_booked_slots: {
+        Args: { _day: string; _doctor_id: string }
+        Returns: {
+          duration_minutes: number
+          scheduled_at: string
+        }[]
+      }
       get_doctor_patient_counts: {
         Args: never
         Returns: {
