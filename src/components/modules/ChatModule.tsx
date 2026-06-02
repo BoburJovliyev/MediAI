@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles, Users, Megaphone
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles, Users, Megaphone,
+  Video, Phone, PhoneOff, Pin, PinOff, Images, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import GroupsView from "./GroupsView";
+import VideoCall from "./VideoCall";
 
 interface ChatContact {
   user_id: string;
