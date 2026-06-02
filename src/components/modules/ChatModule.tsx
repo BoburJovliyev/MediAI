@@ -1145,6 +1145,10 @@ const ChatModule = () => {
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Reply size={12} /> Javob</button>
                               <button onClick={() => { setForwardMessage(msg); setMenuMessageId(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Forward size={12} /> Yo'naltirish</button>
+                              <button onClick={() => togglePin(msg)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground">
+                                {msg.is_pinned ? <><PinOff size={12} /> Qadashni olib tashlash</> : <><Pin size={12} /> Qadash</>}
+                              </button>
                               {msg.message && (
                                 <button onClick={() => copyText(msg.message!)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Copy size={12} /> Nusxalash</button>
