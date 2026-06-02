@@ -607,6 +607,15 @@ const ChatModule = () => {
     setMenuMessageId(null);
   };
 
+  const togglePin = async (msg: ChatMessage) => {
+    setMenuMessageId(null);
+    const pin = !msg.is_pinned;
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin } : m));
+    const { error } = await supabase.rpc("toggle_pin_message" as any, { _message_id: msg.id, _pin: pin });
+    if (error) { toast.error("Xatolik"); loadMessages(); return; }
+    toast.success(pin ? "Xabar qadaldi" : "Qadash olib tashlandi");
+  };
+
   const getReplyMessage = (replyId: string) => messages.find(m => m.id === replyId);
   const getContactName = (userId: string) => userId === user?.id ? "Siz" : selectedContact?.full_name || "Nomsiz";
 
