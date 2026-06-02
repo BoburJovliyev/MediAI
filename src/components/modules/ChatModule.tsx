@@ -84,6 +84,11 @@ const ChatModule = () => {
   const [myFullName, setMyFullName] = useState<string>("");
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
   const [activeTab, setActiveTab] = useState<"all" | "contacts" | "groups">("all");
+  const [call, setCall] = useState<{ roomId: string; isCaller: boolean; peerId: string; peerName: string; peerAvatar: string | null } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ roomId: string; fromId: string; fromName: string; fromAvatar: string | null } | null>(null);
+  const [showMedia, setShowMedia] = useState(false);
+  const [chatSearch, setChatSearch] = useState("");
+  const [showChatSearch, setShowChatSearch] = useState(false);
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
