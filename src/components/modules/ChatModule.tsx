@@ -463,6 +463,40 @@ const ChatModule = () => {
     typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { from: user?.id } });
   };
 
+  // Incoming call listener (per user)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`incoming-call-${user.id}`, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "call" }, ({ payload }: any) => {
+      if (!payload?.roomId) return;
+      setIncomingCall({ roomId: payload.roomId, fromId: payload.fromId, fromName: payload.fromName, fromAvatar: payload.fromAvatar ?? null });
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const startCall = async () => {
+    if (!user || !selectedContact) return;
+    const roomId = crypto.randomUUID();
+    const ch = supabase.channel(`incoming-call-${selectedContact.user_id}`);
+    await new Promise<void>((resolve) => {
+      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
+    });
+    await ch.send({
+      type: "broadcast",
+      event: "call",
+      payload: { roomId, fromId: user.id, fromName: myFullName || "Foydalanuvchi", fromAvatar: myAvatarUrl },
+    });
+    supabase.removeChannel(ch);
+    setCall({ roomId, isCaller: true, peerId: selectedContact.user_id, peerName: selectedContact.full_name, peerAvatar: selectedContact.avatar_url });
+    toast.info("Qo'ng'iroq qilinmoqda...");
+  };
+
+  const acceptCall = () => {
+    if (!incomingCall) return;
+    setCall({ roomId: incomingCall.roomId, isCaller: false, peerId: incomingCall.fromId, peerName: incomingCall.fromName, peerAvatar: incomingCall.fromAvatar });
+    setIncomingCall(null);
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, otherTyping]);
