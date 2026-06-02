@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import MedicalDisclaimer from "@/components/shared/MedicalDisclaimer";
 
 interface Prescription {
   id: string;
@@ -183,6 +184,8 @@ const PrescriptionsModule = () => {
           })}
         </div>
       )}
+
+      {items.length > 0 && <MedicalDisclaimer type="medication" />}
     </div>
   );
 };
