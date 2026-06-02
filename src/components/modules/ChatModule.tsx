@@ -35,6 +35,7 @@ interface ChatMessage {
   is_read: boolean;
   is_edited: boolean;
   is_deleted: boolean;
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string;
   read_at?: string | null;
