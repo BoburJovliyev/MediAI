@@ -1208,6 +1208,8 @@ const ChatModule = () => {
               )}
               <div ref={messagesEndRef} />
             </div>
+            </>
+            )}
 
             {/* Reply/Edit/Forward banner */}
             {(replyTo || editMessage || forwardMessage) && (
