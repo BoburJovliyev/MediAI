@@ -691,6 +691,18 @@ const ChatModule = () => {
   const totalUnread = contacts.reduce((s, c) => s + (c.unreadCount || 0), 0);
   const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
 
+  const isPlainMessage = (m: ChatMessage) => !m.is_deleted && !parseActivity(m.message) && !parseInvitation(m.message);
+  const pinnedMessages = messages.filter(m => m.is_pinned && isPlainMessage(m));
+  const mediaImages = messages.filter(m => m.image_url && !m.is_deleted);
+  const mediaFiles = messages.filter(m => m.file_url && !m.is_deleted && !m.file_name?.endsWith(".webm"));
+  const searchActive = showChatSearch && chatSearch.trim().length > 0;
+  const matchedIds = new Set(
+    searchActive
+      ? messages.filter(m => isPlainMessage(m) && m.message?.toLowerCase().includes(chatSearch.toLowerCase())).map(m => m.id)
+      : []
+  );
+  const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
+
   const TabBar = (
     <div className="flex gap-2 mb-3">
       {([
