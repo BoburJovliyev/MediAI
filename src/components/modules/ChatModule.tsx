@@ -854,15 +854,86 @@ const ChatModule = () => {
                   {selectedContact.full_name?.charAt(0)?.toUpperCase()}
                 </div>
               )}
-              <div>
-                <p className="font-semibold text-foreground text-sm">{selectedContact.full_name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{selectedContact.full_name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{selectedContact.role || "user"}</p>
               </div>
+              <button onClick={() => { setShowChatSearch(v => !v); setChatSearch(""); }}
+                className={`p-2 rounded-xl transition-colors ${showChatSearch ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Xabarlardan qidirish">
+                <Search size={18} />
+              </button>
+              <button onClick={() => setShowMedia(v => !v)}
+                className={`p-2 rounded-xl transition-colors ${showMedia ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Media albom">
+                <Images size={18} />
+              </button>
+              <button onClick={startCall} className="p-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity" title="Video qo'ng'iroq">
+                <Video size={18} />
+              </button>
             </div>
 
+            {/* In-chat search bar */}
+            {showChatSearch && (
+              <div className="px-4 py-2 border-b border-border bg-secondary/30">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input autoFocus value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder="Suhbatdan matn qidirish..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                {searchActive && <p className="text-[11px] text-muted-foreground mt-1">{matchedIds.size} ta natija topildi</p>}
+              </div>
+            )}
+
+            {/* Pinned messages bar */}
+            {pinnedMessages.length > 0 && !showMedia && (
+              <div className="px-4 py-2 border-b border-border bg-primary/5 space-y-1">
+                {pinnedMessages.slice(-3).map(pm => (
+                  <div key={pm.id} className="flex items-center gap-2 text-xs">
+                    <Pin size={12} className="text-primary shrink-0" />
+                    <span className="flex-1 truncate text-foreground">{pm.message || (pm.image_url ? "📷 Rasm" : pm.file_name || "Fayl")}</span>
+                    <button onClick={() => togglePin(pm)} className="text-muted-foreground hover:text-destructive shrink-0" title="Qadashni olib tashlash">
+                      <PinOff size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Media album panel */}
+            {showMedia ? (
+              <div className="flex-1 overflow-y-auto p-4">
+                <h4 className="font-display font-bold text-foreground mb-3 flex items-center gap-2"><Images size={18} className="text-primary" /> Media albom</h4>
+                {mediaImages.length === 0 && mediaFiles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Suhbatda media fayllar yo'q.</p>
+                ) : (
+                  <>
+                    {mediaImages.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-5">
+                        {mediaImages.map(m => (
+                          <img key={m.id} src={m.image_url!} alt="" onClick={() => setPreviewImage(m.image_url!)}
+                            className="aspect-square w-full object-cover rounded-xl cursor-zoom-in border border-border" />
+                        ))}
+                      </div>
+                    )}
+                    {mediaFiles.length > 0 && (
+                      <div className="space-y-2">
+                        {mediaFiles.map(m => (
+                          <a key={m.id} href={m.file_url!} target="_blank" rel="noopener" download
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary text-sm text-foreground hover:bg-secondary/70">
+                            <FileText size={16} className="text-primary shrink-0" />
+                            <span className="flex-1 truncate">{m.file_name}</span>
+                            <Download size={14} className="text-muted-foreground" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+            <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {messages.map(msg => {
+              {displayedMessages.map(msg => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
                 return (() => {
