@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Image, Paperclip, Reply, Forward, Smile, Check, CheckCheck,
-  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles, Users, Megaphone
+  MoreVertical, Edit2, Trash2, X, MessageCircle, Search, ArrowLeft, UserPlus, Mail, Mic, Square, Play, Pause, UserCheck, UserX, Copy, Info, Download, Sparkles, Users, Megaphone,
+  Video, Phone, PhoneOff, Pin, PinOff, Images, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import GroupsView from "./GroupsView";
+import VideoCall from "./VideoCall";
 
 interface ChatContact {
   user_id: string;
@@ -33,6 +35,7 @@ interface ChatMessage {
   is_read: boolean;
   is_edited: boolean;
   is_deleted: boolean;
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string;
   read_at?: string | null;
@@ -81,6 +84,11 @@ const ChatModule = () => {
   const [myFullName, setMyFullName] = useState<string>("");
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
   const [activeTab, setActiveTab] = useState<"all" | "contacts" | "groups">("all");
+  const [call, setCall] = useState<{ roomId: string; isCaller: boolean; peerId: string; peerName: string; peerAvatar: string | null } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ roomId: string; fromId: string; fromName: string; fromAvatar: string | null } | null>(null);
+  const [showMedia, setShowMedia] = useState(false);
+  const [chatSearch, setChatSearch] = useState("");
+  const [showChatSearch, setShowChatSearch] = useState(false);
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
@@ -455,6 +463,40 @@ const ChatModule = () => {
     typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { from: user?.id } });
   };
 
+  // Incoming call listener (per user)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`incoming-call-${user.id}`, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "call" }, ({ payload }: any) => {
+      if (!payload?.roomId) return;
+      setIncomingCall({ roomId: payload.roomId, fromId: payload.fromId, fromName: payload.fromName, fromAvatar: payload.fromAvatar ?? null });
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const startCall = async () => {
+    if (!user || !selectedContact) return;
+    const roomId = crypto.randomUUID();
+    const ch = supabase.channel(`incoming-call-${selectedContact.user_id}`);
+    await new Promise<void>((resolve) => {
+      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
+    });
+    await ch.send({
+      type: "broadcast",
+      event: "call",
+      payload: { roomId, fromId: user.id, fromName: myFullName || "Foydalanuvchi", fromAvatar: myAvatarUrl },
+    });
+    supabase.removeChannel(ch);
+    setCall({ roomId, isCaller: true, peerId: selectedContact.user_id, peerName: selectedContact.full_name, peerAvatar: selectedContact.avatar_url });
+    toast.info("Qo'ng'iroq qilinmoqda...");
+  };
+
+  const acceptCall = () => {
+    if (!incomingCall) return;
+    setCall({ roomId: incomingCall.roomId, isCaller: false, peerId: incomingCall.fromId, peerName: incomingCall.fromName, peerAvatar: incomingCall.fromAvatar });
+    setIncomingCall(null);
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, otherTyping]);
@@ -565,6 +607,15 @@ const ChatModule = () => {
     setMenuMessageId(null);
   };
 
+  const togglePin = async (msg: ChatMessage) => {
+    setMenuMessageId(null);
+    const pin = !msg.is_pinned;
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin } : m));
+    const { error } = await supabase.rpc("toggle_pin_message" as any, { _message_id: msg.id, _pin: pin });
+    if (error) { toast.error("Xatolik"); loadMessages(); return; }
+    toast.success(pin ? "Xabar qadaldi" : "Qadash olib tashlandi");
+  };
+
   const getReplyMessage = (replyId: string) => messages.find(m => m.id === replyId);
   const getContactName = (userId: string) => userId === user?.id ? "Siz" : selectedContact?.full_name || "Nomsiz";
 
@@ -639,6 +690,18 @@ const ChatModule = () => {
   const filteredContacts = baseList.filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
   const totalUnread = contacts.reduce((s, c) => s + (c.unreadCount || 0), 0);
   const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
+
+  const isPlainMessage = (m: ChatMessage) => !m.is_deleted && !parseActivity(m.message) && !parseInvitation(m.message);
+  const pinnedMessages = messages.filter(m => m.is_pinned && isPlainMessage(m));
+  const mediaImages = messages.filter(m => m.image_url && !m.is_deleted);
+  const mediaFiles = messages.filter(m => m.file_url && !m.is_deleted && !m.file_name?.endsWith(".webm"));
+  const searchActive = showChatSearch && chatSearch.trim().length > 0;
+  const matchedIds = new Set(
+    searchActive
+      ? messages.filter(m => isPlainMessage(m) && m.message?.toLowerCase().includes(chatSearch.toLowerCase())).map(m => m.id)
+      : []
+  );
+  const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
 
   const TabBar = (
     <div className="flex gap-2 mb-3">
@@ -791,15 +854,86 @@ const ChatModule = () => {
                   {selectedContact.full_name?.charAt(0)?.toUpperCase()}
                 </div>
               )}
-              <div>
-                <p className="font-semibold text-foreground text-sm">{selectedContact.full_name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{selectedContact.full_name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{selectedContact.role || "user"}</p>
               </div>
+              <button onClick={() => { setShowChatSearch(v => !v); setChatSearch(""); }}
+                className={`p-2 rounded-xl transition-colors ${showChatSearch ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Xabarlardan qidirish">
+                <Search size={18} />
+              </button>
+              <button onClick={() => setShowMedia(v => !v)}
+                className={`p-2 rounded-xl transition-colors ${showMedia ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Media albom">
+                <Images size={18} />
+              </button>
+              <button onClick={startCall} className="p-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity" title="Video qo'ng'iroq">
+                <Video size={18} />
+              </button>
             </div>
 
+            {/* In-chat search bar */}
+            {showChatSearch && (
+              <div className="px-4 py-2 border-b border-border bg-secondary/30">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input autoFocus value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder="Suhbatdan matn qidirish..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                {searchActive && <p className="text-[11px] text-muted-foreground mt-1">{matchedIds.size} ta natija topildi</p>}
+              </div>
+            )}
+
+            {/* Pinned messages bar */}
+            {pinnedMessages.length > 0 && !showMedia && (
+              <div className="px-4 py-2 border-b border-border bg-primary/5 space-y-1">
+                {pinnedMessages.slice(-3).map(pm => (
+                  <div key={pm.id} className="flex items-center gap-2 text-xs">
+                    <Pin size={12} className="text-primary shrink-0" />
+                    <span className="flex-1 truncate text-foreground">{pm.message || (pm.image_url ? "📷 Rasm" : pm.file_name || "Fayl")}</span>
+                    <button onClick={() => togglePin(pm)} className="text-muted-foreground hover:text-destructive shrink-0" title="Qadashni olib tashlash">
+                      <PinOff size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Media album panel */}
+            {showMedia ? (
+              <div className="flex-1 overflow-y-auto p-4">
+                <h4 className="font-display font-bold text-foreground mb-3 flex items-center gap-2"><Images size={18} className="text-primary" /> Media albom</h4>
+                {mediaImages.length === 0 && mediaFiles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Suhbatda media fayllar yo'q.</p>
+                ) : (
+                  <>
+                    {mediaImages.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-5">
+                        {mediaImages.map(m => (
+                          <img key={m.id} src={m.image_url!} alt="" onClick={() => setPreviewImage(m.image_url!)}
+                            className="aspect-square w-full object-cover rounded-xl cursor-zoom-in border border-border" />
+                        ))}
+                      </div>
+                    )}
+                    {mediaFiles.length > 0 && (
+                      <div className="space-y-2">
+                        {mediaFiles.map(m => (
+                          <a key={m.id} href={m.file_url!} target="_blank" rel="noopener" download
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary text-sm text-foreground hover:bg-secondary/70">
+                            <FileText size={16} className="text-primary shrink-0" />
+                            <span className="flex-1 truncate">{m.file_name}</span>
+                            <Download size={14} className="text-muted-foreground" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+            <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {messages.map(msg => {
+              {displayedMessages.map(msg => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
                 return (() => {
@@ -1011,6 +1145,10 @@ const ChatModule = () => {
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Reply size={12} /> Javob</button>
                               <button onClick={() => { setForwardMessage(msg); setMenuMessageId(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Forward size={12} /> Yo'naltirish</button>
+                              <button onClick={() => togglePin(msg)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground">
+                                {msg.is_pinned ? <><PinOff size={12} /> Qadashni olib tashlash</> : <><Pin size={12} /> Qadash</>}
+                              </button>
                               {msg.message && (
                                 <button onClick={() => copyText(msg.message!)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Copy size={12} /> Nusxalash</button>
@@ -1074,6 +1212,8 @@ const ChatModule = () => {
               )}
               <div ref={messagesEndRef} />
             </div>
+            </>
+            )}
 
             {/* Reply/Edit/Forward banner */}
             {(replyTo || editMessage || forwardMessage) && (
@@ -1178,6 +1318,43 @@ const ChatModule = () => {
           onClick={(e) => e.stopPropagation()}
         />
       </div>
+    )}
+
+    {/* Incoming call modal */}
+    {incomingCall && !call && (
+      <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center gap-5">
+        {incomingCall.fromAvatar ? (
+          <img src={incomingCall.fromAvatar} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
+            {incomingCall.fromName.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="text-center">
+          <p className="text-lg font-display font-bold text-foreground">{incomingCall.fromName}</p>
+          <p className="text-sm text-muted-foreground">Video qo'ng'iroq qilmoqda...</p>
+        </div>
+        <div className="flex items-center gap-6">
+          <button onClick={() => setIncomingCall(null)} className="p-5 rounded-full bg-destructive text-destructive-foreground shadow-glow">
+            <PhoneOff size={24} />
+          </button>
+          <button onClick={acceptCall} className="p-5 rounded-full bg-medical-green text-white shadow-glow animate-pulse">
+            <Phone size={24} />
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Active video call */}
+    {call && user && (
+      <VideoCall
+        roomId={call.roomId}
+        isCaller={call.isCaller}
+        peerName={call.peerName}
+        peerAvatar={call.peerAvatar}
+        selfId={user.id}
+        onEnd={() => setCall(null)}
+      />
     )}
     </div>
   );

@@ -94,6 +94,7 @@ export type Database = {
           image_url: string | null
           is_deleted: boolean
           is_edited: boolean
+          is_pinned: boolean
           is_read: boolean
           message: string | null
           read_at: string | null
@@ -112,6 +113,7 @@ export type Database = {
           image_url?: string | null
           is_deleted?: boolean
           is_edited?: boolean
+          is_pinned?: boolean
           is_read?: boolean
           message?: string | null
           read_at?: string | null
@@ -130,6 +132,7 @@ export type Database = {
           image_url?: string | null
           is_deleted?: boolean
           is_edited?: boolean
+          is_pinned?: boolean
           is_read?: boolean
           message?: string | null
           read_at?: string | null
@@ -780,6 +783,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      toggle_pin_message: {
+        Args: { _message_id: string; _pin: boolean }
+        Returns: undefined
       }
     }
     Enums: {
