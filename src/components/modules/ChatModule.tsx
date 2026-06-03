@@ -567,6 +567,8 @@ const ChatModule = () => {
 
   const handleFileUpload = async (file: File, type: "image" | "file") => {
     if (!user || !selectedContact) return;
+    const valid = validateUpload(file, type);
+    if (!valid.ok) { toast.error(valid.error!); return; }
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/${Date.now()}.${ext}`;
