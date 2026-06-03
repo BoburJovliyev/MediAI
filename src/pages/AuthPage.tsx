@@ -25,43 +25,30 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [doctors, setDoctors] = useState<{ user_id: string; full_name: string | null }[]>([]);
-  const [selectedDoctor, setSelectedDoctor] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    if (mode === "signup" && role === "user") {
-      supabase.from("profiles").select("user_id, full_name").eq("role", "doctor")
-        .then(({ data }) => setDoctors(data || []));
-    }
-  }, [mode, role]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (mode === "signup" && role === "user" && !selectedDoctor) {
-      setError(t("auth.selectDoctorError"));
-      return;
-    }
+
     setLoading(true);
     const extra: Record<string, string> = {};
     if (age) extra.age = age;
     if (gender) extra.gender = gender;
     if (role === "doctor" && specialty) extra.specialty = specialty;
     
-    // If user selects a doctor, treat them also as patient
-    const finalRole = selectedDoctor ? "patient" : role;
+    const finalRole = role;
     
     const result = await onAuth(mode, email, password, fullName, finalRole, extra);
     if (result.error) {
       setError(result.error.message);
     } else if (mode === "signup") {
-      if (selectedDoctor) {
-        localStorage.setItem("pending_doctor_id", selectedDoctor);
-      }
       setSuccess(t("auth.success"));
     }
     setLoading(false);
@@ -69,7 +56,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
 
 
 
-  const showDoctorList = mode === "signup" && role === "user";
+
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -135,7 +122,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">{t("auth.selectRole")}</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => { setRole("doctor"); setSelectedDoctor(""); }}
+                    <button type="button" onClick={() => { setRole("doctor"); }}
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${role === "doctor" ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
                       <Stethoscope size={22} className={role === "doctor" ? "text-primary" : "text-muted-foreground"} />
                       <span className={`text-xs font-semibold ${role === "doctor" ? "text-primary" : "text-muted-foreground"}`}>{t("auth.doctor")}</span>
@@ -160,31 +147,7 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
                   </div>
                 )}
 
-                {/* Doctor selection for patient/user */}
-                {showDoctorList && (
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">
-                      {t("auth.selectDoctor")} {role === "user" && <span className="text-muted-foreground text-xs">({t("auth.patient")})</span>}
-                    </label>
-                    {doctors.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">{t("auth.noDoctors")}</p>
-                    ) : (
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {doctors.map(d => (
-                          <button key={d.user_id} type="button" onClick={() => setSelectedDoctor(d.user_id)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedDoctor === d.user_id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-primary/30"}`}>
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Stethoscope size={16} className="text-primary" />
-                            </div>
-                            <span className={`text-sm font-medium ${selectedDoctor === d.user_id ? "text-primary" : "text-foreground"}`}>
-                              {d.full_name || t("general.doctor")}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+
               </>
             )}
             <div>
