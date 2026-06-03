@@ -901,13 +901,31 @@ const ChatModule = () => {
 
             {/* In-chat search bar */}
             {showChatSearch && (
-              <div className="px-4 py-2 border-b border-border bg-secondary/30">
+              <div className="px-4 py-2 border-b border-border bg-secondary/30 space-y-2">
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input autoFocus value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder="Suhbatdan matn qidirish..."
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
-                {searchActive && <p className="text-[11px] text-muted-foreground mt-1">{matchedIds.size} ta natija topildi</p>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {([
+                    { key: "all", label: "Hammasi" },
+                    { key: "me", label: "Men" },
+                    { key: "peer", label: selectedContact?.full_name?.split(" ")[0] || "Suhbatdosh" },
+                  ] as const).map(f => (
+                    <button key={f.key} onClick={() => setSearchAuthor(f.key)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${searchAuthor === f.key ? "gradient-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground border border-border"}`}>
+                      {f.label}
+                    </button>
+                  ))}
+                  <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)}
+                    className="px-2 py-1 rounded-full text-xs bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  {(searchDate || searchAuthor !== "all") && (
+                    <button onClick={() => { setSearchAuthor("all"); setSearchDate(""); }}
+                      className="text-xs text-muted-foreground hover:text-destructive">Tozalash</button>
+                  )}
+                </div>
+                {searchActive && <p className="text-[11px] text-muted-foreground">{matchedIds.size} ta natija topildi</p>}
               </div>
             )}
 
