@@ -1111,7 +1111,7 @@ const ChatModule = () => {
                           </div>
                         ) : null}
                         {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
-                          <p>{msg.message}</p>
+                          <p>{searchActive ? highlightText(msg.message) : msg.message}</p>
                         )}
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
