@@ -44,8 +44,45 @@ const GroupsView = () => {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
+  const [inCall, setInCall] = useState(false);
+  const [callActive, setCallActive] = useState(false);
+  const [myName, setMyName] = useState("Foydalanuvchi");
+  const lobbyRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const isOwner = !!(selected && user && selected.doctor_id === user.id);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setMyName((data as any)?.full_name || "Foydalanuvchi"));
+  }, [user]);
+
+  // Lobby presence: know whether the doctor has an active call
+  useEffect(() => {
+    if (!selected || !user) return;
+    setCallActive(false);
+    setInCall(false);
+    const channel = supabase.channel(`group-call-${selected.id}`, { config: { presence: { key: user.id } } });
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState() as Record<string, any[]>;
+      const doctorPresent = Object.values(state).some((arr) => arr.some((m: any) => m.role === "doctor"));
+      setCallActive(doctorPresent);
+    });
+    channel.subscribe();
+    lobbyRef.current = channel;
+    return () => { supabase.removeChannel(channel); lobbyRef.current = null; };
+  }, [selected?.id, user?.id]);
+
+  // Announce presence in the lobby while in a call
+  useEffect(() => {
+    const ch = lobbyRef.current;
+    if (!ch) return;
+    if (inCall) {
+      ch.track({ role: isOwner ? "doctor" : "member", name: myName });
+    } else {
+      ch.untrack();
+    }
+  }, [inCall, isOwner, myName]);
 
   useEffect(() => {
     if (!user) return;
