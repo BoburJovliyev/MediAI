@@ -47,6 +47,16 @@ import EmojiPicker from "./EmojiPicker";
 
 const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
+const isEmojiOnly = (text: string | null): boolean => {
+  if (!text) return false;
+  const clean = text.trim();
+  if (!clean) return false;
+  const emojiRegex = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\u20e3\ufe0f\s]+$/u;
+  const hasLettersOrDigits = /[a-zA-Z0-9\p{L}\p{N}]/u.test(clean);
+  const hasEmoji = /\p{Emoji}/u.test(clean);
+  return emojiRegex.test(clean) && !hasLettersOrDigits && hasEmoji && clean.replace(/\s/g, "").length <= 10;
+};
+
 const ChatModule = () => {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<ChatContact[]>([]);
@@ -982,11 +992,13 @@ const ChatModule = () => {
             <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {displayedMessages.map(msg => {
+              {displayedMessages.map((msg, index) => {
                 const isMine = msg.sender_id === user?.id;
                 const replyMsg = msg.reply_to ? getReplyMessage(msg.reply_to) : null;
-                return (() => {
-                  const activity = parseActivity(msg.message);
+                const nextMsg = displayedMessages[index + 1];
+                const showAvatar = !isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
+                const showMyAvatar = isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
+                const activity = parseActivity(msg.message);
                   if (activity) {
                     let label = "";
                     let cls = "bg-secondary text-muted-foreground";
@@ -1053,37 +1065,62 @@ const ChatModule = () => {
                         </div>
                       </div>
                     );
-                  }
+                  const emojiOnly = isEmojiOnly(msg.message);
+                  const isImageOnly = !!msg.image_url && !msg.message && !msg.file_url && !msg.is_deleted;
+
                   return (
                   <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
                     {!isMine && (
-                      selectedContact?.avatar_url ? (
-                        <img src={selectedContact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      showAvatar ? (
+                        selectedContact?.avatar_url ? (
+                          <img src={selectedContact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
+                            {selectedContact?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                          </div>
+                        )
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
-                          {selectedContact?.full_name?.charAt(0)?.toUpperCase() || "?"}
-                        </div>
+                        <div className="w-7 h-7 shrink-0" />
                       )
                     )}
                     <div className={`relative max-w-[75%] group ${isMine ? "order-1" : ""}`}>
                       {msg.forwarded_from && (
                         <div className="text-[10px] px-3 py-0.5 text-muted-foreground italic">↗ Yo'naltirilgan xabar</div>
                       )}
-                      <div className={`px-4 py-2.5 rounded-2xl text-sm ${
-                        isMine
-                          ? "gradient-primary text-primary-foreground rounded-br-md"
-                          : "bg-secondary text-foreground rounded-bl-md"
-                      } ${msg.is_deleted ? "italic opacity-60" : ""}`}>
-                        {msg.image_url && !msg.is_deleted && (
-                          <div className="relative group/img mb-1">
+                      <div className={
+                        emojiOnly
+                          ? "p-0 bg-transparent shadow-none select-none"
+                          : isImageOnly
+                          ? `bg-secondary/40 border border-border/30 p-1 rounded-2xl shadow-sm ${isMine ? "rounded-br-md" : "rounded-bl-md"}`
+                          : `px-4 py-2.5 rounded-2xl text-sm ${
+                              isMine
+                                ? "gradient-primary text-primary-foreground rounded-br-md"
+                                : "bg-secondary text-foreground rounded-bl-md"
+                            } ${msg.is_deleted ? "italic opacity-60" : ""}`
+                      }>
+                        {emojiOnly ? (
+                          <div className="flex flex-col">
+                            <span className="text-5xl md:text-6xl leading-none py-1 select-none">
+                              {msg.message}
+                            </span>
+                            <div className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground ${isMine ? "justify-end" : "justify-start"}`}>
+                              <span>{format(new Date(msg.created_at), "HH:mm")}</span>
+                              {msg.is_edited && <span className="opacity-50">tahrirlangan</span>}
+                              {isMine && (msg.is_read
+                                ? <CheckCheck size={12} className="text-primary" />
+                                : <Check size={12} className="text-muted-foreground" />)}
+                            </div>
+                          </div>
+                        ) : isImageOnly ? (
+                          <div className="relative group/img">
                             <img
-                              src={msg.image_url}
+                              src={msg.image_url!}
                               alt=""
-                              className="rounded-xl max-w-[260px] max-h-[260px] object-cover cursor-zoom-in"
+                              className="rounded-xl max-w-[280px] max-h-[280px] object-cover cursor-zoom-in block w-full"
                               onClick={() => setPreviewImage(msg.image_url!)}
                             />
                             <a
-                              href={msg.image_url}
+                              href={msg.image_url!}
                               download
                               target="_blank"
                               rel="noopener"
@@ -1093,36 +1130,68 @@ const ChatModule = () => {
                             >
                               <Download size={14} />
                             </a>
+                            {/* Overlay Timestamp */}
+                            <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[9px] text-white/90 flex items-center gap-0.5 shadow-sm">
+                              <span>{format(new Date(msg.created_at), "HH:mm")}</span>
+                              {msg.is_edited && <span className="opacity-50">tahrirlangan</span>}
+                              {isMine && (msg.is_read
+                                ? <CheckCheck size={10} className="text-primary-foreground" />
+                                : <Check size={10} className="text-white/70" />)}
+                            </div>
                           </div>
+                        ) : (
+                          <>
+                            {msg.image_url && !msg.is_deleted && (
+                              <div className="relative group/img mb-1">
+                                <img
+                                  src={msg.image_url}
+                                  alt=""
+                                  className="rounded-xl max-w-[260px] max-h-[260px] object-cover cursor-zoom-in"
+                                  onClick={() => setPreviewImage(msg.image_url!)}
+                                />
+                                <a
+                                  href={msg.image_url}
+                                  download
+                                  target="_blank"
+                                  rel="noopener"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                  title="Yuklab olish"
+                                >
+                                  <Download size={14} />
+                                </a>
+                              </div>
+                            )}
+                            {msg.file_url && !msg.is_deleted && msg.file_name?.endsWith(".webm") ? (
+                              <div className="flex items-center gap-2 mb-1">
+                                <button onClick={() => toggleAudioPlay(msg.id, msg.file_url!)}
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center ${isMine ? "bg-white/20" : "bg-primary/10"}`}>
+                                  {playingAudioId === msg.id ? <Pause size={14} /> : <Play size={14} />}
+                                </button>
+                                <div className="flex-1 h-1 rounded-full bg-current opacity-30" />
+                                <span className="text-[10px] opacity-70">🎤</span>
+                              </div>
+                            ) : msg.file_url && !msg.is_deleted ? (
+                              <div className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg ${isMine ? "bg-white/10" : "bg-background/50"}`}>
+                                <Paperclip size={14} className="shrink-0" />
+                                <span className="flex-1 truncate text-xs">{msg.file_name}</span>
+                                <a href={msg.file_url} target="_blank" rel="noopener" download className="p-1 rounded hover:bg-white/20" title="Yuklab olish">
+                                  <Download size={14} />
+                                </a>
+                              </div>
+                            ) : null}
+                            {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
+                              <p>{searchActive ? highlightText(msg.message) : msg.message}</p>
+                            )}
+                            <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
+                              <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
+                              {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
+                              {isMine && (msg.is_read
+                                ? <CheckCheck size={12} className="opacity-70" />
+                                : <Check size={12} className="opacity-50" />)}
+                            </div>
+                          </>
                         )}
-                        {msg.file_url && !msg.is_deleted && msg.file_name?.endsWith(".webm") ? (
-                          <div className="flex items-center gap-2 mb-1">
-                            <button onClick={() => toggleAudioPlay(msg.id, msg.file_url!)}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center ${isMine ? "bg-white/20" : "bg-primary/10"}`}>
-                              {playingAudioId === msg.id ? <Pause size={14} /> : <Play size={14} />}
-                            </button>
-                            <div className="flex-1 h-1 rounded-full bg-current opacity-30" />
-                            <span className="text-[10px] opacity-70">🎤</span>
-                          </div>
-                        ) : msg.file_url && !msg.is_deleted ? (
-                          <div className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg ${isMine ? "bg-white/10" : "bg-background/50"}`}>
-                            <Paperclip size={14} className="shrink-0" />
-                            <span className="flex-1 truncate text-xs">{msg.file_name}</span>
-                            <a href={msg.file_url} target="_blank" rel="noopener" download className="p-1 rounded hover:bg-white/20" title="Yuklab olish">
-                              <Download size={14} />
-                            </a>
-                          </div>
-                        ) : null}
-                        {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
-                          <p>{searchActive ? highlightText(msg.message) : msg.message}</p>
-                        )}
-                        <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
-                          <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
-                          {msg.is_edited && <span className="text-[10px] opacity-50">tahrirlangan</span>}
-                          {isMine && (msg.is_read
-                            ? <CheckCheck size={12} className="opacity-70" />
-                            : <Check size={12} className="opacity-50" />)}
-                        </div>
                       </div>
                       {/* Reactions display */}
                       {(reactions[msg.id] && reactions[msg.id].length > 0) && (
@@ -1237,17 +1306,20 @@ const ChatModule = () => {
                       )}
                     </div>
                     {isMine && (
-                      myAvatarUrl ? (
-                        <img src={myAvatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 order-2" />
+                      showMyAvatar ? (
+                        myAvatarUrl ? (
+                          <img src={myAvatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 order-2" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[11px] font-bold shrink-0 order-2">
+                            {(myFullName || "?").charAt(0).toUpperCase()}
+                          </div>
+                        )
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[11px] font-bold shrink-0 order-2">
-                          {(myFullName || "?").charAt(0).toUpperCase()}
-                        </div>
+                        <div className="w-7 h-7 shrink-0 order-2" />
                       )
                     )}
                   </div>
-                ); // close regular message return
-                })(); // invoke IIFE
+                );
               })}
               {otherTyping && (
                 <div className="flex justify-start">
