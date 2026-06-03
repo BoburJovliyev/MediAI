@@ -322,6 +322,15 @@ const GroupsView = () => {
           </>
         )}
       </div>
+      {inCall && selected && user && (
+        <VideoCall
+          roomId={`group-${selected.id}`}
+          selfId={user.id}
+          selfName={myName}
+          title={selected.name}
+          onEnd={() => setInCall(false)}
+        />
+      )}
     </motion.div>
   );
 };
