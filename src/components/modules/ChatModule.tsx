@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import GroupsView from "./GroupsView";
 import VideoCall from "./VideoCall";
+import { validateUpload } from "@/lib/uploadValidation";
 
 interface ChatContact {
   user_id: string;
@@ -89,6 +90,8 @@ const ChatModule = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
   const [showChatSearch, setShowChatSearch] = useState(false);
+  const [searchAuthor, setSearchAuthor] = useState<"all" | "me" | "peer">("all");
+  const [searchDate, setSearchDate] = useState("");
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
@@ -565,6 +568,8 @@ const ChatModule = () => {
 
   const handleFileUpload = async (file: File, type: "image" | "file") => {
     if (!user || !selectedContact) return;
+    const valid = validateUpload(file, type);
+    if (!valid.ok) { toast.error(valid.error!); return; }
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/${Date.now()}.${ext}`;
@@ -607,10 +612,19 @@ const ChatModule = () => {
     setMenuMessageId(null);
   };
 
+  const MAX_PINS = 5;
   const togglePin = async (msg: ChatMessage) => {
     setMenuMessageId(null);
     const pin = !msg.is_pinned;
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin } : m));
+    if (pin) {
+      const currentPins = messages.filter(m => m.is_pinned && isPlainMessage(m)).length;
+      if (currentPins >= MAX_PINS) {
+        toast.error(`Eng ko'pi bilan ${MAX_PINS} ta xabar qadalishi mumkin`);
+        return;
+      }
+    }
+    const stamp = new Date().toISOString();
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin, updated_at: stamp } : m));
     const { error } = await supabase.rpc("toggle_pin_message" as any, { _message_id: msg.id, _pin: pin });
     if (error) { toast.error("Xatolik"); loadMessages(); return; }
     toast.success(pin ? "Xabar qadaldi" : "Qadash olib tashlandi");
@@ -692,16 +706,33 @@ const ChatModule = () => {
   const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
 
   const isPlainMessage = (m: ChatMessage) => !m.is_deleted && !parseActivity(m.message) && !parseInvitation(m.message);
-  const pinnedMessages = messages.filter(m => m.is_pinned && isPlainMessage(m));
+  const pinnedMessages = messages
+    .filter(m => m.is_pinned && isPlainMessage(m))
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   const mediaImages = messages.filter(m => m.image_url && !m.is_deleted);
   const mediaFiles = messages.filter(m => m.file_url && !m.is_deleted && !m.file_name?.endsWith(".webm"));
-  const searchActive = showChatSearch && chatSearch.trim().length > 0;
-  const matchedIds = new Set(
-    searchActive
-      ? messages.filter(m => isPlainMessage(m) && m.message?.toLowerCase().includes(chatSearch.toLowerCase())).map(m => m.id)
-      : []
-  );
+  const searchActive = showChatSearch && (chatSearch.trim().length > 0 || searchAuthor !== "all" || !!searchDate);
+  const matchesSearch = (m: ChatMessage) => {
+    if (!isPlainMessage(m)) return false;
+    if (chatSearch.trim() && !m.message?.toLowerCase().includes(chatSearch.toLowerCase())) return false;
+    if (searchAuthor === "me" && m.sender_id !== user?.id) return false;
+    if (searchAuthor === "peer" && m.sender_id !== selectedContact?.user_id) return false;
+    if (searchDate && format(new Date(m.created_at), "yyyy-MM-dd") !== searchDate) return false;
+    return true;
+  };
+  const matchedIds = new Set(searchActive ? messages.filter(matchesSearch).map(m => m.id) : []);
   const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
+
+  const highlightText = (text: string) => {
+    const q = chatSearch.trim();
+    if (!q) return text;
+    const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase()
+        ? <mark key={i} className="bg-medical-orange/40 text-foreground rounded px-0.5">{part}</mark>
+        : part
+    );
+  };
 
   const TabBar = (
     <div className="flex gap-2 mb-3">
@@ -873,13 +904,31 @@ const ChatModule = () => {
 
             {/* In-chat search bar */}
             {showChatSearch && (
-              <div className="px-4 py-2 border-b border-border bg-secondary/30">
+              <div className="px-4 py-2 border-b border-border bg-secondary/30 space-y-2">
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input autoFocus value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder="Suhbatdan matn qidirish..."
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
-                {searchActive && <p className="text-[11px] text-muted-foreground mt-1">{matchedIds.size} ta natija topildi</p>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {([
+                    { key: "all", label: "Hammasi" },
+                    { key: "me", label: "Men" },
+                    { key: "peer", label: selectedContact?.full_name?.split(" ")[0] || "Suhbatdosh" },
+                  ] as const).map(f => (
+                    <button key={f.key} onClick={() => setSearchAuthor(f.key)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${searchAuthor === f.key ? "gradient-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground border border-border"}`}>
+                      {f.label}
+                    </button>
+                  ))}
+                  <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)}
+                    className="px-2 py-1 rounded-full text-xs bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  {(searchDate || searchAuthor !== "all") && (
+                    <button onClick={() => { setSearchAuthor("all"); setSearchDate(""); }}
+                      className="text-xs text-muted-foreground hover:text-destructive">Tozalash</button>
+                  )}
+                </div>
+                {searchActive && <p className="text-[11px] text-muted-foreground">{matchedIds.size} ta natija topildi</p>}
               </div>
             )}
 
@@ -1065,7 +1114,7 @@ const ChatModule = () => {
                           </div>
                         ) : null}
                         {msg.message && msg.message !== "📷 Rasm" && !(msg.file_url && msg.message?.startsWith("📎 ")) && (
-                          <p>{msg.message}</p>
+                          <p>{searchActive ? highlightText(msg.message) : msg.message}</p>
                         )}
                         <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
                           <span className="text-[10px] opacity-70">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -1349,10 +1398,9 @@ const ChatModule = () => {
     {call && user && (
       <VideoCall
         roomId={call.roomId}
-        isCaller={call.isCaller}
-        peerName={call.peerName}
-        peerAvatar={call.peerAvatar}
         selfId={user.id}
+        selfName={myFullName || "Foydalanuvchi"}
+        title={call.peerName}
         onEnd={() => setCall(null)}
       />
     )}

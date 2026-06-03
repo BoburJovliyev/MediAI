@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Send, Image as ImageIcon, Users, ArrowLeft, Megaphone, Lock, Stethoscope, Search, Loader2 } from "lucide-react";
+import { Send, Image as ImageIcon, Users, ArrowLeft, Megaphone, Lock, Stethoscope, Search, Loader2, Video, PhoneOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import VideoCall from "./VideoCall";
+import { validateUpload } from "@/lib/uploadValidation";
 
 interface DoctorGroup {
   id: string;
@@ -42,8 +44,45 @@ const GroupsView = () => {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
+  const [inCall, setInCall] = useState(false);
+  const [callActive, setCallActive] = useState(false);
+  const [myName, setMyName] = useState("Foydalanuvchi");
+  const lobbyRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const isOwner = !!(selected && user && selected.doctor_id === user.id);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setMyName((data as any)?.full_name || "Foydalanuvchi"));
+  }, [user]);
+
+  // Lobby presence: know whether the doctor has an active call
+  useEffect(() => {
+    if (!selected || !user) return;
+    setCallActive(false);
+    setInCall(false);
+    const channel = supabase.channel(`group-call-${selected.id}`, { config: { presence: { key: user.id } } });
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState() as Record<string, any[]>;
+      const doctorPresent = Object.values(state).some((arr) => arr.some((m: any) => m.role === "doctor"));
+      setCallActive(doctorPresent);
+    });
+    channel.subscribe();
+    lobbyRef.current = channel;
+    return () => { supabase.removeChannel(channel); lobbyRef.current = null; };
+  }, [selected?.id, user?.id]);
+
+  // Announce presence in the lobby while in a call
+  useEffect(() => {
+    const ch = lobbyRef.current;
+    if (!ch) return;
+    if (inCall) {
+      ch.track({ role: isOwner ? "doctor" : "member", name: myName });
+    } else {
+      ch.untrack();
+    }
+  }, [inCall, isOwner, myName]);
 
   useEffect(() => {
     if (!user) return;
@@ -124,6 +163,8 @@ const GroupsView = () => {
 
   const sendImage = async (file: File) => {
     if (!user || !selected || !isOwner) return;
+    const valid = validateUpload(file, "image");
+    if (!valid.ok) { toast.error(valid.error!); return; }
     setUploading(true);
     try {
       const path = `${user.id}/${Date.now()}_${file.name}`;
@@ -213,7 +254,30 @@ const GroupsView = () => {
                 <p className="font-semibold text-foreground text-sm">{selected.name}</p>
                 <p className="text-xs text-muted-foreground">{selected.memberCount} a'zo • Kanal</p>
               </div>
+              {isOwner ? (
+                <button onClick={() => setInCall(true)} disabled={inCall}
+                  className="px-3 py-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
+                  title="Video chat boshlash">
+                  <Video size={18} /> <span className="hidden sm:inline">Video chat</span>
+                </button>
+              ) : callActive && !inCall ? (
+                <button onClick={() => setInCall(true)}
+                  className="px-3 py-2 rounded-xl bg-medical-green text-white hover:opacity-90 transition-opacity flex items-center gap-1.5 text-sm font-medium animate-pulse"
+                  title="Video chatga qo'shilish">
+                  <Video size={18} /> <span className="hidden sm:inline">Qo'shilish</span>
+                </button>
+              ) : null}
             </div>
+
+            {callActive && !inCall && (
+              <div className="px-4 py-2 bg-medical-green-light border-b border-border flex items-center gap-2 text-sm text-medical-green">
+                <Video size={16} />
+                <span className="flex-1">Shifokor video chat boshladi</span>
+                <button onClick={() => setInCall(true)} className="px-3 py-1 rounded-lg bg-medical-green text-white text-xs font-semibold">
+                  Qo'shilish
+                </button>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-secondary/30">
               {messages.length === 0 ? (
@@ -258,6 +322,15 @@ const GroupsView = () => {
           </>
         )}
       </div>
+      {inCall && selected && user && (
+        <VideoCall
+          roomId={`group-${selected.id}`}
+          selfId={user.id}
+          selfName={myName}
+          title={selected.name}
+          onEnd={() => setInCall(false)}
+        />
+      )}
     </motion.div>
   );
 };
