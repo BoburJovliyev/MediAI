@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Send, Image as ImageIcon, Users, ArrowLeft, Megaphone, Lock, Stethoscope, Search, Loader2 } from "lucide-react";
+import { Send, Image as ImageIcon, Users, ArrowLeft, Megaphone, Lock, Stethoscope, Search, Loader2, Video, PhoneOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import VideoCall from "./VideoCall";
+import { validateUpload } from "@/lib/uploadValidation";
 
 interface DoctorGroup {
   id: string;
