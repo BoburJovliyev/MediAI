@@ -701,16 +701,33 @@ const ChatModule = () => {
   const contactsOnly = contacts.filter(c => c.lastMessageTime); // chatted
 
   const isPlainMessage = (m: ChatMessage) => !m.is_deleted && !parseActivity(m.message) && !parseInvitation(m.message);
-  const pinnedMessages = messages.filter(m => m.is_pinned && isPlainMessage(m));
+  const pinnedMessages = messages
+    .filter(m => m.is_pinned && isPlainMessage(m))
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   const mediaImages = messages.filter(m => m.image_url && !m.is_deleted);
   const mediaFiles = messages.filter(m => m.file_url && !m.is_deleted && !m.file_name?.endsWith(".webm"));
-  const searchActive = showChatSearch && chatSearch.trim().length > 0;
-  const matchedIds = new Set(
-    searchActive
-      ? messages.filter(m => isPlainMessage(m) && m.message?.toLowerCase().includes(chatSearch.toLowerCase())).map(m => m.id)
-      : []
-  );
+  const searchActive = showChatSearch && (chatSearch.trim().length > 0 || searchAuthor !== "all" || !!searchDate);
+  const matchesSearch = (m: ChatMessage) => {
+    if (!isPlainMessage(m)) return false;
+    if (chatSearch.trim() && !m.message?.toLowerCase().includes(chatSearch.toLowerCase())) return false;
+    if (searchAuthor === "me" && m.sender_id !== user?.id) return false;
+    if (searchAuthor === "peer" && m.sender_id !== selectedContact?.user_id) return false;
+    if (searchDate && format(new Date(m.created_at), "yyyy-MM-dd") !== searchDate) return false;
+    return true;
+  };
+  const matchedIds = new Set(searchActive ? messages.filter(matchesSearch).map(m => m.id) : []);
   const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
+
+  const highlightText = (text: string) => {
+    const q = chatSearch.trim();
+    if (!q) return text;
+    const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase()
+        ? <mark key={i} className="bg-medical-orange/40 text-foreground rounded px-0.5">{part}</mark>
+        : part
+    );
+  };
 
   const TabBar = (
     <div className="flex gap-2 mb-3">
