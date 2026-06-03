@@ -163,6 +163,8 @@ const GroupsView = () => {
 
   const sendImage = async (file: File) => {
     if (!user || !selected || !isOwner) return;
+    const valid = validateUpload(file, "image");
+    if (!valid.ok) { toast.error(valid.error!); return; }
     setUploading(true);
     try {
       const path = `${user.id}/${Date.now()}_${file.name}`;
