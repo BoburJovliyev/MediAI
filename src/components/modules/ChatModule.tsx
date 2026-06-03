@@ -89,6 +89,8 @@ const ChatModule = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
   const [showChatSearch, setShowChatSearch] = useState(false);
+  const [searchAuthor, setSearchAuthor] = useState<"all" | "me" | "peer">("all");
+  const [searchDate, setSearchDate] = useState("");
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user.id).maybeSingle()
