@@ -1349,10 +1349,9 @@ const ChatModule = () => {
     {call && user && (
       <VideoCall
         roomId={call.roomId}
-        isCaller={call.isCaller}
-        peerName={call.peerName}
-        peerAvatar={call.peerAvatar}
         selfId={user.id}
+        selfName={myFullName || "Foydalanuvchi"}
+        title={call.peerName}
         onEnd={() => setCall(null)}
       />
     )}
