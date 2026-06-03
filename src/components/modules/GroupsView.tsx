@@ -254,7 +254,30 @@ const GroupsView = () => {
                 <p className="font-semibold text-foreground text-sm">{selected.name}</p>
                 <p className="text-xs text-muted-foreground">{selected.memberCount} a'zo • Kanal</p>
               </div>
+              {isOwner ? (
+                <button onClick={() => setInCall(true)} disabled={inCall}
+                  className="px-3 py-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
+                  title="Video chat boshlash">
+                  <Video size={18} /> <span className="hidden sm:inline">Video chat</span>
+                </button>
+              ) : callActive && !inCall ? (
+                <button onClick={() => setInCall(true)}
+                  className="px-3 py-2 rounded-xl bg-medical-green text-white hover:opacity-90 transition-opacity flex items-center gap-1.5 text-sm font-medium animate-pulse"
+                  title="Video chatga qo'shilish">
+                  <Video size={18} /> <span className="hidden sm:inline">Qo'shilish</span>
+                </button>
+              ) : null}
             </div>
+
+            {callActive && !inCall && (
+              <div className="px-4 py-2 bg-medical-green-light border-b border-border flex items-center gap-2 text-sm text-medical-green">
+                <Video size={16} />
+                <span className="flex-1">Shifokor video chat boshladi</span>
+                <button onClick={() => setInCall(true)} className="px-3 py-1 rounded-lg bg-medical-green text-white text-xs font-semibold">
+                  Qo'shilish
+                </button>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-secondary/30">
               {messages.length === 0 ? (
