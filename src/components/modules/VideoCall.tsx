@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2 } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VideoCallProps {
+  /** Unique room identifier — everyone joining the same room is connected. */
   roomId: string;
-  isCaller: boolean;
-  peerName: string;
-  peerAvatar: string | null;
+  /** Current user id. */
   selfId: string;
+  /** Current user display name. */
+  selfName?: string;
+  /** Optional title shown at top (peer name for 1:1, group name for calls). */
+  title?: string;
   onEnd: () => void;
 }
 
@@ -16,38 +19,150 @@ const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" },
   ],
 };
 
-const VideoCall = ({ roomId, isCaller, peerName, peerAvatar, selfId, onEnd }: VideoCallProps) => {
+interface RemotePeer {
+  id: string;
+  name: string;
+  stream: MediaStream | null;
+}
+
+const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
-  const [status, setStatus] = useState<"connecting" | "connected" | "ended">("connecting");
+  const peersRef = useRef<Record<string, RTCPeerConnection>>({});
+  const makingOfferRef = useRef<Record<string, boolean>>({});
+  const ignoreOfferRef = useRef<Record<string, boolean>>({});
+  const pendingIceRef = useRef<Record<string, RTCIceCandidateInit[]>>({});
+  const peerNamesRef = useRef<Record<string, string>>({});
+
+  const [remotePeers, setRemotePeers] = useState<RemotePeer[]>([]);
+  const [status, setStatus] = useState<"connecting" | "active">("connecting");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [duration, setDuration] = useState(0);
 
+  const hasRemote = remotePeers.some((p) => p.stream);
+
   useEffect(() => {
-    if (status !== "connected") return;
+    if (!hasRemote) return;
+    setStatus("active");
     const t = setInterval(() => setDuration((d) => d + 1), 1000);
     return () => clearInterval(t);
-  }, [status]);
+  }, [hasRemote]);
+
+  const upsertRemote = useCallback((id: string, patch: Partial<RemotePeer>) => {
+    setRemotePeers((prev) => {
+      const existing = prev.find((p) => p.id === id);
+      if (existing) return prev.map((p) => (p.id === id ? { ...p, ...patch } : p));
+      return [...prev, { id, name: peerNamesRef.current[id] || "Foydalanuvchi", stream: null, ...patch }];
+    });
+  }, []);
+
+  const removeRemote = useCallback((id: string) => {
+    peersRef.current[id]?.close();
+    delete peersRef.current[id];
+    delete makingOfferRef.current[id];
+    delete ignoreOfferRef.current[id];
+    delete pendingIceRef.current[id];
+    setRemotePeers((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    const send = (type: string, payload: any) => {
-      channelRef.current?.send({ type: "broadcast", event: "signal", payload: { type, from: selfId, ...payload } });
+    const send = (payload: any) =>
+      channelRef.current?.send({ type: "broadcast", event: "signal", payload: { ...payload, from: selfId } });
+
+    const createPeer = (peerId: string) => {
+      if (peersRef.current[peerId]) return peersRef.current[peerId];
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      peersRef.current[peerId] = pc;
+
+      localStreamRef.current?.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current!));
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) send({ kind: "ice", to: peerId, candidate: e.candidate.toJSON() });
+      };
+      pc.ontrack = (e) => {
+        upsertRemote(peerId, { stream: e.streams[0], name: peerNamesRef.current[peerId] });
+      };
+      pc.onnegotiationneeded = async () => {
+        try {
+          makingOfferRef.current[peerId] = true;
+          await pc.setLocalDescription();
+          send({ kind: "desc", to: peerId, description: pc.localDescription });
+        } catch (err) {
+          console.error("negotiation error", err);
+        } finally {
+          makingOfferRef.current[peerId] = false;
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+          // Give a brief grace period for transient disconnects
+          if (pc.connectionState === "failed") removeRemote(peerId);
+        }
+      };
+      upsertRemote(peerId, {});
+      return pc;
+    };
+
+    const flushIce = async (peerId: string, pc: RTCPeerConnection) => {
+      const queued = pendingIceRef.current[peerId] || [];
+      pendingIceRef.current[peerId] = [];
+      for (const c of queued) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* ignore */ }
+      }
+    };
+
+    const handleSignal = async (payload: any) => {
+      if (!payload || payload.from === selfId || payload.to !== selfId) return;
+      const peerId = payload.from as string;
+      if (payload.name) peerNamesRef.current[peerId] = payload.name;
+      const polite = selfId < peerId; // deterministic role to resolve glare
+
+      if (payload.kind === "desc" && payload.description) {
+        const pc = peersRef.current[peerId] || createPeer(peerId);
+        const description = payload.description as RTCSessionDescriptionInit;
+        const offerCollision =
+          description.type === "offer" && (makingOfferRef.current[peerId] || pc.signalingState !== "stable");
+        ignoreOfferRef.current[peerId] = !polite && offerCollision;
+        if (ignoreOfferRef.current[peerId]) return;
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(description));
+          await flushIce(peerId, pc);
+          if (description.type === "offer") {
+            await pc.setLocalDescription();
+            send({ kind: "desc", to: peerId, description: pc.localDescription });
+          }
+        } catch (err) {
+          console.error("desc error", err);
+        }
+      } else if (payload.kind === "ice" && payload.candidate) {
+        const pc = peersRef.current[peerId];
+        if (!pc || !pc.remoteDescription) {
+          (pendingIceRef.current[peerId] ||= []).push(payload.candidate);
+          return;
+        }
+        try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); }
+        catch (err) { if (!ignoreOfferRef.current[peerId]) console.error("ice error", err); }
+      }
     };
 
     const setup = async () => {
       let stream: MediaStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
       } catch {
+        alert("Kamera va mikrofonga ruxsat berilmadi. Iltimos, brauzer ruxsatlarini tekshiring.");
         onEnd();
         return;
       }
@@ -55,76 +170,53 @@ const VideoCall = ({ roomId, isCaller, peerName, peerAvatar, selfId, onEnd }: Vi
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-      const pc = new RTCPeerConnection(ICE_SERVERS);
-      pcRef.current = pc;
-      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-
-      pc.ontrack = (e) => {
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
-        setStatus("connected");
-      };
-      pc.onicecandidate = (e) => {
-        if (e.candidate) send("ice", { candidate: e.candidate });
-      };
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") setStatus("connected");
-        if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
-          if (!cancelled) end();
-        }
-      };
-
-      const channel = supabase.channel(`webrtc-${roomId}`, { config: { broadcast: { self: false } } });
+      const channel = supabase.channel(`rtc-${roomId}`, {
+        config: { broadcast: { self: false }, presence: { key: selfId } },
+      });
       channelRef.current = channel;
 
-      channel.on("broadcast", { event: "signal" }, async ({ payload }: any) => {
-        if (!payload || payload.from === selfId) return;
-        try {
-          if (payload.type === "ready" && isCaller) {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            send("offer", { sdp: offer });
-          } else if (payload.type === "offer" && !isCaller) {
-            await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            send("answer", { sdp: answer });
-          } else if (payload.type === "answer" && isCaller) {
-            await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-          } else if (payload.type === "ice") {
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-          } else if (payload.type === "bye") {
-            end();
+      channel.on("broadcast", { event: "signal" }, ({ payload }) => handleSignal(payload));
+
+      channel.on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState() as Record<string, any[]>;
+        const presentIds = Object.keys(state).filter((id) => id !== selfId);
+        presentIds.forEach((id) => {
+          const meta = state[id]?.[0] as any;
+          if (meta?.name) peerNamesRef.current[id] = meta.name;
+          // Deterministic initiator: the lexicographically greater id starts the offer.
+          if (!peersRef.current[id] && selfId > id) {
+            createPeer(id); // adding tracks triggers onnegotiationneeded -> offer
           }
-        } catch (err) {
-          console.error("signal error", err);
-        }
+        });
+        // Drop peers who left
+        Object.keys(peersRef.current).forEach((id) => {
+          if (!presentIds.includes(id)) removeRemote(id);
+        });
       });
 
-      channel.subscribe((s) => {
-        if (s === "SUBSCRIBED" && !isCaller) send("ready", {});
+      channel.subscribe(async (s) => {
+        if (s === "SUBSCRIBED") {
+          await channel.track({ name: selfName || "Foydalanuvchi", at: Date.now() });
+        }
       });
     };
 
     setup();
     return () => {
       cancelled = true;
-      cleanup(true);
+      Object.values(peersRef.current).forEach((pc) => pc.close());
+      peersRef.current = {};
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const cleanup = (silent = false) => {
-    if (!silent) channelRef.current?.send({ type: "broadcast", event: "signal", payload: { type: "bye", from: selfId } });
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    pcRef.current?.close();
-    pcRef.current = null;
-    if (channelRef.current) supabase.removeChannel(channelRef.current);
-    channelRef.current = null;
-  };
+  }, [roomId, selfId]);
 
   const end = () => {
-    setStatus("ended");
-    cleanup();
+    Object.values(peersRef.current).forEach((pc) => pc.close());
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    if (channelRef.current) supabase.removeChannel(channelRef.current);
     onEnd();
   };
 
@@ -139,52 +231,97 @@ const VideoCall = ({ roomId, isCaller, peerName, peerAvatar, selfId, onEnd }: Vi
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+  const activePeers = remotePeers.filter((p) => p.stream);
+  const gridCols =
+    activePeers.length <= 1 ? "grid-cols-1" : activePeers.length <= 4 ? "grid-cols-2" : "grid-cols-3";
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col">
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-        <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-        {status !== "connected" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-card">
-            {peerAvatar ? (
-              <img src={peerAvatar} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
-                {peerName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <p className="text-lg font-display font-bold text-foreground">{peerName}</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col"
+    >
+      {/* Top bar */}
+      <div className="absolute top-0 inset-x-0 z-10 p-4 flex items-center justify-center">
+        <div className="px-4 py-1.5 rounded-full bg-black/50 text-white text-sm flex items-center gap-2">
+          {title && <span className="font-medium">{title}</span>}
+          {status === "active" ? (
+            <span className="flex items-center gap-1.5">
+              <Users size={14} /> {activePeers.length + 1} • {fmt(duration)}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Loader2 size={14} className="animate-spin" /> Ulanmoqda...
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Remote videos grid */}
+      <div className="flex-1 flex items-center justify-center overflow-hidden p-2">
+        {activePeers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
+              {(title || "?").charAt(0).toUpperCase()}
+            </div>
+            <p className="text-lg font-display font-bold text-foreground">{title || "Qo'ng'iroq"}</p>
             <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 size={16} className="animate-spin" /> Ulanmoqda...
+              <Loader2 size={16} className="animate-spin" /> Ishtirokchilar kutilmoqda...
             </p>
           </div>
+        ) : (
+          <div className={`grid ${gridCols} gap-2 w-full h-full`}>
+            {activePeers.map((p) => (
+              <div key={p.id} className="relative rounded-2xl overflow-hidden bg-secondary">
+                <RemoteVideo stream={p.stream!} />
+                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/50 text-white text-xs">
+                  {p.name}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
+
+        {/* Local preview */}
         <video
           ref={localVideoRef}
           autoPlay
           playsInline
           muted
-          className="absolute bottom-4 right-4 w-32 h-44 md:w-40 md:h-56 object-cover rounded-2xl border-2 border-border shadow-elevated bg-secondary"
+          className="absolute bottom-24 right-4 w-28 h-40 md:w-36 md:h-52 object-cover rounded-2xl border-2 border-border shadow-elevated bg-secondary"
         />
-        {status === "connected" && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/50 text-white text-sm">
-            {peerName} • {fmt(duration)}
-          </div>
-        )}
       </div>
 
+      {/* Controls */}
       <div className="p-6 flex items-center justify-center gap-4">
-        <button onClick={toggleMic} className={`p-4 rounded-full transition-colors ${micOn ? "bg-secondary text-foreground" : "bg-destructive text-destructive-foreground"}`}>
+        <button
+          onClick={toggleMic}
+          className={`p-4 rounded-full transition-colors ${micOn ? "bg-secondary text-foreground" : "bg-destructive text-destructive-foreground"}`}
+        >
           {micOn ? <Mic size={22} /> : <MicOff size={22} />}
         </button>
         <button onClick={end} className="p-5 rounded-full bg-destructive text-destructive-foreground shadow-glow">
           <PhoneOff size={24} />
         </button>
-        <button onClick={toggleCam} className={`p-4 rounded-full transition-colors ${camOn ? "bg-secondary text-foreground" : "bg-destructive text-destructive-foreground"}`}>
+        <button
+          onClick={toggleCam}
+          className={`p-4 rounded-full transition-colors ${camOn ? "bg-secondary text-foreground" : "bg-destructive text-destructive-foreground"}`}
+        >
           {camOn ? <Video size={22} /> : <VideoOff size={22} />}
         </button>
       </div>
     </motion.div>
   );
+};
+
+const RemoteVideo = ({ stream }: { stream: MediaStream }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (ref.current && ref.current.srcObject !== stream) {
+      ref.current.srcObject = stream;
+    }
+  }, [stream]);
+  return <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />;
 };
 
 export default VideoCall;
