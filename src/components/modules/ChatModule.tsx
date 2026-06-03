@@ -607,10 +607,19 @@ const ChatModule = () => {
     setMenuMessageId(null);
   };
 
+  const MAX_PINS = 5;
   const togglePin = async (msg: ChatMessage) => {
     setMenuMessageId(null);
     const pin = !msg.is_pinned;
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin } : m));
+    if (pin) {
+      const currentPins = messages.filter(m => m.is_pinned && isPlainMessage(m)).length;
+      if (currentPins >= MAX_PINS) {
+        toast.error(`Eng ko'pi bilan ${MAX_PINS} ta xabar qadalishi mumkin`);
+        return;
+      }
+    }
+    const stamp = new Date().toISOString();
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: pin, updated_at: stamp } : m));
     const { error } = await supabase.rpc("toggle_pin_message" as any, { _message_id: msg.id, _pin: pin });
     if (error) { toast.error("Xatolik"); loadMessages(); return; }
     toast.success(pin ? "Xabar qadaldi" : "Qadash olib tashlandi");
