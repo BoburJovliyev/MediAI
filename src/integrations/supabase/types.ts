@@ -812,6 +812,10 @@ export type Database = {
         Args: { _details?: Json; _entity_id: string; _entity_type: string }
         Returns: undefined
       }
+      record_call_status: {
+        Args: { _call_id: string; _status: string }
+        Returns: undefined
+      }
       search_users_by_email: {
         Args: { search_email: string }
         Returns: {
