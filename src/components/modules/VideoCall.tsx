@@ -264,7 +264,57 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, selfId]);
 
-  const end = () => {
+  // Audio/connection diagnostics loop.
+  useEffect(() => {
+    let raf = 0;
+    const buf = new Uint8Array(256);
+    const tickMic = () => {
+      const a = micAnalyserRef.current;
+      if (a) {
+        a.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+        const rms = Math.sqrt(sum / buf.length);
+        setMicLevel(Math.min(1, rms * 3));
+      }
+      raf = requestAnimationFrame(tickMic);
+    };
+    raf = requestAnimationFrame(tickMic);
+
+    const statsInterval = setInterval(async () => {
+      const pcs = Object.values(peersRef.current);
+      if (pcs.length === 0) return;
+      let worstRtt = 0;
+      let lossRatio = 0;
+      let audioLevel = 0;
+      for (const pc of pcs) {
+        try {
+          const stats = await pc.getStats();
+          stats.forEach((r: any) => {
+            if (r.type === "candidate-pair" && r.state === "succeeded" && r.currentRoundTripTime != null) {
+              worstRtt = Math.max(worstRtt, r.currentRoundTripTime);
+            }
+            if (r.type === "inbound-rtp" && r.kind === "audio") {
+              if (r.packetsLost != null && r.packetsReceived) {
+                lossRatio = Math.max(lossRatio, r.packetsLost / (r.packetsLost + r.packetsReceived));
+              }
+              if (r.audioLevel != null) audioLevel = Math.max(audioLevel, r.audioLevel);
+            }
+          });
+        } catch { /* ignore */ }
+      }
+      setRemoteActive(audioLevel > 0.01);
+      let q: "good" | "fair" | "poor" = "good";
+      if (worstRtt > 0.5 || lossRatio > 0.1) q = "poor";
+      else if (worstRtt > 0.25 || lossRatio > 0.03) q = "fair";
+      setQuality(q);
+    }, 2000);
+
+    return () => { cancelAnimationFrame(raf); clearInterval(statsInterval); };
+  }, []);
+
+  useEffect(() => () => { audioCtxRef.current?.close().catch(() => {}); }, []);
+
     Object.values(peersRef.current).forEach((pc) => pc.close());
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     if (channelRef.current) supabase.removeChannel(channelRef.current);
