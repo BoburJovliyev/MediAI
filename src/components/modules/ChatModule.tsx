@@ -885,10 +885,21 @@ const ChatModule = () => {
                 className={`p-2 rounded-xl transition-colors ${showMedia ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Media albom">
                 <Images size={18} />
               </button>
+              <button onClick={() => setShowCallHistory(v => !v)}
+                className={`p-2 rounded-xl transition-colors ${showCallHistory ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Qo'ng'iroqlar tarixi">
+                <Phone size={18} />
+              </button>
               <button onClick={startCall} className="p-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity" title="Video qo'ng'iroq">
                 <Video size={18} />
               </button>
             </div>
+
+            {showCallHistory && selectedContact && (
+              <div className="border-b border-border bg-secondary/20 max-h-72 overflow-y-auto">
+                <CallHistory peerId={selectedContact.user_id} />
+              </div>
+            )}
+
 
             {/* In-chat search bar */}
             {showChatSearch && (
