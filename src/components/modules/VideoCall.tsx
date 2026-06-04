@@ -436,10 +436,19 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
 const RemoteVideo = ({ stream }: { stream: MediaStream }) => {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (ref.current && ref.current.srcObject !== stream) {
-      ref.current.srcObject = stream;
-    }
+    const el = ref.current;
+    if (!el) return;
+    if (el.srcObject !== stream) el.srcObject = stream;
+    // Auto-retry rendering if the browser stalls the playback.
+    let retries = 0;
+    const tryPlay = () => {
+      el.play().catch(() => {
+        if (retries++ < 5) setTimeout(tryPlay, 600);
+      });
+    };
+    tryPlay();
   }, [stream]);
+  // autoPlay (not muted) so remote audio is heard.
   return <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />;
 };
 
