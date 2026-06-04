@@ -208,6 +208,19 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
+      // Local mic level meter via Web Audio analyser.
+      try {
+        const AC = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AC();
+        audioCtxRef.current = ctx;
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        src.connect(analyser);
+        micAnalyserRef.current = analyser;
+      } catch { /* ignore */ }
+
+
       const channel = supabase.channel(`rtc-${roomId}`, {
         config: { broadcast: { self: false }, presence: { key: selfId } },
       });
