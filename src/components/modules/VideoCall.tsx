@@ -110,6 +110,7 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
       };
       pc.ontrack = (e) => {
         upsertRemote(peerId, { stream: e.streams[0], name: peerNamesRef.current[peerId] });
+        fireConnected();
       };
       pc.onnegotiationneeded = async () => {
         try {
@@ -122,12 +123,29 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
           makingOfferRef.current[peerId] = false;
         }
       };
-      pc.onconnectionstatechange = () => {
-        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
-          // Give a brief grace period for transient disconnects
-          if (pc.connectionState === "failed") removeRemote(peerId);
+      pc.oniceconnectionstatechange = () => {
+        // Auto-retry on failure via ICE restart (up to 3 attempts) before dropping.
+        if (pc.iceConnectionState === "failed") {
+          const attempts = restartAttemptsRef.current[peerId] || 0;
+          if (attempts < 3) {
+            restartAttemptsRef.current[peerId] = attempts + 1;
+            try { pc.restartIce(); } catch { /* ignore */ }
+          } else {
+            removeRemote(peerId);
+          }
         }
       };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") {
+          restartAttemptsRef.current[peerId] = 0;
+          fireConnected();
+        }
+        if (pc.connectionState === "failed") {
+          const attempts = restartAttemptsRef.current[peerId] || 0;
+          if (attempts >= 3) removeRemote(peerId);
+        }
+      };
+
       upsertRemote(peerId, {});
       return pc;
     };
