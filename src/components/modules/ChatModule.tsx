@@ -1443,17 +1443,6 @@ const ChatModule = () => {
     )}
     {/* Incoming/active video calls are handled globally by CallProvider */}
 
-
-    {/* Active video call */}
-    {call && user && (
-      <VideoCall
-        roomId={call.roomId}
-        selfId={user.id}
-        selfName={myFullName || "Foydalanuvchi"}
-        title={call.peerName}
-        onEnd={() => setCall(null)}
-      />
-    )}
     </div>
   );
 };
