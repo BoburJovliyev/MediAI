@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      call_logs: {
+        Row: {
+          callee_id: string | null
+          callee_name: string | null
+          caller_id: string
+          caller_name: string | null
+          connected_at: string | null
+          created_at: string
+          duration_seconds: number
+          ended_at: string | null
+          group_id: string | null
+          id: string
+          room_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          callee_id?: string | null
+          callee_name?: string | null
+          caller_id: string
+          caller_name?: string | null
+          connected_at?: string | null
+          created_at?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          group_id?: string | null
+          id?: string
+          room_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          callee_id?: string | null
+          callee_name?: string | null
+          caller_id?: string
+          caller_name?: string | null
+          connected_at?: string | null
+          created_at?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          group_id?: string | null
+          id?: string
+          room_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -759,6 +810,10 @@ export type Database = {
       }
       log_admin_access_attempt: {
         Args: { _details?: Json; _entity_id: string; _entity_type: string }
+        Returns: undefined
+      }
+      record_call_status: {
+        Args: { _call_id: string; _status: string }
         Returns: undefined
       }
       search_users_by_email: {

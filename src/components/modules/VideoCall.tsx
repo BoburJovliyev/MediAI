@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, Users } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, Users, Signal, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VideoCallProps {
@@ -12,6 +12,8 @@ interface VideoCallProps {
   selfName?: string;
   /** Optional title shown at top (peer name for 1:1, group name for calls). */
   title?: string;
+  /** Fired once a remote peer's media is flowing. */
+  onConnected?: () => void;
   onEnd: () => void;
 }
 
@@ -30,7 +32,7 @@ interface RemotePeer {
   stream: MediaStream | null;
 }
 
-const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) => {
+const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: VideoCallProps) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -39,14 +41,32 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
   const ignoreOfferRef = useRef<Record<string, boolean>>({});
   const pendingIceRef = useRef<Record<string, RTCIceCandidateInit[]>>({});
   const peerNamesRef = useRef<Record<string, string>>({});
+  const onConnectedRef = useRef(onConnected);
+  onConnectedRef.current = onConnected;
+  const connectedFiredRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const micAnalyserRef = useRef<AnalyserNode | null>(null);
+  const restartAttemptsRef = useRef<Record<string, number>>({});
 
   const [remotePeers, setRemotePeers] = useState<RemotePeer[]>([]);
   const [status, setStatus] = useState<"connecting" | "active">("connecting");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [micLevel, setMicLevel] = useState(0); // 0..1 local mic input
+  const [remoteActive, setRemoteActive] = useState(false); // remote audio detected
+  const [quality, setQuality] = useState<"good" | "fair" | "poor">("good");
 
   const hasRemote = remotePeers.some((p) => p.stream);
+
+  const fireConnected = useCallback(() => {
+    if (!connectedFiredRef.current) {
+      connectedFiredRef.current = true;
+      onConnectedRef.current?.();
+    }
+  }, []);
+
+
 
   useEffect(() => {
     if (!hasRemote) return;
@@ -90,6 +110,7 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
       };
       pc.ontrack = (e) => {
         upsertRemote(peerId, { stream: e.streams[0], name: peerNamesRef.current[peerId] });
+        fireConnected();
       };
       pc.onnegotiationneeded = async () => {
         try {
@@ -102,12 +123,29 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
           makingOfferRef.current[peerId] = false;
         }
       };
-      pc.onconnectionstatechange = () => {
-        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
-          // Give a brief grace period for transient disconnects
-          if (pc.connectionState === "failed") removeRemote(peerId);
+      pc.oniceconnectionstatechange = () => {
+        // Auto-retry on failure via ICE restart (up to 3 attempts) before dropping.
+        if (pc.iceConnectionState === "failed") {
+          const attempts = restartAttemptsRef.current[peerId] || 0;
+          if (attempts < 3) {
+            restartAttemptsRef.current[peerId] = attempts + 1;
+            try { pc.restartIce(); } catch { /* ignore */ }
+          } else {
+            removeRemote(peerId);
+          }
         }
       };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") {
+          restartAttemptsRef.current[peerId] = 0;
+          fireConnected();
+        }
+        if (pc.connectionState === "failed") {
+          const attempts = restartAttemptsRef.current[peerId] || 0;
+          if (attempts >= 3) removeRemote(peerId);
+        }
+      };
+
       upsertRemote(peerId, {});
       return pc;
     };
@@ -170,6 +208,19 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
+      // Local mic level meter via Web Audio analyser.
+      try {
+        const AC = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AC();
+        audioCtxRef.current = ctx;
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        src.connect(analyser);
+        micAnalyserRef.current = analyser;
+      } catch { /* ignore */ }
+
+
       const channel = supabase.channel(`rtc-${roomId}`, {
         config: { broadcast: { self: false }, presence: { key: selfId } },
       });
@@ -213,6 +264,57 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, selfId]);
 
+  // Audio/connection diagnostics loop.
+  useEffect(() => {
+    let raf = 0;
+    const buf = new Uint8Array(256);
+    const tickMic = () => {
+      const a = micAnalyserRef.current;
+      if (a) {
+        a.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+        const rms = Math.sqrt(sum / buf.length);
+        setMicLevel(Math.min(1, rms * 3));
+      }
+      raf = requestAnimationFrame(tickMic);
+    };
+    raf = requestAnimationFrame(tickMic);
+
+    const statsInterval = setInterval(async () => {
+      const pcs = Object.values(peersRef.current);
+      if (pcs.length === 0) return;
+      let worstRtt = 0;
+      let lossRatio = 0;
+      let audioLevel = 0;
+      for (const pc of pcs) {
+        try {
+          const stats = await pc.getStats();
+          stats.forEach((r: any) => {
+            if (r.type === "candidate-pair" && r.state === "succeeded" && r.currentRoundTripTime != null) {
+              worstRtt = Math.max(worstRtt, r.currentRoundTripTime);
+            }
+            if (r.type === "inbound-rtp" && r.kind === "audio") {
+              if (r.packetsLost != null && r.packetsReceived) {
+                lossRatio = Math.max(lossRatio, r.packetsLost / (r.packetsLost + r.packetsReceived));
+              }
+              if (r.audioLevel != null) audioLevel = Math.max(audioLevel, r.audioLevel);
+            }
+          });
+        } catch { /* ignore */ }
+      }
+      setRemoteActive(audioLevel > 0.01);
+      let q: "good" | "fair" | "poor" = "good";
+      if (worstRtt > 0.5 || lossRatio > 0.1) q = "poor";
+      else if (worstRtt > 0.25 || lossRatio > 0.03) q = "fair";
+      setQuality(q);
+    }, 2000);
+
+    return () => { cancelAnimationFrame(raf); clearInterval(statsInterval); };
+  }, []);
+
+  useEffect(() => () => { audioCtxRef.current?.close().catch(() => {}); }, []);
+
   const end = () => {
     Object.values(peersRef.current).forEach((pc) => pc.close());
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -242,7 +344,7 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
       className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col"
     >
       {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 p-4 flex items-center justify-center">
+      <div className="absolute top-0 inset-x-0 z-10 p-4 flex flex-col items-center gap-2">
         <div className="px-4 py-1.5 rounded-full bg-black/50 text-white text-sm flex items-center gap-2">
           {title && <span className="font-medium">{title}</span>}
           {status === "active" ? (
@@ -255,7 +357,24 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
             </span>
           )}
         </div>
+        {/* Diagnostics: connection quality, mic level, remote audio */}
+        <div className="px-3 py-1 rounded-full bg-black/40 text-white/90 text-xs flex items-center gap-3">
+          <span className="flex items-center gap-1" title="Ulanish sifati">
+            <Signal size={13} className={quality === "good" ? "text-medical-green" : quality === "fair" ? "text-yellow-400" : "text-destructive"} />
+            {quality === "good" ? "Yaxshi" : quality === "fair" ? "O'rtacha" : "Zaif"}
+          </span>
+          <span className="flex items-center gap-1" title="Mikrofon darajasi">
+            <Mic size={13} />
+            <span className="relative w-14 h-1.5 rounded-full bg-white/20 overflow-hidden">
+              <span className="absolute inset-y-0 left-0 bg-medical-green rounded-full transition-[width] duration-75" style={{ width: `${Math.round(micLevel * 100)}%` }} />
+            </span>
+          </span>
+          <span className="flex items-center gap-1" title="Suhbatdosh ovozi">
+            <Volume2 size={13} className={remoteActive ? "text-medical-green" : "text-white/40"} />
+          </span>
+        </div>
       </div>
+
 
       {/* Remote videos grid */}
       <div className="flex-1 flex items-center justify-center overflow-hidden p-2">
@@ -317,10 +436,19 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
 const RemoteVideo = ({ stream }: { stream: MediaStream }) => {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (ref.current && ref.current.srcObject !== stream) {
-      ref.current.srcObject = stream;
-    }
+    const el = ref.current;
+    if (!el) return;
+    if (el.srcObject !== stream) el.srcObject = stream;
+    // Auto-retry rendering if the browser stalls the playback.
+    let retries = 0;
+    const tryPlay = () => {
+      el.play().catch(() => {
+        if (retries++ < 5) setTimeout(tryPlay, 600);
+      });
+    };
+    tryPlay();
   }, [stream]);
+  // autoPlay (not muted) so remote audio is heard.
   return <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />;
 };
 

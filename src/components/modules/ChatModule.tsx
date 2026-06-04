@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import GroupsView from "./GroupsView";
-import VideoCall from "./VideoCall";
+import { useCall } from "@/hooks/useCall";
+import CallHistory from "./CallHistory";
 import { validateUpload } from "@/lib/uploadValidation";
 
 interface ChatContact {
@@ -95,9 +96,9 @@ const ChatModule = () => {
   const [myFullName, setMyFullName] = useState<string>("");
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
   const [activeTab, setActiveTab] = useState<"all" | "contacts" | "groups">("all");
-  const [call, setCall] = useState<{ roomId: string; isCaller: boolean; peerId: string; peerName: string; peerAvatar: string | null } | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ roomId: string; fromId: string; fromName: string; fromAvatar: string | null } | null>(null);
+  const { startCall: startVideoCall } = useCall();
   const [showMedia, setShowMedia] = useState(false);
+  const [showCallHistory, setShowCallHistory] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
   const [showChatSearch, setShowChatSearch] = useState(false);
   const [searchAuthor, setSearchAuthor] = useState<"all" | "me" | "peer">("all");
@@ -476,39 +477,16 @@ const ChatModule = () => {
     typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { from: user?.id } });
   };
 
-  // Incoming call listener (per user)
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase.channel(`incoming-call-${user.id}`, { config: { broadcast: { self: false } } });
-    channel.on("broadcast", { event: "call" }, ({ payload }: any) => {
-      if (!payload?.roomId) return;
-      setIncomingCall({ roomId: payload.roomId, fromId: payload.fromId, fromName: payload.fromName, fromAvatar: payload.fromAvatar ?? null });
-    }).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
-
-  const startCall = async () => {
+  // Calls are initiated and received through the global CallProvider.
+  const startCall = () => {
     if (!user || !selectedContact) return;
-    const roomId = crypto.randomUUID();
-    const ch = supabase.channel(`incoming-call-${selectedContact.user_id}`);
-    await new Promise<void>((resolve) => {
-      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
+    startVideoCall({
+      user_id: selectedContact.user_id,
+      full_name: selectedContact.full_name,
+      avatar_url: selectedContact.avatar_url,
     });
-    await ch.send({
-      type: "broadcast",
-      event: "call",
-      payload: { roomId, fromId: user.id, fromName: myFullName || "Foydalanuvchi", fromAvatar: myAvatarUrl },
-    });
-    supabase.removeChannel(ch);
-    setCall({ roomId, isCaller: true, peerId: selectedContact.user_id, peerName: selectedContact.full_name, peerAvatar: selectedContact.avatar_url });
-    toast.info("Qo'ng'iroq qilinmoqda...");
   };
 
-  const acceptCall = () => {
-    if (!incomingCall) return;
-    setCall({ roomId: incomingCall.roomId, isCaller: false, peerId: incomingCall.fromId, peerName: incomingCall.fromName, peerAvatar: incomingCall.fromAvatar });
-    setIncomingCall(null);
-  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -907,10 +885,21 @@ const ChatModule = () => {
                 className={`p-2 rounded-xl transition-colors ${showMedia ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Media albom">
                 <Images size={18} />
               </button>
+              <button onClick={() => setShowCallHistory(v => !v)}
+                className={`p-2 rounded-xl transition-colors ${showCallHistory ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary"}`} title="Qo'ng'iroqlar tarixi">
+                <Phone size={18} />
+              </button>
               <button onClick={startCall} className="p-2 rounded-xl bg-medical-green-light text-medical-green hover:opacity-80 transition-opacity" title="Video qo'ng'iroq">
                 <Video size={18} />
               </button>
             </div>
+
+            {showCallHistory && selectedContact && (
+              <div className="border-b border-border bg-secondary/20 max-h-72 overflow-y-auto">
+                <CallHistory peerId={selectedContact.user_id} />
+              </div>
+            )}
+
 
             {/* In-chat search bar */}
             {showChatSearch && (
@@ -1065,6 +1054,7 @@ const ChatModule = () => {
                         </div>
                       </div>
                     );
+                  }
                   const emojiOnly = isEmojiOnly(msg.message);
                   const isImageOnly = !!msg.image_url && !msg.message && !msg.file_url && !msg.is_deleted;
 
@@ -1440,42 +1430,8 @@ const ChatModule = () => {
         />
       </div>
     )}
+    {/* Incoming/active video calls are handled globally by CallProvider */}
 
-    {/* Incoming call modal */}
-    {incomingCall && !call && (
-      <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center gap-5">
-        {incomingCall.fromAvatar ? (
-          <img src={incomingCall.fromAvatar} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
-            {incomingCall.fromName.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="text-center">
-          <p className="text-lg font-display font-bold text-foreground">{incomingCall.fromName}</p>
-          <p className="text-sm text-muted-foreground">Video qo'ng'iroq qilmoqda...</p>
-        </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setIncomingCall(null)} className="p-5 rounded-full bg-destructive text-destructive-foreground shadow-glow">
-            <PhoneOff size={24} />
-          </button>
-          <button onClick={acceptCall} className="p-5 rounded-full bg-medical-green text-white shadow-glow animate-pulse">
-            <Phone size={24} />
-          </button>
-        </div>
-      </div>
-    )}
-
-    {/* Active video call */}
-    {call && user && (
-      <VideoCall
-        roomId={call.roomId}
-        selfId={user.id}
-        selfName={myFullName || "Foydalanuvchi"}
-        title={call.peerName}
-        onEnd={() => setCall(null)}
-      />
-    )}
     </div>
   );
 };

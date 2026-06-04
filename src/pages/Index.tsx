@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { CallProvider } from "@/hooks/useCall";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
@@ -108,7 +109,9 @@ const AppContent = () => {
 
 const Index = () => (
   <AuthProvider>
-    <AppContent />
+    <CallProvider>
+      <AppContent />
+    </CallProvider>
   </AuthProvider>
 );
 
