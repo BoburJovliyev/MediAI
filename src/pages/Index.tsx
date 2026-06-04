@@ -108,7 +108,9 @@ const AppContent = () => {
 
 const Index = () => (
   <AuthProvider>
-    <AppContent />
+    <CallProvider>
+      <AppContent />
+    </CallProvider>
   </AuthProvider>
 );
 
