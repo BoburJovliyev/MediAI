@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import GroupsView from "./GroupsView";
-import VideoCall from "./VideoCall";
+import { useCall } from "@/hooks/useCall";
+import CallHistory from "./CallHistory";
 import { validateUpload } from "@/lib/uploadValidation";
 
 interface ChatContact {
