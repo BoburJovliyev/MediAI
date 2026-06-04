@@ -32,7 +32,7 @@ interface RemotePeer {
   stream: MediaStream | null;
 }
 
-const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) => {
+const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: VideoCallProps) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -41,14 +41,32 @@ const VideoCall = ({ roomId, selfId, selfName, title, onEnd }: VideoCallProps) =
   const ignoreOfferRef = useRef<Record<string, boolean>>({});
   const pendingIceRef = useRef<Record<string, RTCIceCandidateInit[]>>({});
   const peerNamesRef = useRef<Record<string, string>>({});
+  const onConnectedRef = useRef(onConnected);
+  onConnectedRef.current = onConnected;
+  const connectedFiredRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const micAnalyserRef = useRef<AnalyserNode | null>(null);
+  const restartAttemptsRef = useRef<Record<string, number>>({});
 
   const [remotePeers, setRemotePeers] = useState<RemotePeer[]>([]);
   const [status, setStatus] = useState<"connecting" | "active">("connecting");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [micLevel, setMicLevel] = useState(0); // 0..1 local mic input
+  const [remoteActive, setRemoteActive] = useState(false); // remote audio detected
+  const [quality, setQuality] = useState<"good" | "fair" | "poor">("good");
 
   const hasRemote = remotePeers.some((p) => p.stream);
+
+  const fireConnected = useCallback(() => {
+    if (!connectedFiredRef.current) {
+      connectedFiredRef.current = true;
+      onConnectedRef.current?.();
+    }
+  }, []);
+
+
 
   useEffect(() => {
     if (!hasRemote) return;
