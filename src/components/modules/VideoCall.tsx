@@ -315,6 +315,7 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
 
   useEffect(() => () => { audioCtxRef.current?.close().catch(() => {}); }, []);
 
+  const end = () => {
     Object.values(peersRef.current).forEach((pc) => pc.close());
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     if (channelRef.current) supabase.removeChannel(channelRef.current);
