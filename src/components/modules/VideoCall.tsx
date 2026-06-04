@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, Users } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2, Users, Signal, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VideoCallProps {
@@ -12,6 +12,8 @@ interface VideoCallProps {
   selfName?: string;
   /** Optional title shown at top (peer name for 1:1, group name for calls). */
   title?: string;
+  /** Fired once a remote peer's media is flowing. */
+  onConnected?: () => void;
   onEnd: () => void;
 }
 
