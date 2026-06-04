@@ -344,7 +344,7 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
       className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col"
     >
       {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 p-4 flex items-center justify-center">
+      <div className="absolute top-0 inset-x-0 z-10 p-4 flex flex-col items-center gap-2">
         <div className="px-4 py-1.5 rounded-full bg-black/50 text-white text-sm flex items-center gap-2">
           {title && <span className="font-medium">{title}</span>}
           {status === "active" ? (
@@ -357,7 +357,24 @@ const VideoCall = ({ roomId, selfId, selfName, title, onConnected, onEnd }: Vide
             </span>
           )}
         </div>
+        {/* Diagnostics: connection quality, mic level, remote audio */}
+        <div className="px-3 py-1 rounded-full bg-black/40 text-white/90 text-xs flex items-center gap-3">
+          <span className="flex items-center gap-1" title="Ulanish sifati">
+            <Signal size={13} className={quality === "good" ? "text-medical-green" : quality === "fair" ? "text-yellow-400" : "text-destructive"} />
+            {quality === "good" ? "Yaxshi" : quality === "fair" ? "O'rtacha" : "Zaif"}
+          </span>
+          <span className="flex items-center gap-1" title="Mikrofon darajasi">
+            <Mic size={13} />
+            <span className="relative w-14 h-1.5 rounded-full bg-white/20 overflow-hidden">
+              <span className="absolute inset-y-0 left-0 bg-medical-green rounded-full transition-[width] duration-75" style={{ width: `${Math.round(micLevel * 100)}%` }} />
+            </span>
+          </span>
+          <span className="flex items-center gap-1" title="Suhbatdosh ovozi">
+            <Volume2 size={13} className={remoteActive ? "text-medical-green" : "text-white/40"} />
+          </span>
+        </div>
       </div>
+
 
       {/* Remote videos grid */}
       <div className="flex-1 flex items-center justify-center overflow-hidden p-2">
