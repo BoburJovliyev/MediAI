@@ -1441,31 +1441,8 @@ const ChatModule = () => {
         />
       </div>
     )}
+    {/* Incoming/active video calls are handled globally by CallProvider */}
 
-    {/* Incoming call modal */}
-    {incomingCall && !call && (
-      <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center gap-5">
-        {incomingCall.fromAvatar ? (
-          <img src={incomingCall.fromAvatar} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
-            {incomingCall.fromName.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="text-center">
-          <p className="text-lg font-display font-bold text-foreground">{incomingCall.fromName}</p>
-          <p className="text-sm text-muted-foreground">Video qo'ng'iroq qilmoqda...</p>
-        </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setIncomingCall(null)} className="p-5 rounded-full bg-destructive text-destructive-foreground shadow-glow">
-            <PhoneOff size={24} />
-          </button>
-          <button onClick={acceptCall} className="p-5 rounded-full bg-medical-green text-white shadow-glow animate-pulse">
-            <Phone size={24} />
-          </button>
-        </div>
-      </div>
-    )}
 
     {/* Active video call */}
     {call && user && (
