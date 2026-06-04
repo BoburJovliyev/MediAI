@@ -1065,6 +1065,7 @@ const ChatModule = () => {
                         </div>
                       </div>
                     );
+                  }
                   const emojiOnly = isEmojiOnly(msg.message);
                   const isImageOnly = !!msg.image_url && !msg.message && !msg.file_url && !msg.is_deleted;
 
