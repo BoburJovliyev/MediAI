@@ -130,7 +130,7 @@ const GroupsView = () => {
       .select("*")
       .eq("group_id", group.id)
       .order("created_at", { ascending: true });
-    setMessages((data || []) as any);
+    setMessages((await resolveMessageMedia((data || []) as any)) as any);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
@@ -140,8 +140,10 @@ const GroupsView = () => {
     const channel = supabase
       .channel(`group_${selected.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_messages", filter: `group_id=eq.${selected.id}` },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new as any]);
+        async (payload) => {
+          const m = payload.new as any;
+          m.image_url = await resolveMediaUrl(m.image_url);
+          setMessages(prev => prev.some((x: any) => x.id === m.id) ? prev : [...prev, m]);
           setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         })
       .subscribe();
