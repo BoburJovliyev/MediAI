@@ -559,19 +559,23 @@ const ChatModule = () => {
     if (!user || !selectedContact) return;
     const valid = validateUpload(file, type);
     if (!valid.ok) { toast.error(valid.error!); return; }
+    if (type === "image") {
+      const dim = await validateImageDimensions(file, MAX_IMAGE_DIMENSION);
+      if (!dim.ok) { toast.error(dim.error!); return; }
+    }
     setUploading(true);
     const ext = file.name.split(".").pop();
+    // Private bucket: persist the path; signed URLs are generated on display.
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("chat-files").upload(path, file);
+    const { error } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, file, { contentType: file.type || undefined });
     if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
 
     const msgData: any = { sender_id: user.id, receiver_id: selectedContact.user_id };
     if (type === "image") {
-      msgData.image_url = urlData.publicUrl;
+      msgData.image_url = path;
       msgData.message = null;
     } else {
-      msgData.file_url = urlData.publicUrl;
+      msgData.file_url = path;
       msgData.file_name = file.name;
       msgData.message = null;
     }
