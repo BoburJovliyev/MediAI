@@ -500,7 +500,7 @@ const ChatModule = () => {
       .select("*")
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.user_id}),and(sender_id.eq.${selectedContact.user_id},receiver_id.eq.${user.id})`)
       .order("created_at", { ascending: true });
-    const msgs = data || [];
+    const msgs = await resolveMessageMedia((data || []) as ChatMessage[]);
     setMessages(msgs);
     loadReactions(msgs.map((m: any) => m.id));
   };
