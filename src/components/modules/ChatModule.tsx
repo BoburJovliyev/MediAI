@@ -416,20 +416,25 @@ const ChatModule = () => {
         event: "*",
         schema: "public",
         table: "chat_messages",
-      }, (payload) => {
+      }, async (payload) => {
         if (payload.eventType === "INSERT") {
           const newMsg = payload.new as ChatMessage;
           if (
             (newMsg.sender_id === user.id && newMsg.receiver_id === selectedContact.user_id) ||
             (newMsg.sender_id === selectedContact.user_id && newMsg.receiver_id === user.id)
           ) {
-            setMessages(prev => [...prev, newMsg]);
+            newMsg.image_url = await resolveMediaUrl(newMsg.image_url);
+            newMsg.file_url = await resolveMediaUrl(newMsg.file_url);
+            setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
             if (newMsg.sender_id === selectedContact.user_id) {
               supabase.from("chat_messages").update({ is_read: true, read_at: new Date().toISOString() }).eq("id", newMsg.id).then();
             }
           }
         } else if (payload.eventType === "UPDATE") {
-          setMessages(prev => prev.map(m => m.id === (payload.new as ChatMessage).id ? payload.new as ChatMessage : m));
+          const upd = payload.new as ChatMessage;
+          upd.image_url = await resolveMediaUrl(upd.image_url);
+          upd.file_url = await resolveMediaUrl(upd.file_url);
+          setMessages(prev => prev.map(m => m.id === upd.id ? upd : m));
         }
       })
       .on("postgres_changes", {
