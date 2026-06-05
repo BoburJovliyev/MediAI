@@ -12,7 +12,8 @@ import { format } from "date-fns";
 import GroupsView from "./GroupsView";
 import { useCall } from "@/hooks/useCall";
 import CallHistory from "./CallHistory";
-import { validateUpload } from "@/lib/uploadValidation";
+import { validateUpload, validateImageDimensions, MAX_IMAGE_DIMENSION } from "@/lib/uploadValidation";
+import { CHAT_MEDIA_BUCKET, resolveMessageMedia, resolveMediaUrl } from "@/lib/signedUrl";
 
 interface ChatContact {
   user_id: string;
