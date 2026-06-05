@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import VideoCall from "./VideoCall";
-import { validateUpload } from "@/lib/uploadValidation";
+import { validateUpload, validateImageDimensions, MAX_IMAGE_DIMENSION } from "@/lib/uploadValidation";
+import { CHAT_MEDIA_BUCKET, resolveMessageMedia, resolveMediaUrl } from "@/lib/signedUrl";
 
 interface DoctorGroup {
   id: string;
@@ -129,7 +130,7 @@ const GroupsView = () => {
       .select("*")
       .eq("group_id", group.id)
       .order("created_at", { ascending: true });
-    setMessages((data || []) as any);
+    setMessages((await resolveMessageMedia((data || []) as any)) as any);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
@@ -139,8 +140,10 @@ const GroupsView = () => {
     const channel = supabase
       .channel(`group_${selected.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_messages", filter: `group_id=eq.${selected.id}` },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new as any]);
+        async (payload) => {
+          const m = payload.new as any;
+          m.image_url = await resolveMediaUrl(m.image_url);
+          setMessages(prev => prev.some((x: any) => x.id === m.id) ? prev : [...prev, m]);
           setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         })
       .subscribe();
@@ -165,16 +168,17 @@ const GroupsView = () => {
     if (!user || !selected || !isOwner) return;
     const valid = validateUpload(file, "image");
     if (!valid.ok) { toast.error(valid.error!); return; }
+    const dim = await validateImageDimensions(file, MAX_IMAGE_DIMENSION);
+    if (!dim.ok) { toast.error(dim.error!); return; }
     setUploading(true);
     try {
       const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from("chat-files").upload(path, file);
+      const { error: upErr } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, file, { contentType: file.type || undefined });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("chat-files").getPublicUrl(path);
       const { error } = await (supabase.from("group_messages" as any) as any).insert({
         group_id: selected.id,
         sender_id: user.id,
-        image_url: pub.publicUrl,
+        image_url: path,
       });
       if (error) throw error;
       loadGroups();

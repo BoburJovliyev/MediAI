@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { validateUpload, validateImageDimensions, MAX_AVATAR_DIMENSION } from "@/lib/uploadValidation";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -45,8 +46,13 @@ const ProfilePage = () => {
 
   const handleAvatarUpload = async (file: File) => {
     if (!user) return;
+    const valid = validateUpload(file, "avatar");
+    if (!valid.ok) { toast.error(valid.error!); return; }
+    const dim = await validateImageDimensions(file, MAX_AVATAR_DIMENSION);
+    if (!dim.ok) { toast.error(dim.error!); return; }
     setUploading(true);
     const ext = file.name.split(".").pop();
+    // Avatars stay in the PUBLIC chat-files bucket so they're viewable everywhere.
     const path = `${user.id}/avatar.${ext}`;
     const { error } = await supabase.storage.from("chat-files").upload(path, file, { upsert: true });
     if (error) {
@@ -54,7 +60,9 @@ const ProfilePage = () => {
       setUploading(false);
       return;
     }
+    // Cache-bust so the new avatar shows immediately.
     const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
+    urlData.publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
     setAvatarUrl(urlData.publicUrl);
     await supabase.from("profiles").update({ avatar_url: urlData.publicUrl }).eq("user_id", user.id);
     setUploading(false);

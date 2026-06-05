@@ -12,7 +12,8 @@ import { format } from "date-fns";
 import GroupsView from "./GroupsView";
 import { useCall } from "@/hooks/useCall";
 import CallHistory from "./CallHistory";
-import { validateUpload } from "@/lib/uploadValidation";
+import { validateUpload, validateImageDimensions, MAX_IMAGE_DIMENSION } from "@/lib/uploadValidation";
+import { CHAT_MEDIA_BUCKET, resolveMessageMedia, resolveMediaUrl } from "@/lib/signedUrl";
 
 interface ChatContact {
   user_id: string;
@@ -217,15 +218,15 @@ const ChatModule = () => {
   const uploadVoiceMessage = async (blob: Blob) => {
     if (!user || !selectedContact) return;
     setUploading(true);
+    // Private bucket: store the path, resolve to a signed URL on display.
     const path = `${user.id}/voice_${Date.now()}.webm`;
-    const { error } = await supabase.storage.from("chat-files").upload(path, blob, { contentType: "audio/webm" });
+    const { error } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, blob, { contentType: "audio/webm" });
     if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
     await supabase.from("chat_messages").insert({
       sender_id: user.id,
       receiver_id: selectedContact.user_id,
       message: "🎤 Ovozli xabar",
-      file_url: urlData.publicUrl,
+      file_url: path,
       file_name: "voice_message.webm",
     });
     setUploading(false);
@@ -415,20 +416,25 @@ const ChatModule = () => {
         event: "*",
         schema: "public",
         table: "chat_messages",
-      }, (payload) => {
+      }, async (payload) => {
         if (payload.eventType === "INSERT") {
           const newMsg = payload.new as ChatMessage;
           if (
             (newMsg.sender_id === user.id && newMsg.receiver_id === selectedContact.user_id) ||
             (newMsg.sender_id === selectedContact.user_id && newMsg.receiver_id === user.id)
           ) {
-            setMessages(prev => [...prev, newMsg]);
+            newMsg.image_url = await resolveMediaUrl(newMsg.image_url);
+            newMsg.file_url = await resolveMediaUrl(newMsg.file_url);
+            setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
             if (newMsg.sender_id === selectedContact.user_id) {
               supabase.from("chat_messages").update({ is_read: true, read_at: new Date().toISOString() }).eq("id", newMsg.id).then();
             }
           }
         } else if (payload.eventType === "UPDATE") {
-          setMessages(prev => prev.map(m => m.id === (payload.new as ChatMessage).id ? payload.new as ChatMessage : m));
+          const upd = payload.new as ChatMessage;
+          upd.image_url = await resolveMediaUrl(upd.image_url);
+          upd.file_url = await resolveMediaUrl(upd.file_url);
+          setMessages(prev => prev.map(m => m.id === upd.id ? upd : m));
         }
       })
       .on("postgres_changes", {
@@ -499,7 +505,7 @@ const ChatModule = () => {
       .select("*")
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.user_id}),and(sender_id.eq.${selectedContact.user_id},receiver_id.eq.${user.id})`)
       .order("created_at", { ascending: true });
-    const msgs = data || [];
+    const msgs = await resolveMessageMedia((data || []) as ChatMessage[]);
     setMessages(msgs);
     loadReactions(msgs.map((m: any) => m.id));
   };
@@ -558,19 +564,23 @@ const ChatModule = () => {
     if (!user || !selectedContact) return;
     const valid = validateUpload(file, type);
     if (!valid.ok) { toast.error(valid.error!); return; }
+    if (type === "image") {
+      const dim = await validateImageDimensions(file, MAX_IMAGE_DIMENSION);
+      if (!dim.ok) { toast.error(dim.error!); return; }
+    }
     setUploading(true);
     const ext = file.name.split(".").pop();
+    // Private bucket: persist the path; signed URLs are generated on display.
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("chat-files").upload(path, file);
+    const { error } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, file, { contentType: file.type || undefined });
     if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
 
     const msgData: any = { sender_id: user.id, receiver_id: selectedContact.user_id };
     if (type === "image") {
-      msgData.image_url = urlData.publicUrl;
+      msgData.image_url = path;
       msgData.message = null;
     } else {
-      msgData.file_url = urlData.publicUrl;
+      msgData.file_url = path;
       msgData.file_name = file.name;
       msgData.message = null;
     }
