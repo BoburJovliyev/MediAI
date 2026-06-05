@@ -217,15 +217,15 @@ const ChatModule = () => {
   const uploadVoiceMessage = async (blob: Blob) => {
     if (!user || !selectedContact) return;
     setUploading(true);
+    // Private bucket: store the path, resolve to a signed URL on display.
     const path = `${user.id}/voice_${Date.now()}.webm`;
-    const { error } = await supabase.storage.from("chat-files").upload(path, blob, { contentType: "audio/webm" });
+    const { error } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, blob, { contentType: "audio/webm" });
     if (error) { toast.error("Yuklashda xatolik"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(path);
     await supabase.from("chat_messages").insert({
       sender_id: user.id,
       receiver_id: selectedContact.user_id,
       message: "🎤 Ovozli xabar",
-      file_url: urlData.publicUrl,
+      file_url: path,
       file_name: "voice_message.webm",
     });
     setUploading(false);
