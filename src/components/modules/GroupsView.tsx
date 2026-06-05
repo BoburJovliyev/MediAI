@@ -168,16 +168,17 @@ const GroupsView = () => {
     if (!user || !selected || !isOwner) return;
     const valid = validateUpload(file, "image");
     if (!valid.ok) { toast.error(valid.error!); return; }
+    const dim = await validateImageDimensions(file, MAX_IMAGE_DIMENSION);
+    if (!dim.ok) { toast.error(dim.error!); return; }
     setUploading(true);
     try {
       const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from("chat-files").upload(path, file);
+      const { error: upErr } = await supabase.storage.from(CHAT_MEDIA_BUCKET).upload(path, file, { contentType: file.type || undefined });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("chat-files").getPublicUrl(path);
       const { error } = await (supabase.from("group_messages" as any) as any).insert({
         group_id: selected.id,
         sender_id: user.id,
-        image_url: pub.publicUrl,
+        image_url: path,
       });
       if (error) throw error;
       loadGroups();
