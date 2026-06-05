@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { validateUpload, validateImageDimensions, MAX_AVATAR_DIMENSION } from "@/lib/uploadValidation";
 
 const ProfilePage = () => {
   const { user } = useAuth();
