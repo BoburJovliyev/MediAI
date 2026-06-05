@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import VideoCall from "./VideoCall";
-import { validateUpload } from "@/lib/uploadValidation";
+import { validateUpload, validateImageDimensions, MAX_IMAGE_DIMENSION } from "@/lib/uploadValidation";
+import { CHAT_MEDIA_BUCKET, resolveMessageMedia, resolveMediaUrl } from "@/lib/signedUrl";
 
 interface DoctorGroup {
   id: string;
