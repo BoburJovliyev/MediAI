@@ -197,6 +197,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         stopDial();
         playBlip();
         toast.error("Javob bo'lmadi");
+        insertCallMarker(peer.user_id, "missed");
         setActive(null);
       }
     }, NO_ANSWER_MS);
