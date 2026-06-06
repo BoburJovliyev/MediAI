@@ -72,6 +72,9 @@ const ChatModule = () => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [menuMessageId, setMenuMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [locallyDeleted, setLocallyDeleted] = useState<Set<string>>(() => {
+    try { return new Set<string>(JSON.parse(localStorage.getItem(LOCAL_DELETE_KEY) || "[]")); } catch { return new Set<string>(); }
+  });
   const [uploading, setUploading] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
