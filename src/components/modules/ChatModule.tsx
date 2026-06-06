@@ -48,6 +48,7 @@ interface ChatMessage {
 import EmojiPicker from "./EmojiPicker";
 
 const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const LOCAL_DELETE_KEY = "chat_local_deleted_v1";
 
 const isEmojiOnly = (text: string | null): boolean => {
   if (!text) return false;
@@ -71,6 +72,9 @@ const ChatModule = () => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [menuMessageId, setMenuMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [locallyDeleted, setLocallyDeleted] = useState<Set<string>>(() => {
+    try { return new Set<string>(JSON.parse(localStorage.getItem(LOCAL_DELETE_KEY) || "[]")); } catch { return new Set<string>(); }
+  });
   const [uploading, setUploading] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -435,6 +439,9 @@ const ChatModule = () => {
           upd.image_url = await resolveMediaUrl(upd.image_url);
           upd.file_url = await resolveMediaUrl(upd.file_url);
           setMessages(prev => prev.map(m => m.id === upd.id ? upd : m));
+        } else if (payload.eventType === "DELETE") {
+          const oldId = (payload.old as any)?.id;
+          if (oldId) setMessages(prev => prev.filter(m => m.id !== oldId));
         }
       })
       .on("postgres_changes", {
@@ -592,22 +599,26 @@ const ChatModule = () => {
     loadContacts();
   };
 
-  const deleteMsg = async (msg: ChatMessage) => {
-    const ageMs = Date.now() - new Date(msg.created_at).getTime();
-    if (ageMs > EDIT_DELETE_WINDOW_MS) {
-      toast.error("10 daqiqadan keyin xabarni o'chirib bo'lmaydi");
-      setMenuMessageId(null);
-      return;
-    }
-    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", msg.id);
-    if (user && selectedContact) {
-      await supabase.from("chat_messages").insert({
-        sender_id: user.id,
-        receiver_id: selectedContact.user_id,
-        message: JSON.stringify({ type: "delete_activity", from: user.id }),
-      });
-    }
+  // "Delete for me" — hide locally only, no DB change, peer keeps the message.
+  const deleteForMe = (msg: ChatMessage) => {
     setMenuMessageId(null);
+    setLocallyDeleted(prev => {
+      const next = new Set(prev);
+      next.add(msg.id);
+      try { localStorage.setItem(LOCAL_DELETE_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  // "Delete for everyone" — permanently remove the row. Leaves no trace anywhere.
+  const deleteForEveryone = async (msg: ChatMessage) => {
+    setMenuMessageId(null);
+    setMessages(prev => prev.filter(m => m.id !== msg.id));
+    const { error } = await supabase.from("chat_messages").delete().eq("id", msg.id);
+    if (error) {
+      toast.error("O'chirishda xatolik");
+      loadMessages();
+    }
   };
 
   const MAX_PINS = 5;
@@ -645,7 +656,7 @@ const ChatModule = () => {
     if (!message) return null;
     try {
       const parsed = JSON.parse(message);
-      if (parsed.type === "invitation_activity" || parsed.type === "edit_activity" || parsed.type === "delete_activity") return parsed;
+      if (parsed.type === "invitation_activity" || parsed.type === "edit_activity" || parsed.type === "call_activity") return parsed;
     } catch { }
     return null;
   };
@@ -719,7 +730,8 @@ const ChatModule = () => {
     return true;
   };
   const matchedIds = new Set(searchActive ? messages.filter(matchesSearch).map(m => m.id) : []);
-  const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
+  const displayedMessages = (searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages)
+    .filter(m => !locallyDeleted.has(m.id));
 
   const highlightText = (text: string) => {
     const q = chatSearch.trim();
@@ -997,7 +1009,31 @@ const ChatModule = () => {
                 const nextMsg = displayedMessages[index + 1];
                 const showAvatar = !isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
                 const showMyAvatar = isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
-                const activity = parseActivity(msg.message);
+                 const activity = parseActivity(msg.message);
+                  if (activity && activity.type === "call_activity") {
+                    const outgoing = activity.from === user?.id;
+                    const status = activity.status as string;
+                    const missed = status === "missed" || status === "rejected";
+                    const statusText =
+                      status === "completed" ? (outgoing ? "Chiquvchi qo'ng'iroq" : "Kiruvchi qo'ng'iroq")
+                      : status === "rejected" ? "Qo'ng'iroq rad etildi"
+                      : "Javobsiz qo'ng'iroq";
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <button
+                          onClick={startCall}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-colors hover:opacity-80 ${
+                            missed ? "bg-destructive/10 text-destructive" : "bg-medical-green-light text-medical-green"
+                          }`}
+                        >
+                          {activity.video ? <Video size={12} /> : <Phone size={12} />}
+                          {statusText}
+                          {activity.duration ? <span className="opacity-70">· {activity.duration}</span> : null}
+                          <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
+                        </button>
+                      </div>
+                    );
+                  }
                   if (activity) {
                     let label = "";
                     let cls = "bg-secondary text-muted-foreground";
@@ -1008,9 +1044,6 @@ const ChatModule = () => {
                     } else if (activity.type === "edit_activity") {
                       label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni tahrirladi`;
                       cls = "bg-primary/10 text-primary";
-                    } else if (activity.type === "delete_activity") {
-                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni o'chirdi`;
-                      cls = "bg-destructive/10 text-destructive";
                     }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
@@ -1227,7 +1260,14 @@ const ChatModule = () => {
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className={`absolute ${isMine ? "left-0" : "right-0"} top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[260px] py-1 overflow-hidden`}>
+                            <div
+                              className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                              onClick={() => setMenuMessageId(null)}
+                            >
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-card border border-border rounded-2xl shadow-elevated w-full max-w-xs py-1 overflow-hidden animate-in fade-in zoom-in-95 max-h-[80vh] overflow-y-auto"
+                            >
                               {/* Quick reactions */}
                               <div className="flex items-center justify-between px-2 py-2 border-b border-border bg-secondary/40">
                                 {["❤️","👍","👏","🔥","😂","😮","🙏"].map(em => (
@@ -1293,13 +1333,18 @@ const ChatModule = () => {
                                 </>
                               )}
                               {isMine && (
-                                <>
-                                  <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
-                                  <button onClick={() => deleteMsg(msg)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> O'chirish</button>
-                                </>
+                                <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
                               )}
+                              <div className="border-t border-border mt-1 pt-1">
+                                <button onClick={() => deleteForMe(msg)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Trash2 size={12} /> O'zim uchun o'chirish</button>
+                                {isMine && (
+                                  <button onClick={() => deleteForEveryone(msg)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> Hamma uchun o'chirish</button>
+                                )}
+                              </div>
+                            </div>
                             </div>
                           )}
                         </div>

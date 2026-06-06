@@ -79,6 +79,19 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     setTimeout(() => supabase.removeChannel(ch), 500);
   }, []);
 
+  // Leave a Telegram-style call marker in the direct chat (caller side only,
+  // to avoid duplicates). status: completed | missed | rejected.
+  const insertCallMarker = useCallback(async (peerId: string, status: string) => {
+    if (!user) return;
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: peerId,
+      message: JSON.stringify({ type: "call_activity", status, video: true, from: user.id }),
+    });
+  }, [user]);
+
+
+
   // Global signaling listener for the current user.
   useEffect(() => {
     if (!user) return;
@@ -129,6 +142,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         clearNoAnswer();
         playBlip();
         toast.error("Qo'ng'iroq rad etildi");
+        insertCallMarker(a.peer.user_id, "rejected");
         setActive(null);
       }
     });
@@ -183,10 +197,11 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         stopDial();
         playBlip();
         toast.error("Javob bo'lmadi");
+        insertCallMarker(peer.user_id, "missed");
         setActive(null);
       }
     }, NO_ANSWER_MS);
-  }, [user, myProfile, sendToPeer, clearNoAnswer, stopDial]);
+  }, [user, myProfile, sendToPeer, clearNoAnswer, stopDial, insertCallMarker]);
 
   const acceptCall = useCallback(async () => {
     const inc = incomingRef.current;
@@ -222,13 +237,16 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     if (a) {
       if (a.connected) {
         await supabase.rpc("record_call_status" as any, { _call_id: a.callLogId, _status: "completed" });
+        // Only the caller writes the chat marker to avoid duplicates.
+        if (a.isCaller) await insertCallMarker(a.peer.user_id, "completed");
       } else if (a.isCaller) {
         await supabase.rpc("record_call_status" as any, { _call_id: a.callLogId, _status: "missed" });
         await sendToPeer(a.peer.user_id, "cancel", { roomId: a.roomId });
+        await insertCallMarker(a.peer.user_id, "missed");
       }
     }
     setActive(null);
-  }, [stopDial, clearNoAnswer, sendToPeer]);
+  }, [stopDial, clearNoAnswer, sendToPeer, insertCallMarker]);
 
   // Mark connected once the peer media is flowing (caller side fallback).
   const handleConnected = useCallback(() => {
