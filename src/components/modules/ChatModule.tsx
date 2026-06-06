@@ -592,22 +592,26 @@ const ChatModule = () => {
     loadContacts();
   };
 
-  const deleteMsg = async (msg: ChatMessage) => {
-    const ageMs = Date.now() - new Date(msg.created_at).getTime();
-    if (ageMs > EDIT_DELETE_WINDOW_MS) {
-      toast.error("10 daqiqadan keyin xabarni o'chirib bo'lmaydi");
-      setMenuMessageId(null);
-      return;
-    }
-    await supabase.from("chat_messages").update({ is_deleted: true, message: "Bu xabar o'chirildi" }).eq("id", msg.id);
-    if (user && selectedContact) {
-      await supabase.from("chat_messages").insert({
-        sender_id: user.id,
-        receiver_id: selectedContact.user_id,
-        message: JSON.stringify({ type: "delete_activity", from: user.id }),
-      });
-    }
+  // "Delete for me" — hide locally only, no DB change, peer keeps the message.
+  const deleteForMe = (msg: ChatMessage) => {
     setMenuMessageId(null);
+    setLocallyDeleted(prev => {
+      const next = new Set(prev);
+      next.add(msg.id);
+      try { localStorage.setItem(LOCAL_DELETE_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  // "Delete for everyone" — permanently remove the row. Leaves no trace anywhere.
+  const deleteForEveryone = async (msg: ChatMessage) => {
+    setMenuMessageId(null);
+    setMessages(prev => prev.filter(m => m.id !== msg.id));
+    const { error } = await supabase.from("chat_messages").delete().eq("id", msg.id);
+    if (error) {
+      toast.error("O'chirishda xatolik");
+      loadMessages();
+    }
   };
 
   const MAX_PINS = 5;
