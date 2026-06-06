@@ -142,6 +142,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         clearNoAnswer();
         playBlip();
         toast.error("Qo'ng'iroq rad etildi");
+        insertCallMarker(a.peer.user_id, "rejected");
         setActive(null);
       }
     });
