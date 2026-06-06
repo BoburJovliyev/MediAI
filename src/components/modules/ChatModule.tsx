@@ -1320,6 +1320,7 @@ const ChatModule = () => {
                                 )}
                               </div>
                             </div>
+                            </div>
                           )}
                         </div>
                       )}
