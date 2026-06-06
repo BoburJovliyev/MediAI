@@ -439,6 +439,9 @@ const ChatModule = () => {
           upd.image_url = await resolveMediaUrl(upd.image_url);
           upd.file_url = await resolveMediaUrl(upd.file_url);
           setMessages(prev => prev.map(m => m.id === upd.id ? upd : m));
+        } else if (payload.eventType === "DELETE") {
+          const oldId = (payload.old as any)?.id;
+          if (oldId) setMessages(prev => prev.filter(m => m.id !== oldId));
         }
       })
       .on("postgres_changes", {
