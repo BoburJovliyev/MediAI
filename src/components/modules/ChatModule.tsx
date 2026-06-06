@@ -727,7 +727,8 @@ const ChatModule = () => {
     return true;
   };
   const matchedIds = new Set(searchActive ? messages.filter(matchesSearch).map(m => m.id) : []);
-  const displayedMessages = searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages;
+  const displayedMessages = (searchActive ? messages.filter(m => matchedIds.has(m.id)) : messages)
+    .filter(m => !locallyDeleted.has(m.id));
 
   const highlightText = (text: string) => {
     const q = chatSearch.trim();
