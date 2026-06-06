@@ -201,7 +201,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         setActive(null);
       }
     }, NO_ANSWER_MS);
-  }, [user, myProfile, sendToPeer, clearNoAnswer, stopDial]);
+  }, [user, myProfile, sendToPeer, clearNoAnswer, stopDial, insertCallMarker]);
 
   const acceptCall = useCallback(async () => {
     const inc = incomingRef.current;
