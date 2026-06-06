@@ -79,6 +79,19 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     setTimeout(() => supabase.removeChannel(ch), 500);
   }, []);
 
+  // Leave a Telegram-style call marker in the direct chat (caller side only,
+  // to avoid duplicates). status: completed | missed | rejected.
+  const insertCallMarker = useCallback(async (peerId: string, status: string) => {
+    if (!user) return;
+    await supabase.from("chat_messages").insert({
+      sender_id: user.id,
+      receiver_id: peerId,
+      message: JSON.stringify({ type: "call_activity", status, video: true, from: user.id }),
+    });
+  }, [user]);
+
+
+
   // Global signaling listener for the current user.
   useEffect(() => {
     if (!user) return;
