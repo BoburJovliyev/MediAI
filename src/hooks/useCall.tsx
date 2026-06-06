@@ -237,13 +237,16 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     if (a) {
       if (a.connected) {
         await supabase.rpc("record_call_status" as any, { _call_id: a.callLogId, _status: "completed" });
+        // Only the caller writes the chat marker to avoid duplicates.
+        if (a.isCaller) await insertCallMarker(a.peer.user_id, "completed");
       } else if (a.isCaller) {
         await supabase.rpc("record_call_status" as any, { _call_id: a.callLogId, _status: "missed" });
         await sendToPeer(a.peer.user_id, "cancel", { roomId: a.roomId });
+        await insertCallMarker(a.peer.user_id, "missed");
       }
     }
     setActive(null);
-  }, [stopDial, clearNoAnswer, sendToPeer]);
+  }, [stopDial, clearNoAnswer, sendToPeer, insertCallMarker]);
 
   // Mark connected once the peer media is flowing (caller side fallback).
   const handleConnected = useCallback(() => {
