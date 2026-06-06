@@ -1301,13 +1301,17 @@ const ChatModule = () => {
                                 </>
                               )}
                               {isMine && (
-                                <>
-                                  <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
-                                  <button onClick={() => deleteMsg(msg)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> O'chirish</button>
-                                </>
+                                <button onClick={() => { setEditMessage(msg); setNewMessage(msg.message || ""); setMenuMessageId(null); }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Edit2 size={12} /> Tahrirlash</button>
                               )}
+                              <div className="border-t border-border mt-1 pt-1">
+                                <button onClick={() => deleteForMe(msg)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Trash2 size={12} /> O'zim uchun o'chirish</button>
+                                {isMine && (
+                                  <button onClick={() => deleteForEveryone(msg)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> Hamma uchun o'chirish</button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
