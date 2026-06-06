@@ -653,7 +653,7 @@ const ChatModule = () => {
     if (!message) return null;
     try {
       const parsed = JSON.parse(message);
-      if (parsed.type === "invitation_activity" || parsed.type === "edit_activity" || parsed.type === "delete_activity") return parsed;
+      if (parsed.type === "invitation_activity" || parsed.type === "edit_activity" || parsed.type === "call_activity") return parsed;
     } catch { }
     return null;
   };
