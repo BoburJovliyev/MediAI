@@ -1235,7 +1235,14 @@ const ChatModule = () => {
                             <MoreVertical size={14} />
                           </button>
                           {menuMessageId === msg.id && (
-                            <div className={`absolute ${isMine ? "left-0" : "right-0"} top-full mt-1 bg-card border border-border rounded-2xl shadow-elevated z-20 min-w-[260px] py-1 overflow-hidden`}>
+                            <div
+                              className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                              onClick={() => setMenuMessageId(null)}
+                            >
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-card border border-border rounded-2xl shadow-elevated w-full max-w-xs py-1 overflow-hidden animate-in fade-in zoom-in-95 max-h-[80vh] overflow-y-auto"
+                            >
                               {/* Quick reactions */}
                               <div className="flex items-center justify-between px-2 py-2 border-b border-border bg-secondary/40">
                                 {["❤️","👍","👏","🔥","😂","😮","🙏"].map(em => (
