@@ -48,6 +48,7 @@ interface ChatMessage {
 import EmojiPicker from "./EmojiPicker";
 
 const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const LOCAL_DELETE_KEY = "chat_local_deleted_v1";
 
 const isEmojiOnly = (text: string | null): boolean => {
   if (!text) return false;
