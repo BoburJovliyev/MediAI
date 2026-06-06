@@ -1006,7 +1006,31 @@ const ChatModule = () => {
                 const nextMsg = displayedMessages[index + 1];
                 const showAvatar = !isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
                 const showMyAvatar = isMine && (!nextMsg || nextMsg.sender_id !== msg.sender_id || !!parseActivity(nextMsg.message) || !!parseInvitation(nextMsg.message));
-                const activity = parseActivity(msg.message);
+                 const activity = parseActivity(msg.message);
+                  if (activity && activity.type === "call_activity") {
+                    const outgoing = activity.from === user?.id;
+                    const status = activity.status as string;
+                    const missed = status === "missed" || status === "rejected";
+                    const statusText =
+                      status === "completed" ? (outgoing ? "Chiquvchi qo'ng'iroq" : "Kiruvchi qo'ng'iroq")
+                      : status === "rejected" ? "Qo'ng'iroq rad etildi"
+                      : "Javobsiz qo'ng'iroq";
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <button
+                          onClick={startCall}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-colors hover:opacity-80 ${
+                            missed ? "bg-destructive/10 text-destructive" : "bg-medical-green-light text-medical-green"
+                          }`}
+                        >
+                          {activity.video ? <Video size={12} /> : <Phone size={12} />}
+                          {statusText}
+                          {activity.duration ? <span className="opacity-70">· {activity.duration}</span> : null}
+                          <span className="opacity-60">• {format(new Date(msg.created_at), "HH:mm")}</span>
+                        </button>
+                      </div>
+                    );
+                  }
                   if (activity) {
                     let label = "";
                     let cls = "bg-secondary text-muted-foreground";
@@ -1017,9 +1041,6 @@ const ChatModule = () => {
                     } else if (activity.type === "edit_activity") {
                       label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni tahrirladi`;
                       cls = "bg-primary/10 text-primary";
-                    } else if (activity.type === "delete_activity") {
-                      label = `${activity.from === user?.id ? "Siz" : selectedContact?.full_name || "Foydalanuvchi"} xabarni o'chirdi`;
-                      cls = "bg-destructive/10 text-destructive";
                     }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
