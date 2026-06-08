@@ -27,7 +27,8 @@ Javobni quyidagi JSON formatda ber:
   "findings": ["topilma 1", "topilma 2"],
   "severity": "normal | mild | moderate | severe",
   "recommendation": "tavsiya matni",
-  "regions": ["tekshirilgan hudud 1", "tekshirilgan hudud 2"]
+  "regions": ["tekshirilgan hudud 1", "tekshirilgan hudud 2"],
+  "recommended_doctor": "kardiolog | nevrolog | jarroh | ortoped va h.k."
 }
 
 Muhim: Faqat JSON qaytar, boshqa hech narsa qo'shma.`;
@@ -73,8 +74,9 @@ Muhim: Faqat JSON qaytar, boshqa hech narsa qo'shma.`;
                   severity: { type: "string", enum: ["normal", "mild", "moderate", "severe"] },
                   recommendation: { type: "string" },
                   regions: { type: "array", items: { type: "string" } },
+                  recommended_doctor: { type: "string", description: "Recommended doctor specialty in Uzbek (e.g., 'Kardiolog', 'Jarroh')" },
                 },
-                required: ["findings", "severity", "recommendation", "regions"],
+                required: ["findings", "severity", "recommendation", "regions", "recommended_doctor"],
                 additionalProperties: false,
               },
             },
@@ -109,7 +111,7 @@ Muhim: Faqat JSON qaytar, boshqa hech narsa qo'shma.`;
       // Fallback: try parsing the content as JSON
       const content = data.choices?.[0]?.message?.content || "";
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      result = jsonMatch ? JSON.parse(jsonMatch[0]) : { findings: ["Tahlil natijasi olinmadi"], severity: "normal", recommendation: "Qayta urinib ko'ring", regions: [] };
+      result = jsonMatch ? JSON.parse(jsonMatch[0]) : { findings: ["Tahlil natijasi olinmadi"], severity: "normal", recommendation: "Qayta urinib ko'ring", regions: [], recommended_doctor: "Umumiy amaliyot shifokori" };
     }
 
     return new Response(JSON.stringify(result), {

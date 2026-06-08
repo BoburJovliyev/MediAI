@@ -17,6 +17,8 @@ interface Appointment {
   status: string;
   reason: string | null;
   notes: string | null;
+  location_name: string | null;
+  location_address: string | null;
 }
 
 interface Availability {
@@ -51,6 +53,12 @@ const statusLabel: Record<string, string> = {
   completed: "Yakunlangan",
 };
 
+const HOSPITALS = [
+  { id: '1', name: 'Asosiy poliklinika', address: 'Toshkent sh., Yunusobod tumani', coords: '41.3643,69.2882' },
+  { id: '2', name: 'Tibbiyot markazi', address: 'Toshkent sh., Chilonzor tumani', coords: '41.2721,69.2045' },
+  { id: '3', name: 'Xususiy klinika', address: 'Toshkent sh., Mirzo Ulugbek tumani', coords: '41.3262,69.3243' }
+];
+
 const AppointmentsModule = () => {
   const { user } = useAuth();
   const { isDoctor, loading: roleLoading } = useUserRole();
@@ -71,6 +79,7 @@ const AppointmentsModule = () => {
   const [docAvailability, setDocAvailability] = useState<Availability[]>([]);
   const [bookedSlots, setBookedSlots] = useState<{ scheduled_at: string }[]>([]);
   const [reason, setReason] = useState("");
+  const [selectedHospital, setSelectedHospital] = useState<string>("");
   const [booking, setBooking] = useState(false);
 
   const loadAppointments = async () => {
@@ -182,15 +191,30 @@ const AppointmentsModule = () => {
   }, [docAvailability, bookedSlots, selectedDate]);
 
   const book = async (slot: string) => {
-    if (!user || !selectedDoctor) return;
+    if (!user || !selectedDoctor || !selectedHospital) return;
     setBooking(true);
+    
     const scheduled = new Date(selectedDate + "T" + slot + ":00");
+    const scheduledIso = scheduled.toISOString();
+    
+    // Check for duplicate on client side
+    const isDuplicate = bookedSlots.some(b => b.scheduled_at === scheduledIso);
+    if (isDuplicate) {
+      toast.error("Bu vaqt allaqachon band qilingan.");
+      setBooking(false);
+      return;
+    }
+
+    const hospital = HOSPITALS.find(h => h.id === selectedHospital);
+
     const { error } = await supabase.from("appointments").insert({
       doctor_id: selectedDoctor,
       patient_id: user.id,
-      scheduled_at: scheduled.toISOString(),
+      scheduled_at: scheduledIso,
       duration_minutes: docAvailability[0]?.slot_minutes || 30,
       reason: reason || null,
+      location_name: hospital?.name,
+      location_address: hospital?.address,
     });
     setBooking(false);
     if (error) { toast.error("Band qilishda xatolik"); return; }
@@ -255,9 +279,17 @@ const AppointmentsModule = () => {
             {statusLabel[a.status] || a.status}
           </span>
         </div>
-        <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5"><Calendar size={14} /> {format(new Date(a.scheduled_at), "dd.MM.yyyy")}</span>
-          <span className="flex items-center gap-1.5"><Clock size={14} /> {format(new Date(a.scheduled_at), "HH:mm")}</span>
+        <div className="flex flex-col gap-2 mt-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5"><Calendar size={14} /> {format(new Date(a.scheduled_at), "dd.MM.yyyy")}</span>
+            <span className="flex items-center gap-1.5"><Clock size={14} /> {format(new Date(a.scheduled_at), "HH:mm")}</span>
+          </div>
+          {a.location_name && (
+            <div className="flex flex-col text-xs bg-secondary/50 rounded-lg p-2 border border-border/50">
+              <span className="font-semibold text-foreground">{a.location_name}</span>
+              <span className="text-muted-foreground">{a.location_address}</span>
+            </div>
+          )}
         </div>
         {(a.status === "pending" || a.status === "confirmed") && (
           <div className="flex gap-2 mt-4">
@@ -356,24 +388,69 @@ const AppointmentsModule = () => {
                 className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
             </div>
           </div>
-          <div className="mt-3">
-            <label className="text-xs text-muted-foreground block mb-1">Sabab (ixtiyoriy)</label>
-            <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Masalan: konsultatsiya"
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+          <div className="mt-3 grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Shifoxona / Manzil</label>
+              <select value={selectedHospital} onChange={(e) => setSelectedHospital(e.target.value)}
+                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
+                <option value="">Manzilni tanlang...</option>
+                {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Sabab (ixtiyoriy)</label>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Masalan: konsultatsiya"
+                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+            </div>
           </div>
-          {selectedDoctor && (
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground mb-2">Bo'sh vaqtlar:</p>
+
+          {selectedHospital && (
+            <div className="mt-4 border border-border rounded-xl overflow-hidden shadow-sm">
+              <iframe
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                src={`https://maps.google.com/maps?q=${HOSPITALS.find(h => h.id === selectedHospital)?.coords}&hl=uz&z=15&output=embed`}
+              ></iframe>
+              <div className="bg-secondary p-3 flex items-center justify-between">
+                <div className="text-sm">
+                  <p className="font-semibold text-foreground">{HOSPITALS.find(h => h.id === selectedHospital)?.name}</p>
+                  <p className="text-xs text-muted-foreground">{HOSPITALS.find(h => h.id === selectedHospital)?.address}</p>
+                </div>
+                <a 
+                  href={`https://google.com/maps/dir//${HOSPITALS.find(h => h.id === selectedHospital)?.coords}`} 
+                  target="_blank" 
+                  rel="noopener"
+                  className="px-3 py-1.5 rounded-lg bg-medical-blue-light text-medical-blue text-xs font-semibold flex items-center gap-1.5 hover:bg-medical-blue hover:text-white transition"
+                >
+                  🗺️ Yo'l ko'rsatish
+                </a>
+              </div>
+            </div>
+          )}
+
+          {selectedDoctor && selectedDate && selectedHospital && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm font-semibold text-foreground mb-3">Bo'sh vaqtlar:</p>
               {availableSlots.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Bu kunda bo'sh vaqt yo'q.</p>
+                <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-xl border border-warning/20">Bu kunda bo'sh vaqt yo'q.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {availableSlots.map((s) => (
-                    <button key={s} disabled={booking} onClick={() => book(s)}
-                      className="px-3 py-2 rounded-xl text-sm bg-secondary hover:gradient-primary hover:text-primary-foreground transition border border-border disabled:opacity-50">
-                      {s}
-                    </button>
-                  ))}
+                  {availableSlots.map((s) => {
+                    const isTaken = bookedSlots.some(b => b.scheduled_at === new Date(selectedDate + "T" + s + ":00").toISOString());
+                    return (
+                      <button key={s} disabled={booking || isTaken} onClick={() => !isTaken && book(s)}
+                        className={`px-4 py-2 rounded-xl text-sm transition border ${
+                          isTaken 
+                            ? "bg-secondary text-muted-foreground/50 border-border/50 cursor-not-allowed opacity-50" 
+                            : "bg-secondary hover:gradient-primary hover:text-primary-foreground border-border hover:border-transparent text-foreground shadow-sm"
+                        }`}>
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

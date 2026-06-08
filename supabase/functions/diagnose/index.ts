@@ -67,8 +67,9 @@ Bemor ma'lumotlari:
                     items: { type: "string" },
                     description: "Lifestyle recommendations in Uzbek",
                   },
+                  recommended_doctor: { type: "string", description: "Recommended doctor specialty to visit (e.g., 'Nevrolog', 'Ortoped')" },
                 },
-                required: ["condition", "confidence", "description", "medications", "lifestyle"],
+                required: ["condition", "confidence", "description", "medications", "lifestyle", "recommended_doctor"],
                 additionalProperties: false,
               },
             },
@@ -98,7 +99,7 @@ Bemor ma'lumotlari:
     } else {
       const content = data.choices?.[0]?.message?.content || "";
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      result = jsonMatch ? JSON.parse(jsonMatch[0]) : { condition: "Tahlil amalga oshmadi", confidence: 0, description: "Qayta urinib ko'ring", medications: [], lifestyle: [] };
+      result = jsonMatch ? JSON.parse(jsonMatch[0]) : { condition: "Tahlil amalga oshmadi", confidence: 0, description: "Qayta urinib ko'ring", medications: [], lifestyle: [], recommended_doctor: "Umumiy amaliyot shifokori" };
     }
 
     return new Response(JSON.stringify(result), {

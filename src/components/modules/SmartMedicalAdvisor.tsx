@@ -21,6 +21,7 @@ interface Diagnosis {
   description: string;
   medications: { name: string; dose: string; frequency: string; duration: string }[];
   lifestyle: string[];
+  recommended_doctor?: string;
 }
 
 const DAILY_LIMIT = 5;
@@ -69,6 +70,7 @@ const SmartMedicalAdvisor = () => {
         description: result.description || "",
         medications: result.medications || [],
         lifestyle: result.lifestyle || [],
+        recommended_doctor: result.recommended_doctor,
       };
       setDiagnosis(d);
 
@@ -206,6 +208,18 @@ const SmartMedicalAdvisor = () => {
                     ))}
                   </div>
                 </div>
+
+                {diagnosis.recommended_doctor && (
+                  <div className="bg-medical-blue-light/50 rounded-xl p-4 mt-2">
+                    <div className="flex items-start gap-2">
+                      <Stethoscope size={16} className="text-medical-blue md:mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground mb-1">Qaysi doktorga ko'rinish kerak:</h4>
+                        <p className="text-sm text-foreground/80">{diagnosis.recommended_doctor}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <MedicalDisclaimer type="medication" />
             </motion.div>

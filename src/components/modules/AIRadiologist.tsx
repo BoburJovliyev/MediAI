@@ -14,6 +14,7 @@ interface AnalysisResult {
   severity: "normal" | "mild" | "moderate" | "severe";
   recommendation: string;
   regions: string[];
+  recommended_doctor?: string;
 }
 
 const severityConfig = {
@@ -117,6 +118,7 @@ const AIRadiologist = () => {
         severity: data.severity || "normal",
         recommendation: data.recommendation || "",
         regions: data.regions || [],
+        recommended_doctor: data.recommended_doctor,
       };
       setResult(analysisResult);
 
@@ -331,6 +333,17 @@ const AIRadiologist = () => {
                     </div>
                   </div>
                 </div>
+                {result.recommended_doctor && (
+                  <div className="bg-medical-blue-light/50 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Stethoscope size={16} className="text-medical-blue md:mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground mb-1">Qaysi doktorga ko'rinish kerak:</h4>
+                        <p className="text-sm text-foreground/80">{result.recommended_doctor}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <MedicalDisclaimer type="diagnosis" />
             </motion.div>

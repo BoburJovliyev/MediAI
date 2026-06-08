@@ -100,6 +100,19 @@ const ChatModule = () => {
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   const [myFullName, setMyFullName] = useState<string>("");
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
+  
+  const [confirmDeleteMsg, setConfirmDeleteMsg] = useState<ChatMessage | null>(null);
+  const [deleteConfirmTimer, setDeleteConfirmTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (confirmDeleteMsg && deleteConfirmTimer > 0) {
+      interval = setInterval(() => {
+        setDeleteConfirmTimer(t => t - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [confirmDeleteMsg, deleteConfirmTimer]);
   const [activeTab, setActiveTab] = useState<"all" | "contacts" | "groups">("all");
   const { startCall: startVideoCall } = useCall();
   const [showMedia, setShowMedia] = useState(false);
@@ -610,8 +623,17 @@ const ChatModule = () => {
     });
   };
 
-  // "Delete for everyone" — permanently remove the row. Leaves no trace anywhere.
-  const deleteForEveryone = async (msg: ChatMessage) => {
+  // "Delete for everyone" with confirmation
+  const confirmDeleteForEveryone = (msg: ChatMessage) => {
+    setConfirmDeleteMsg(msg);
+    setDeleteConfirmTimer(3);
+    setMenuMessageId(null);
+  };
+
+  const executeDeleteForEveryone = async () => {
+    if (!confirmDeleteMsg) return;
+    const msg = confirmDeleteMsg;
+    setConfirmDeleteMsg(null);
     setMenuMessageId(null);
     setMessages(prev => prev.filter(m => m.id !== msg.id));
     const { error } = await supabase.from("chat_messages").delete().eq("id", msg.id);
@@ -1340,7 +1362,7 @@ const ChatModule = () => {
                                 <button onClick={() => deleteForMe(msg)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-foreground"><Trash2 size={12} /> O'zim uchun o'chirish</button>
                                 {isMine && (
-                                  <button onClick={() => deleteForEveryone(msg)}
+                                  <button onClick={() => confirmDeleteForEveryone(msg)}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary text-destructive"><Trash2 size={12} /> Hamma uchun o'chirish</button>
                                 )}
                               </div>
@@ -1486,6 +1508,50 @@ const ChatModule = () => {
       </div>
     )}
     {/* Incoming/active video calls are handled globally by CallProvider */}
+
+    {confirmDeleteMsg && (
+      <div 
+        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={() => setConfirmDeleteMsg(null)}
+      >
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-card w-full max-w-sm rounded-2xl p-6 shadow-elevated border border-border"
+        >
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Trash2 size={24} className="text-destructive" />
+            </div>
+            
+            <div>
+              <h3 className="font-display font-bold text-foreground text-lg">Xabarni o'chirish</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Siz haqiqatan ham ushbu xabarni hamma uchun o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi!
+              </p>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-3 mt-2">
+              <button
+                onClick={() => setConfirmDeleteMsg(null)}
+                className="py-2.5 rounded-xl bg-secondary text-foreground font-medium text-sm hover:bg-secondary/80 transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={executeDeleteForEveryone}
+                disabled={deleteConfirmTimer > 0}
+                className="py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium text-sm disabled:opacity-50 transition"
+              >
+                {deleteConfirmTimer > 0 ? `Tasdiqlash (${deleteConfirmTimer}s)` : "Tasdiqlash"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    )}
 
     </div>
   );
