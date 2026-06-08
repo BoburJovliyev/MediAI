@@ -300,7 +300,10 @@ export type Database = {
           id: string
           slot_minutes: number
           start_time: string
-          weekday: number
+          available_date: string
+          location_name: string | null
+          location_address: string | null
+          location_coords: string | null
         }
         Insert: {
           created_at?: string
@@ -309,7 +312,10 @@ export type Database = {
           id?: string
           slot_minutes?: number
           start_time: string
-          weekday: number
+          available_date?: string
+          location_name?: string | null
+          location_address?: string | null
+          location_coords?: string | null
         }
         Update: {
           created_at?: string
@@ -318,7 +324,10 @@ export type Database = {
           id?: string
           slot_minutes?: number
           start_time?: string
-          weekday?: number
+          available_date?: string
+          location_name?: string | null
+          location_address?: string | null
+          location_coords?: string | null
         }
         Relationships: []
       }

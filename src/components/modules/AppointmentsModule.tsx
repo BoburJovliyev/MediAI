@@ -24,7 +24,10 @@ interface Appointment {
 interface Availability {
   id: string;
   doctor_id: string;
-  weekday: number;
+  available_date: string;
+  location_name: string | null;
+  location_address: string | null;
+  location_coords: string | null;
   start_time: string;
   end_time: string;
   slot_minutes: number;
@@ -36,8 +39,6 @@ interface DoctorProfile {
   specialty: string | null;
   avatar_url: string | null;
 }
-
-const WEEKDAYS = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
 
 const statusStyles: Record<string, string> = {
   pending: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
@@ -70,7 +71,7 @@ const AppointmentsModule = () => {
 
   // doctor availability management
   const [availability, setAvailability] = useState<Availability[]>([]);
-  const [newSlot, setNewSlot] = useState({ weekday: 1, start_time: "09:00", end_time: "17:00", slot_minutes: 30 });
+  const [newSlot, setNewSlot] = useState({ available_date: format(new Date(), "yyyy-MM-dd"), start_time: "09:00", end_time: "17:00", slot_minutes: 30, hospital_id: "" });
 
   // patient booking
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
@@ -79,7 +80,6 @@ const AppointmentsModule = () => {
   const [docAvailability, setDocAvailability] = useState<Availability[]>([]);
   const [bookedSlots, setBookedSlots] = useState<{ scheduled_at: string }[]>([]);
   const [reason, setReason] = useState("");
-  const [selectedHospital, setSelectedHospital] = useState<string>("");
   const [booking, setBooking] = useState(false);
 
   const loadAppointments = async () => {
@@ -112,7 +112,7 @@ const AppointmentsModule = () => {
       .from("doctor_availability")
       .select("*")
       .eq("doctor_id", user.id)
-      .order("weekday", { ascending: true });
+      .order("available_date", { ascending: true });
     setAvailability((data as Availability[]) || []);
   };
 
@@ -149,12 +149,11 @@ const AppointmentsModule = () => {
   useEffect(() => {
     if (isDoctor || !selectedDoctor || !selectedDate) return;
     const load = async () => {
-      const weekday = new Date(selectedDate + "T00:00:00").getDay();
       const { data: avail } = await supabase
         .from("doctor_availability")
         .select("*")
         .eq("doctor_id", selectedDoctor)
-        .eq("weekday", weekday);
+        .eq("available_date", selectedDate);
       setDocAvailability((avail as Availability[]) || []);
       const { data: booked } = await supabase.rpc("get_booked_slots", {
         _doctor_id: selectedDoctor,
@@ -191,7 +190,17 @@ const AppointmentsModule = () => {
   }, [docAvailability, bookedSlots, selectedDate]);
 
   const book = async (slot: string) => {
-    if (!user || !selectedDoctor || !selectedHospital) return;
+    if (!user || !selectedDoctor) return;
+    
+    // Find which location corresponds to this time slot based on availability blocks
+    const [sh_val, sm_val] = slot.split(":").map(Number);
+    const slotMins = sh_val * 60 + sm_val;
+    const matchedLoc = docAvailability.find(a => {
+      const [ash, asm] = a.start_time.split(":").map(Number);
+      const [aeh, aem] = a.end_time.split(":").map(Number);
+      return slotMins >= (ash * 60 + asm) && slotMins < (aeh * 60 + aem);
+    }) || docAvailability[0];
+
     setBooking(true);
     
     const scheduled = new Date(selectedDate + "T" + slot + ":00");
@@ -205,16 +214,14 @@ const AppointmentsModule = () => {
       return;
     }
 
-    const hospital = HOSPITALS.find(h => h.id === selectedHospital);
-
     const { error } = await supabase.from("appointments").insert({
       doctor_id: selectedDoctor,
       patient_id: user.id,
       scheduled_at: scheduledIso,
       duration_minutes: docAvailability[0]?.slot_minutes || 30,
       reason: reason || null,
-      location_name: hospital?.name,
-      location_address: hospital?.address,
+      location_name: matchedLoc?.location_name,
+      location_address: matchedLoc?.location_address,
     });
     setBooking(false);
     if (error) { toast.error("Band qilishda xatolik"); return; }
@@ -236,15 +243,32 @@ const AppointmentsModule = () => {
   const addAvailability = async () => {
     if (!user) return;
     if (newSlot.start_time >= newSlot.end_time) { toast.error("Boshlanish vaqti tugashdan oldin bo'lishi kerak"); return; }
+    if (!newSlot.hospital_id) { toast.error("Iltimos shifoxonani tanlang"); return; }
+
+    const isDuplicate = availability.some(a => 
+      a.available_date === newSlot.available_date && 
+      ((newSlot.start_time >= a.start_time && newSlot.start_time < a.end_time) || 
+       (newSlot.end_time > a.start_time && newSlot.end_time <= a.end_time) ||
+       (newSlot.start_time <= a.start_time && newSlot.end_time >= a.end_time))
+    );
+
+    if (isDuplicate) { toast.error("Ushbu sanada va vaqt oralig'ida allaqachon ish vaqti belgilangan. Vaqtlar to'qnashuvi!"); return; }
+
+    const hospital = HOSPITALS.find(h => h.id === newSlot.hospital_id);
+
     const { error } = await supabase.from("doctor_availability").insert({
       doctor_id: user.id,
-      weekday: newSlot.weekday,
+      available_date: newSlot.available_date,
       start_time: newSlot.start_time,
       end_time: newSlot.end_time,
       slot_minutes: newSlot.slot_minutes,
+      location_name: hospital?.name,
+      location_address: hospital?.address,
+      location_coords: hospital?.coords
     });
     if (error) { toast.error("Xatolik"); return; }
     toast.success("Ish vaqti qo'shildi");
+    setNewSlot({...newSlot, hospital_id: ""});
     loadDoctorData();
   };
 
@@ -258,6 +282,8 @@ const AppointmentsModule = () => {
 
   const renderAppointmentCard = (a: Appointment) => {
     const other = profilesMap[isDoctor ? a.patient_id : a.doctor_id];
+    const destination = HOSPITALS.find(h => h.name === a.location_name)?.coords || `${a.location_name} ${a.location_address}`;
+    
     return (
       <div key={a.id} className="bg-card rounded-2xl p-5 shadow-card border border-border">
         <div className="flex items-start justify-between gap-3">
@@ -285,9 +311,17 @@ const AppointmentsModule = () => {
             <span className="flex items-center gap-1.5"><Clock size={14} /> {format(new Date(a.scheduled_at), "HH:mm")}</span>
           </div>
           {a.location_name && (
-            <div className="flex flex-col text-xs bg-secondary/50 rounded-lg p-2 border border-border/50">
+            <div className="flex flex-col text-xs bg-secondary/50 rounded-lg p-2.5 border border-border/50 mt-1">
               <span className="font-semibold text-foreground">{a.location_name}</span>
-              <span className="text-muted-foreground">{a.location_address}</span>
+              <span className="text-muted-foreground mb-2 mt-0.5">{a.location_address}</span>
+              <a 
+                href={`https://google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`} 
+                target="_blank" 
+                rel="noopener"
+                className="px-3 py-1.5 rounded-lg bg-medical-blue-light text-medical-blue text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-medical-blue hover:text-white transition w-max"
+              >
+                🗺️ Navigator orqali borish
+              </a>
             </div>
           )}
         </div>
@@ -326,43 +360,71 @@ const AppointmentsModule = () => {
       {/* DOCTOR: availability management */}
       {isDoctor && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-6 shadow-card border border-border">
-          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Clock size={18} className="text-primary" /> Ish vaqti</h3>
-          <div className="flex flex-wrap gap-3 items-end">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Kun</label>
-              <select value={newSlot.weekday} onChange={(e) => setNewSlot({ ...newSlot, weekday: Number(e.target.value) })}
-                className="bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
-                {WEEKDAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-              </select>
+          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Clock size={18} className="text-primary" /> Ish vaqti qo'shish</h3>
+          <div className="flex flex-col gap-4">
+            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Sana</label>
+                <input type="date" value={newSlot.available_date} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setNewSlot({ ...newSlot, available_date: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Boshlanish</label>
+                <input type="time" value={newSlot.start_time} onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Tugash</label>
+                <input type="time" value={newSlot.end_time} onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Slot (daqiqa)</label>
+                <select value={newSlot.slot_minutes} onChange={(e) => setNewSlot({ ...newSlot, slot_minutes: Number(e.target.value) })}
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
+                  {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Boshlanish</label>
-              <input type="time" value={newSlot.start_time} onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
-                className="bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+              <div className="md:col-span-1 lg:col-span-2">
+                <label className="text-xs text-muted-foreground block mb-1">Shifoxona / Manzil</label>
+                <select value={newSlot.hospital_id} onChange={(e) => setNewSlot({ ...newSlot, hospital_id: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
+                  <option value="">Manzilni tanlang...</option>
+                  {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+                </select>
+              </div>
+              <button onClick={addAvailability} className="flex items-center justify-center gap-1.5 px-4 py-2 h-[38px] rounded-xl text-sm gradient-primary text-primary-foreground">
+                <Plus size={16} /> Qo'shish
+              </button>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Tugash</label>
-              <input type="time" value={newSlot.end_time} onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
-                className="bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Slot (daqiqa)</label>
-              <select value={newSlot.slot_minutes} onChange={(e) => setNewSlot({ ...newSlot, slot_minutes: Number(e.target.value) })}
-                className="bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
-                {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <button onClick={addAvailability} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm gradient-primary text-primary-foreground">
-              <Plus size={16} /> Qo'shish
-            </button>
+            
+            {newSlot.hospital_id && (
+              <div className="mt-2 border border-border rounded-xl overflow-hidden shadow-sm">
+                <iframe
+                  width="100%"
+                  height="180"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  src={`https://maps.google.com/maps?q=${HOSPITALS.find(h => h.id === newSlot.hospital_id)?.coords}&hl=uz&z=15&output=embed`}
+                ></iframe>
+              </div>
+            )}
           </div>
+
           {availability.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-col gap-2 mt-6 border-t border-border pt-4">
+              <h4 className="text-sm font-semibold mb-2">Mavjud ish vaqtlari</h4>
               {availability.map((a) => (
-                <span key={a.id} className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-1.5 text-sm text-foreground">
-                  {WEEKDAYS[a.weekday]} {a.start_time.slice(0, 5)}–{a.end_time.slice(0, 5)}
-                  <button onClick={() => removeAvailability(a.id)} className="text-destructive hover:opacity-70"><Trash2 size={13} /></button>
-                </span>
+                <div key={a.id} className="flex items-center justify-between gap-2 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground">
+                  <div>
+                    <span className="font-semibold block">{format(new Date(a.available_date), "dd.MM.yyyy")}</span>
+                    <span className="text-xs text-muted-foreground">{a.start_time.slice(0, 5)} – {a.end_time.slice(0, 5)} at {a.location_name}</span>
+                  </div>
+                  <button onClick={() => removeAvailability(a.id)} className="p-2 bg-destructive/15 rounded-lg text-destructive hover:bg-destructive hover:text-destructive-foreground transition"><Trash2 size={16} /></button>
+                </div>
               ))}
             </div>
           )}
@@ -373,7 +435,7 @@ const AppointmentsModule = () => {
       {!isDoctor && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-6 shadow-card border border-border">
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Stethoscope size={18} className="text-primary" /> Yangi qabulga yozilish</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Shifokor</label>
               <select value={selectedDoctor} onChange={(e) => setSelectedDoctor(e.target.value)}
@@ -387,16 +449,6 @@ const AppointmentsModule = () => {
               <input type="date" value={selectedDate} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
             </div>
-          </div>
-          <div className="mt-3 grid sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Shifoxona / Manzil</label>
-              <select value={selectedHospital} onChange={(e) => setSelectedHospital(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
-                <option value="">Manzilni tanlang...</option>
-                {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-              </select>
-            </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Sabab (ixtiyoriy)</label>
               <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Masalan: konsultatsiya"
@@ -404,34 +456,24 @@ const AppointmentsModule = () => {
             </div>
           </div>
 
-          {selectedHospital && (
-            <div className="mt-4 border border-border rounded-xl overflow-hidden shadow-sm">
-              <iframe
-                width="100%"
-                height="200"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                src={`https://maps.google.com/maps?q=${HOSPITALS.find(h => h.id === selectedHospital)?.coords}&hl=uz&z=15&output=embed`}
-              ></iframe>
-              <div className="bg-secondary p-3 flex items-center justify-between">
-                <div className="text-sm">
-                  <p className="font-semibold text-foreground">{HOSPITALS.find(h => h.id === selectedHospital)?.name}</p>
-                  <p className="text-xs text-muted-foreground">{HOSPITALS.find(h => h.id === selectedHospital)?.address}</p>
+          {docAvailability.length > 0 && docAvailability[0]?.location_coords && (
+             <div className="mt-4 border border-border rounded-xl overflow-hidden shadow-sm">
+                <iframe
+                  width="100%"
+                  height="160"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  src={`https://maps.google.com/maps?q=${docAvailability[0].location_coords}&hl=uz&z=15&output=embed`}
+                ></iframe>
+                <div className="bg-secondary px-3 py-2 text-xs">
+                  <span className="font-semibold block">{docAvailability[0].location_name}</span>
+                  <span className="text-muted-foreground">{docAvailability[0].location_address}</span>
                 </div>
-                <a 
-                  href={`https://google.com/maps/dir//${HOSPITALS.find(h => h.id === selectedHospital)?.coords}`} 
-                  target="_blank" 
-                  rel="noopener"
-                  className="px-3 py-1.5 rounded-lg bg-medical-blue-light text-medical-blue text-xs font-semibold flex items-center gap-1.5 hover:bg-medical-blue hover:text-white transition"
-                >
-                  🗺️ Yo'l ko'rsatish
-                </a>
-              </div>
             </div>
           )}
 
-          {selectedDoctor && selectedDate && selectedHospital && (
+          {selectedDoctor && selectedDate && (
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-sm font-semibold text-foreground mb-3">Bo'sh vaqtlar:</p>
               {availableSlots.length === 0 ? (
