@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight, Stethoscope, MessageCircle } from "lucide-react";
+import { FileImage, Brain, Dumbbell, Activity, TrendingUp, Users, Clock, ArrowRight, Stethoscope, MessageCircle, HeartPulse } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardCharts from "./DashboardCharts";
@@ -69,7 +69,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       return [
         { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini AI yordamida tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
         { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
-        { id: "rehab", title: "Tele-Rehab AI", description: "Kamera orqali mashqlarni nazorat qilish", icon: <Dumbbell size={28} />, gradient: "gradient-warm" },
+        { id: "rehab", title: "Sog'lom Hamroh AI", description: "Sog'lom turmush tarzi, uyqu va ovqatlanish nazorati", icon: <HeartPulse size={28} />, gradient: "gradient-warm" },
         { id: "patients", title: "Bemorlar", description: "Bemorlar ro'yxati va tarix", icon: <Users size={28} />, gradient: "gradient-primary" },
       ];
     }
@@ -77,7 +77,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       return [
         { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
         { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
-        { id: "rehab", title: "Tele-Rehab AI", description: "Mashqlarni nazorat qilish", icon: <Dumbbell size={28} />, gradient: "gradient-warm" },
+        { id: "rehab", title: "Sog'lom Hamroh AI", description: "Sog'lom turmush tarzi", icon: <HeartPulse size={28} />, gradient: "gradient-warm" },
         { id: "patients", title: "Bemorlar", description: "Bemorlaringiz ro'yxati", icon: <Users size={28} />, gradient: "gradient-primary" },
       ];
     }

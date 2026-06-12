@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Brain, FileImage, Dumbbell, LayoutDashboard,
-  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Stethoscope, BotMessageSquare, CalendarClock, Pill
+  Shield, Menu, X, LogOut, User, Users, Moon, Sun, MessageCircle, Stethoscope, BotMessageSquare, CalendarClock, Pill, HeartPulse
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,7 +34,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
     { id: "dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
     { id: "radiologist", labelKey: "nav.radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "patient"] },
     { id: "advisor", labelKey: "nav.advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "patient"] },
-    { id: "rehab", labelKey: "nav.rehab", icon: <Dumbbell size={20} />, roles: ["admin", "doctor", "user", "patient"] },
+    { id: "rehab", labelKey: "nav.rehab", icon: <HeartPulse size={20} />, roles: ["admin", "doctor", "user", "patient"] },
     { id: "chat", labelKey: "nav.chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient", "user"] },
     { id: "aichat", labelKey: "nav.aichat", icon: <BotMessageSquare size={20} />, roles: ["admin", "doctor", "patient", "user"] },
     { id: "doctors", labelKey: "nav.doctors", icon: <Stethoscope size={20} />, roles: ["admin", "user", "patient"] },

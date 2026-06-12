@@ -186,7 +186,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "nav.dashboard": "Панель",
     "nav.radiologist": "AI Рентгенолог",
     "nav.advisor": "AI Ассистент",
-    "nav.rehab": "Теле-Реабилитация",
+    "nav.rehab": "Sog'lom Hamroh",
     "nav.chat": "Чат",
     "nav.aichat": "AI Chat",
     "nav.appointments": "Приёмы",

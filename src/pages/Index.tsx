@@ -6,7 +6,7 @@ import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
 import SmartMedicalAdvisor from "@/components/modules/SmartMedicalAdvisor";
 import DoctorsListing from "@/components/modules/DoctorsListing";
-import TeleRehab from "@/components/modules/TeleRehab";
+import HealthCompanion from "@/components/modules/HealthCompanion";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
@@ -88,7 +88,7 @@ const AppContent = () => {
       case "dashboard": return <DashboardHome onNavigate={setActiveTab} />;
       case "radiologist": return <AIRadiologist />;
       case "advisor": return <SmartMedicalAdvisor />;
-      case "rehab": return <TeleRehab />;
+      case "rehab": return <HealthCompanion />;
       case "patients": return <PatientsManager />;
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
