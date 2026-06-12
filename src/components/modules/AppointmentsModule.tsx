@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, Plus, Check, X, CheckCircle2, Stethoscope,
-  Trash2, CalendarClock, MapPin, Navigation, ExternalLink
+  Trash2, CalendarClock, MapPin, Navigation, ExternalLink, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Tooltip } from "react-leaflet";
 import L from "leaflet";
 
 // Fix default marker icon (Leaflet + bundler issue)
@@ -18,6 +18,16 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// Custom red icon for hospitals
+const hospitalIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
 // ─── Types ───────────────────────────────────────────────
@@ -52,6 +62,13 @@ interface DoctorProfile {
   full_name: string | null;
   specialty: string | null;
   avatar_url: string | null;
+}
+
+interface HospitalMarker {
+  id: number;
+  lat: number;
+  lng: number;
+  name: string;
 }
 
 // ─── Status styles ───────────────────────────────────────
@@ -98,11 +115,80 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number,
   return null;
 }
 
+// ─── Overpass API Hospitals Loader ──────────────────────
+function MapHospitals({ onSelect }: { onSelect: (lat: number, lng: number, name: string) => void }) {
+  const [hospitals, setHospitals] = useState<HospitalMarker[]>([]);
+  
+  const map = useMapEvents({
+    moveend: () => fetchHospitals(),
+    zoomend: () => fetchHospitals(),
+  });
+
+  const fetchHospitals = async () => {
+    // Only load if zoomed in enough to prevent huge queries
+    if (map.getZoom() < 12) return;
+    
+    const bounds = map.getBounds();
+    const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+    const query = `
+      [out:json][timeout:15];
+      (
+        node["amenity"="hospital"](${bbox});
+        way["amenity"="hospital"](${bbox});
+        node["amenity"="clinic"](${bbox});
+        way["amenity"="clinic"](${bbox});
+      );
+      out center;
+    `;
+    
+    try {
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+      const data = await res.json();
+      const markers = data.elements.map((e: any) => ({
+        id: e.id,
+        lat: e.lat || e.center?.lat,
+        lng: e.lon || e.center?.lon,
+        name: e.tags?.name || (e.tags?.amenity === "hospital" ? "Kasalxona" : "Klinika")
+      })).filter((m: any) => m.lat && m.lng);
+      setHospitals(markers);
+    } catch (err) {
+      console.error("Overpass xatolik:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchHospitals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <>
+      {hospitals.map(h => (
+        <Marker
+          key={h.id}
+          position={[h.lat, h.lng]}
+          icon={hospitalIcon}
+          eventHandlers={{
+            click: () => onSelect(h.lat, h.lng, h.name)
+          }}
+        >
+          <Tooltip direction="top" offset={[0, -30]} opacity={1}>
+            <span className="font-semibold text-xs">{h.name}</span>
+          </Tooltip>
+        </Marker>
+      ))}
+    </>
+  );
+}
+
 // ─── Fly to location component ──────────────────────────
 function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo([lat, lng], 16, { duration: 1 });
+    map.flyTo([lat, lng], 14, { duration: 1.5 });
   }, [lat, lng, map]);
   return null;
 }
@@ -156,6 +242,8 @@ const AppointmentsModule = () => {
   const [locationName, setLocationName] = useState("");
   const [locationAddress, setLocationAddress] = useState("");
   const [geocoding, setGeocoding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // patient booking
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
@@ -274,6 +362,25 @@ const AppointmentsModule = () => {
     return Array.from(new Set(slots)).sort();
   }, [docAvailability, bookedSlots, selectedDate]);
 
+  // ─── Map Search ───────────────────────────────────────
+  const handleMapSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setGeocoding(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&accept-language=uz&countrycodes=uz`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        setMapCenter({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+      } else {
+        toast.error("Hech narsa topilmadi. Boshqa nom bilan qidiring.");
+      }
+    } catch {
+      toast.error("Qidiruvda xatolik yuz berdi");
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
   // ─── Doctor: handle map click ─────────────────────────
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     setPickedCoords({ lat, lng });
@@ -282,6 +389,16 @@ const AppointmentsModule = () => {
     setLocationName(geo.name);
     setLocationAddress(geo.address);
     setGeocoding(false);
+  }, []);
+
+  const handleHospitalSelect = useCallback(async (lat: number, lng: number, name: string) => {
+    setPickedCoords({ lat, lng });
+    setLocationName(name);
+    setGeocoding(true);
+    const geo = await reverseGeocode(lat, lng);
+    setLocationAddress(geo.address);
+    setGeocoding(false);
+    toast.success(`${name} tanlandi`);
   }, []);
 
   // ─── Doctor: add availability ─────────────────────────
@@ -551,13 +668,37 @@ const AppointmentsModule = () => {
 
             {/* Location: Interactive Map */}
             <div>
-              <label className="text-xs text-muted-foreground block mb-1 flex items-center gap-1.5">
-                <MapPin size={13} /> Shifoxona manzilini xaritadan belgilang
+              <label className="text-xs text-muted-foreground block mb-2 flex items-center gap-1.5">
+                <MapPin size={14} /> Shifoxona manzilini xaritadan belgilang
               </label>
-              <p className="text-xs text-muted-foreground/70 mb-2">
-                Xaritadagi istalgan joyni bosib shifoxona manzilini belgilang. Manzil nomi avtomatik aniqlanadi.
+
+              {/* SEARCH INPUT */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Viloyat, tuman, shahar yoki shifoxona nomini qidiring..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMapSearch()}
+                    className="w-full pl-9 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <button
+                  onClick={handleMapSearch}
+                  disabled={geocoding}
+                  className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
+                >
+                  {geocoding ? "Qidirilmoqda..." : "Qidirish"}
+                </button>
+              </div>
+
+              <p className="text-xs text-muted-foreground/80 mb-2">
+                Kattalashtirilgan hududdagi kasalxonalar qizil rangli belgilar 🏥 bilan ko'rsatiladi. Uni bosib tezda tanlashingiz mumkin.
               </p>
-              <div className="rounded-xl overflow-hidden border border-border shadow-sm" style={{ height: 300 }}>
+
+              <div className="rounded-xl overflow-hidden border border-border shadow-sm" style={{ height: 380 }}>
                 <MapContainer
                   center={[41.3111, 69.2797]} // Tashkent center
                   zoom={12}
@@ -569,19 +710,21 @@ const AppointmentsModule = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   />
                   <MapClickHandler onLocationSelect={handleMapClick} />
+                  <MapHospitals onSelect={handleHospitalSelect} />
                   {pickedCoords && (
                     <>
                       <Marker position={[pickedCoords.lat, pickedCoords.lng]} />
-                      <FlyToLocation lat={pickedCoords.lat} lng={pickedCoords.lng} />
+                      {/* Only fly to picked if mapCenter wasn't just set by search */}
                     </>
                   )}
+                  {mapCenter && <FlyToLocation lat={mapCenter.lat} lng={mapCenter.lng} />}
                 </MapContainer>
               </div>
             </div>
 
             {/* Location details after picking */}
             {pickedCoords && (
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="grid sm:grid-cols-2 gap-3">
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="grid sm:grid-cols-2 gap-3 mt-2">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Shifoxona nomi</label>
                   <input
@@ -612,7 +755,7 @@ const AppointmentsModule = () => {
             <button
               onClick={addAvailability}
               disabled={geocoding}
-              className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition w-max disabled:opacity-50"
+              className="mt-2 flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition w-max disabled:opacity-50"
             >
               <Plus size={16} /> Qo'shish
             </button>
