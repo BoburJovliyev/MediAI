@@ -1,13 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, Plus, Check, X, CheckCircle2, Stethoscope, Trash2, CalendarClock } from "lucide-react";
+import {
+  Calendar, Clock, Plus, Check, X, CheckCircle2, Stethoscope,
+  Trash2, CalendarClock, MapPin, Navigation, ExternalLink
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useLanguage } from "@/hooks/useLanguage";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import L from "leaflet";
 
+// Fix default marker icon (Leaflet + bundler issue)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// ─── Types ───────────────────────────────────────────────
 interface Appointment {
   id: string;
   doctor_id: string;
@@ -19,6 +32,7 @@ interface Appointment {
   notes: string | null;
   location_name: string | null;
   location_address: string | null;
+  location_coords: string | null;
 }
 
 interface Availability {
@@ -40,6 +54,7 @@ interface DoctorProfile {
   avatar_url: string | null;
 }
 
+// ─── Status styles ───────────────────────────────────────
 const statusStyles: Record<string, string> = {
   pending: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
   confirmed: "bg-medical-green-light text-medical-green",
@@ -54,16 +69,74 @@ const statusLabel: Record<string, string> = {
   completed: "Yakunlangan",
 };
 
-const HOSPITALS = [
-  { id: '1', name: 'Asosiy poliklinika', address: 'Toshkent sh., Yunusobod tumani', coords: '41.3643,69.2882' },
-  { id: '2', name: 'Tibbiyot markazi', address: 'Toshkent sh., Chilonzor tumani', coords: '41.2721,69.2045' },
-  { id: '3', name: 'Xususiy klinika', address: 'Toshkent sh., Mirzo Ulugbek tumani', coords: '41.3262,69.3243' }
-];
+// ─── Reverse geocode with Nominatim ─────────────────────
+async function reverseGeocode(lat: number, lng: number): Promise<{ name: string; address: string }> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`,
+      { headers: { "User-Agent": "MediAI-App/1.0" } }
+    );
+    const data = await res.json();
+    const addr = data.address || {};
+    const name =
+      addr.hospital || addr.clinic || addr.building || addr.amenity ||
+      addr.road || data.name || "Belgilangan joy";
+    const parts = [addr.road, addr.suburb || addr.neighbourhood, addr.city || addr.town || addr.county].filter(Boolean);
+    return { name, address: parts.join(", ") || data.display_name?.split(",").slice(0, 3).join(",") || "" };
+  } catch {
+    return { name: "Belgilangan joy", address: `${lat.toFixed(5)}, ${lng.toFixed(5)}` };
+  }
+}
 
+// ─── Map click handler component ────────────────────────
+function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// ─── Fly to location component ──────────────────────────
+function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([lat, lng], 16, { duration: 1 });
+  }, [lat, lng, map]);
+  return null;
+}
+
+// ─── Static preview map (no interaction) ────────────────
+function StaticMapPreview({ coords, name }: { coords: string; name: string }) {
+  const [lat, lng] = coords.split(",").map(Number);
+  if (isNaN(lat) || isNaN(lng)) return null;
+  return (
+    <div className="rounded-xl overflow-hidden border border-border/50 mt-2" style={{ height: 160 }}>
+      <MapContainer
+        center={[lat, lng]}
+        zoom={15}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+        dragging={false}
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Marker position={[lat, lng]} />
+      </MapContainer>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// ═══ MAIN MODULE ══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
 const AppointmentsModule = () => {
   const { user } = useAuth();
   const { isDoctor, loading: roleLoading } = useUserRole();
-  const { } = useLanguage();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profilesMap, setProfilesMap] = useState<Record<string, DoctorProfile>>({});
@@ -71,7 +144,18 @@ const AppointmentsModule = () => {
 
   // doctor availability management
   const [availability, setAvailability] = useState<Availability[]>([]);
-  const [newSlot, setNewSlot] = useState({ available_date: format(new Date(), "yyyy-MM-dd"), start_time: "09:00", end_time: "17:00", slot_minutes: 30, hospital_id: "" });
+  const [newSlot, setNewSlot] = useState({
+    available_date: format(new Date(), "yyyy-MM-dd"),
+    start_time: "09:00",
+    end_time: "17:00",
+    slot_minutes: 30,
+  });
+
+  // doctor map location picking
+  const [pickedCoords, setPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationName, setLocationName] = useState("");
+  const [locationAddress, setLocationAddress] = useState("");
+  const [geocoding, setGeocoding] = useState(false);
 
   // patient booking
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
@@ -82,6 +166,7 @@ const AppointmentsModule = () => {
   const [reason, setReason] = useState("");
   const [booking, setBooking] = useState(false);
 
+  // ─── Data loaders ──────────────────────────────────────
   const loadAppointments = async () => {
     if (!user) return;
     setLoading(true);
@@ -92,7 +177,6 @@ const AppointmentsModule = () => {
     const appts = (data as Appointment[]) || [];
     setAppointments(appts);
 
-    // load names of counterparties
     const ids = Array.from(new Set(appts.flatMap((a) => [a.doctor_id, a.patient_id])));
     if (ids.length) {
       const { data: profs } = await supabase
@@ -164,6 +248,7 @@ const AppointmentsModule = () => {
     load();
   }, [selectedDoctor, selectedDate, isDoctor]);
 
+  // ─── Available slots computation ──────────────────────
   const availableSlots = useMemo(() => {
     if (!docAvailability.length) return [] as string[];
     const slots: string[] = [];
@@ -189,24 +274,85 @@ const AppointmentsModule = () => {
     return Array.from(new Set(slots)).sort();
   }, [docAvailability, bookedSlots, selectedDate]);
 
+  // ─── Doctor: handle map click ─────────────────────────
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    setPickedCoords({ lat, lng });
+    setGeocoding(true);
+    const geo = await reverseGeocode(lat, lng);
+    setLocationName(geo.name);
+    setLocationAddress(geo.address);
+    setGeocoding(false);
+  }, []);
+
+  // ─── Doctor: add availability ─────────────────────────
+  const addAvailability = async () => {
+    if (!user) return;
+    if (newSlot.start_time >= newSlot.end_time) {
+      toast.error("Boshlanish vaqti tugashdan oldin bo'lishi kerak");
+      return;
+    }
+    if (!pickedCoords) {
+      toast.error("Iltimos xaritadan manzilni belgilang");
+      return;
+    }
+
+    const isDuplicate = availability.some(a =>
+      a.available_date === newSlot.available_date &&
+      ((newSlot.start_time >= a.start_time && newSlot.start_time < a.end_time) ||
+        (newSlot.end_time > a.start_time && newSlot.end_time <= a.end_time) ||
+        (newSlot.start_time <= a.start_time && newSlot.end_time >= a.end_time))
+    );
+
+    if (isDuplicate) {
+      toast.error("Ushbu sanada va vaqt oralig'ida allaqachon ish vaqti belgilangan. Vaqtlar to'qnashuvi!");
+      return;
+    }
+
+    const coordsStr = `${pickedCoords.lat},${pickedCoords.lng}`;
+
+    const { error } = await supabase.from("doctor_availability").insert({
+      doctor_id: user.id,
+      available_date: newSlot.available_date,
+      start_time: newSlot.start_time,
+      end_time: newSlot.end_time,
+      slot_minutes: newSlot.slot_minutes,
+      location_name: locationName || "Belgilangan joy",
+      location_address: locationAddress || "",
+      location_coords: coordsStr,
+    });
+    if (error) { toast.error("Xatolik: " + error.message); return; }
+    toast.success("Ish vaqti va manzil muvaffaqiyatli qo'shildi! ✅");
+    setPickedCoords(null);
+    setLocationName("");
+    setLocationAddress("");
+    loadDoctorData();
+  };
+
+  const removeAvailability = async (id: string) => {
+    await supabase.from("doctor_availability").delete().eq("id", id);
+    toast.success("Ish vaqti o'chirildi");
+    loadDoctorData();
+  };
+
+  // ─── Patient: book a slot ─────────────────────────────
   const book = async (slot: string) => {
     if (!user || !selectedDoctor) return;
-    
-    // Find which location corresponds to this time slot based on availability blocks
+
+    // Find which availability block this slot belongs to
     const [sh_val, sm_val] = slot.split(":").map(Number);
     const slotMins = sh_val * 60 + sm_val;
-    const matchedLoc = docAvailability.find(a => {
+    const matchedAvail = docAvailability.find(a => {
       const [ash, asm] = a.start_time.split(":").map(Number);
       const [aeh, aem] = a.end_time.split(":").map(Number);
       return slotMins >= (ash * 60 + asm) && slotMins < (aeh * 60 + aem);
     }) || docAvailability[0];
 
     setBooking(true);
-    
+
     const scheduled = new Date(selectedDate + "T" + slot + ":00");
     const scheduledIso = scheduled.toISOString();
-    
-    // Check for duplicate on client side
+
+    // Check for duplicate
     const isDuplicate = bookedSlots.some(b => b.scheduled_at === scheduledIso);
     if (isDuplicate) {
       toast.error("Bu vaqt allaqachon band qilingan.");
@@ -218,14 +364,15 @@ const AppointmentsModule = () => {
       doctor_id: selectedDoctor,
       patient_id: user.id,
       scheduled_at: scheduledIso,
-      duration_minutes: docAvailability[0]?.slot_minutes || 30,
+      duration_minutes: matchedAvail?.slot_minutes || 30,
       reason: reason || null,
-      location_name: matchedLoc?.location_name,
-      location_address: matchedLoc?.location_address,
+      location_name: matchedAvail?.location_name || null,
+      location_address: matchedAvail?.location_address || null,
+      location_coords: matchedAvail?.location_coords || null,
     });
     setBooking(false);
     if (error) { toast.error("Band qilishda xatolik"); return; }
-    toast.success("Qabulga yozildingiz! Shifokor tasdiqlashini kuting.");
+    toast.success("Qabulga yozildingiz! Shifokor tasdiqlashini kuting. 🎉");
     setReason("");
     // refresh booked slots
     const { data: booked } = await supabase.rpc("get_booked_slots", { _doctor_id: selectedDoctor, _day: selectedDate });
@@ -240,91 +387,95 @@ const AppointmentsModule = () => {
     loadAppointments();
   };
 
-  const addAvailability = async () => {
-    if (!user) return;
-    if (newSlot.start_time >= newSlot.end_time) { toast.error("Boshlanish vaqti tugashdan oldin bo'lishi kerak"); return; }
-    if (!newSlot.hospital_id) { toast.error("Iltimos shifoxonani tanlang"); return; }
-
-    const isDuplicate = availability.some(a => 
-      a.available_date === newSlot.available_date && 
-      ((newSlot.start_time >= a.start_time && newSlot.start_time < a.end_time) || 
-       (newSlot.end_time > a.start_time && newSlot.end_time <= a.end_time) ||
-       (newSlot.start_time <= a.start_time && newSlot.end_time >= a.end_time))
-    );
-
-    if (isDuplicate) { toast.error("Ushbu sanada va vaqt oralig'ida allaqachon ish vaqti belgilangan. Vaqtlar to'qnashuvi!"); return; }
-
-    const hospital = HOSPITALS.find(h => h.id === newSlot.hospital_id);
-
-    const { error } = await supabase.from("doctor_availability").insert({
-      doctor_id: user.id,
-      available_date: newSlot.available_date,
-      start_time: newSlot.start_time,
-      end_time: newSlot.end_time,
-      slot_minutes: newSlot.slot_minutes,
-      location_name: hospital?.name,
-      location_address: hospital?.address,
-      location_coords: hospital?.coords
-    });
-    if (error) { toast.error("Xatolik"); return; }
-    toast.success("Ish vaqti qo'shildi");
-    setNewSlot({...newSlot, hospital_id: ""});
-    loadDoctorData();
-  };
-
-  const removeAvailability = async (id: string) => {
-    await supabase.from("doctor_availability").delete().eq("id", id);
-    loadDoctorData();
-  };
-
+  // ─── Categorize appointments ──────────────────────────
   const upcoming = appointments.filter((a) => a.status !== "cancelled" && a.status !== "completed");
   const past = appointments.filter((a) => a.status === "cancelled" || a.status === "completed");
 
+  // ─── Render appointment card ──────────────────────────
   const renderAppointmentCard = (a: Appointment) => {
     const other = profilesMap[isDoctor ? a.patient_id : a.doctor_id];
-    const destination = HOSPITALS.find(h => h.name === a.location_name)?.coords || `${a.location_name} ${a.location_address}`;
-    
+
+    // Build Google Maps navigation URL
+    const getNavigationUrl = () => {
+      if (a.location_coords) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${a.location_coords}&travelmode=driving`;
+      }
+      if (a.location_name) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${a.location_name} ${a.location_address || ""}`)}`;
+      }
+      return null;
+    };
+
+    const navUrl = getNavigationUrl();
+
     return (
-      <div key={a.id} className="bg-card rounded-2xl p-5 shadow-card border border-border">
+      <motion.div
+        key={a.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl p-5 shadow-card border border-border hover:shadow-lg transition-shadow duration-300"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {other?.avatar_url ? (
               <img src={other.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover border border-border" />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold text-foreground">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-semibold text-primary">
                 {(other?.full_name || "?").charAt(0).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
               <p className="font-medium text-foreground truncate">{other?.full_name || (isDoctor ? "Bemor" : "Shifokor")}</p>
               {!isDoctor && other?.specialty && <p className="text-xs text-muted-foreground">{other.specialty}</p>}
-              {a.reason && <p className="text-xs text-muted-foreground truncate">{a.reason}</p>}
+              {a.reason && <p className="text-xs text-muted-foreground truncate mt-0.5">{a.reason}</p>}
             </div>
           </div>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${statusStyles[a.status] || ""}`}>
             {statusLabel[a.status] || a.status}
           </span>
         </div>
+
         <div className="flex flex-col gap-2 mt-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5"><Calendar size={14} /> {format(new Date(a.scheduled_at), "dd.MM.yyyy")}</span>
             <span className="flex items-center gap-1.5"><Clock size={14} /> {format(new Date(a.scheduled_at), "HH:mm")}</span>
           </div>
+
+          {/* Location info + Navigator button */}
           {a.location_name && (
-            <div className="flex flex-col text-xs bg-secondary/50 rounded-lg p-2.5 border border-border/50 mt-1">
-              <span className="font-semibold text-foreground">{a.location_name}</span>
-              <span className="text-muted-foreground mb-2 mt-0.5">{a.location_address}</span>
-              <a 
-                href={`https://google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`} 
-                target="_blank" 
-                rel="noopener"
-                className="px-3 py-1.5 rounded-lg bg-medical-blue-light text-medical-blue text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-medical-blue hover:text-white transition w-max"
-              >
-                🗺️ Navigator orqali borish
-              </a>
+            <div className="bg-secondary/50 rounded-xl p-3 border border-border/50 mt-1 space-y-2">
+              <div className="flex items-start gap-2">
+                <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-foreground text-xs block">{a.location_name}</span>
+                  {a.location_address && <span className="text-muted-foreground text-xs">{a.location_address}</span>}
+                </div>
+              </div>
+
+              {/* Mini map preview */}
+              {a.location_coords && <StaticMapPreview coords={a.location_coords} name={a.location_name} />}
+
+              {/* NAVIGATOR BUTTON */}
+              {navUrl && (
+                <a
+                  href={navUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+                    bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md
+                    hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg hover:scale-[1.01]
+                    active:scale-[0.99]"
+                >
+                  <Navigation size={16} />
+                  Navigator orqali borish
+                  <ExternalLink size={14} className="opacity-70" />
+                </a>
+              )}
             </div>
           )}
         </div>
+
+        {/* Action buttons */}
         {(a.status === "pending" || a.status === "confirmed") && (
           <div className="flex gap-2 mt-4">
             {isDoctor && a.status === "pending" && (
@@ -342,10 +493,13 @@ const AppointmentsModule = () => {
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
+  // ═══════════════════════════════════════════════════════
+  // ═══ RENDER ═══════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════
   return (
     <div className="space-y-8">
       <div>
@@ -357,73 +511,130 @@ const AppointmentsModule = () => {
         </p>
       </div>
 
-      {/* DOCTOR: availability management */}
+      {/* ═══ DOCTOR: Ish vaqti qo'shish ═══ */}
       {isDoctor && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-6 shadow-card border border-border">
-          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Clock size={18} className="text-primary" /> Ish vaqti qo'shish</h3>
+          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <Clock size={18} className="text-primary" /> Ish vaqti qo'shish
+          </h3>
+
           <div className="flex flex-col gap-4">
+            {/* Date/Time inputs */}
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Sana</label>
-                <input type="date" value={newSlot.available_date} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setNewSlot({ ...newSlot, available_date: e.target.value })}
+                <input type="date" value={newSlot.available_date} min={format(new Date(), "yyyy-MM-dd")}
+                  onChange={(e) => setNewSlot({ ...newSlot, available_date: e.target.value })}
                   className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Boshlanish</label>
-                <input type="time" value={newSlot.start_time} onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
+                <input type="time" value={newSlot.start_time}
+                  onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
                   className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Tugash</label>
-                <input type="time" value={newSlot.end_time} onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
+                <input type="time" value={newSlot.end_time}
+                  onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
                   className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Slot (daqiqa)</label>
-                <select value={newSlot.slot_minutes} onChange={(e) => setNewSlot({ ...newSlot, slot_minutes: Number(e.target.value) })}
+                <select value={newSlot.slot_minutes}
+                  onChange={(e) => setNewSlot({ ...newSlot, slot_minutes: Number(e.target.value) })}
                   className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
                   {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-              <div className="md:col-span-1 lg:col-span-2">
-                <label className="text-xs text-muted-foreground block mb-1">Shifoxona / Manzil</label>
-                <select value={newSlot.hospital_id} onChange={(e) => setNewSlot({ ...newSlot, hospital_id: e.target.value })}
-                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground">
-                  <option value="">Manzilni tanlang...</option>
-                  {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-                </select>
+
+            {/* Location: Interactive Map */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1 flex items-center gap-1.5">
+                <MapPin size={13} /> Shifoxona manzilini xaritadan belgilang
+              </label>
+              <p className="text-xs text-muted-foreground/70 mb-2">
+                Xaritadagi istalgan joyni bosib shifoxona manzilini belgilang. Manzil nomi avtomatik aniqlanadi.
+              </p>
+              <div className="rounded-xl overflow-hidden border border-border shadow-sm" style={{ height: 300 }}>
+                <MapContainer
+                  center={[41.3111, 69.2797]} // Tashkent center
+                  zoom={12}
+                  style={{ height: "100%", width: "100%" }}
+                  className="z-0"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  />
+                  <MapClickHandler onLocationSelect={handleMapClick} />
+                  {pickedCoords && (
+                    <>
+                      <Marker position={[pickedCoords.lat, pickedCoords.lng]} />
+                      <FlyToLocation lat={pickedCoords.lat} lng={pickedCoords.lng} />
+                    </>
+                  )}
+                </MapContainer>
               </div>
-              <button onClick={addAvailability} className="flex items-center justify-center gap-1.5 px-4 py-2 h-[38px] rounded-xl text-sm gradient-primary text-primary-foreground">
-                <Plus size={16} /> Qo'shish
-              </button>
             </div>
-            
-            {newSlot.hospital_id && (
-              <div className="mt-2 border border-border rounded-xl overflow-hidden shadow-sm">
-                <iframe
-                  width="100%"
-                  height="180"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  src={`https://maps.google.com/maps?q=${HOSPITALS.find(h => h.id === newSlot.hospital_id)?.coords}&hl=uz&z=15&output=embed`}
-                ></iframe>
-              </div>
+
+            {/* Location details after picking */}
+            {pickedCoords && (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Shifoxona nomi</label>
+                  <input
+                    value={geocoding ? "Aniqlanmoqda..." : locationName}
+                    onChange={(e) => setLocationName(e.target.value)}
+                    placeholder="Masalan: Markaziy poliklinika"
+                    className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+                    disabled={geocoding}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Manzil</label>
+                  <input
+                    value={geocoding ? "Aniqlanmoqda..." : locationAddress}
+                    onChange={(e) => setLocationAddress(e.target.value)}
+                    placeholder="Masalan: Toshkent sh., Yunusobod tumani"
+                    className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+                    disabled={geocoding}
+                  />
+                </div>
+                <div className="sm:col-span-2 text-xs text-muted-foreground/60">
+                  📍 Koordinatalar: {pickedCoords.lat.toFixed(6)}, {pickedCoords.lng.toFixed(6)}
+                </div>
+              </motion.div>
             )}
+
+            {/* Add button */}
+            <button
+              onClick={addAvailability}
+              disabled={geocoding}
+              className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition w-max disabled:opacity-50"
+            >
+              <Plus size={16} /> Qo'shish
+            </button>
           </div>
 
+          {/* Existing availability list */}
           {availability.length > 0 && (
             <div className="flex flex-col gap-2 mt-6 border-t border-border pt-4">
               <h4 className="text-sm font-semibold mb-2">Mavjud ish vaqtlari</h4>
               {availability.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-2 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground">
-                  <div>
+                  <div className="min-w-0">
                     <span className="font-semibold block">{format(new Date(a.available_date), "dd.MM.yyyy")}</span>
-                    <span className="text-xs text-muted-foreground">{a.start_time.slice(0, 5)} – {a.end_time.slice(0, 5)} at {a.location_name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {a.start_time.slice(0, 5)} – {a.end_time.slice(0, 5)}
+                      {a.location_name && ` • ${a.location_name}`}
+                    </span>
+                    {a.location_address && <span className="text-xs text-muted-foreground/70 block">{a.location_address}</span>}
                   </div>
-                  <button onClick={() => removeAvailability(a.id)} className="p-2 bg-destructive/15 rounded-lg text-destructive hover:bg-destructive hover:text-destructive-foreground transition"><Trash2 size={16} /></button>
+                  <button onClick={() => removeAvailability(a.id)} className="p-2 bg-destructive/15 rounded-lg text-destructive hover:bg-destructive hover:text-destructive-foreground transition shrink-0">
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -431,10 +642,13 @@ const AppointmentsModule = () => {
         </motion.div>
       )}
 
-      {/* PATIENT: booking */}
+      {/* ═══ PATIENT: Qabulga yozilish ═══ */}
       {!isDoctor && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-6 shadow-card border border-border">
-          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Stethoscope size={18} className="text-primary" /> Yangi qabulga yozilish</h3>
+          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <Stethoscope size={18} className="text-primary" /> Yangi qabulga yozilish
+          </h3>
+
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Shifokor</label>
@@ -446,7 +660,8 @@ const AppointmentsModule = () => {
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Sana</label>
-              <input type="date" value={selectedDate} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setSelectedDate(e.target.value)}
+              <input type="date" value={selectedDate} min={format(new Date(), "yyyy-MM-dd")}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
             </div>
             <div>
@@ -456,23 +671,46 @@ const AppointmentsModule = () => {
             </div>
           </div>
 
+          {/* Show doctor's location on map */}
           {docAvailability.length > 0 && docAvailability[0]?.location_coords && (
-             <div className="mt-4 border border-border rounded-xl overflow-hidden shadow-sm">
-                <iframe
-                  width="100%"
-                  height="160"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  src={`https://maps.google.com/maps?q=${docAvailability[0].location_coords}&hl=uz&z=15&output=embed`}
-                ></iframe>
-                <div className="bg-secondary px-3 py-2 text-xs">
-                  <span className="font-semibold block">{docAvailability[0].location_name}</span>
-                  <span className="text-muted-foreground">{docAvailability[0].location_address}</span>
-                </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin size={14} className="text-primary" />
+                <span className="text-sm font-semibold text-foreground">{docAvailability[0].location_name}</span>
+              </div>
+              {docAvailability[0].location_address && (
+                <p className="text-xs text-muted-foreground mb-2">{docAvailability[0].location_address}</p>
+              )}
+              <div className="rounded-xl overflow-hidden border border-border shadow-sm" style={{ height: 200 }}>
+                <MapContainer
+                  center={docAvailability[0].location_coords.split(",").map(Number) as [number, number]}
+                  zoom={15}
+                  style={{ height: "100%", width: "100%" }}
+                  zoomControl={true}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  />
+                  <Marker position={docAvailability[0].location_coords.split(",").map(Number) as [number, number]} />
+                </MapContainer>
+              </div>
+              {/* Navigate to doctor location */}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${docAvailability[0].location_coords}&travelmode=driving`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold
+                  bg-gradient-to-r from-blue-500 to-indigo-600 text-white
+                  hover:from-blue-600 hover:to-indigo-700 transition-all"
+              >
+                <Navigation size={14} /> Shifoxonaga navigatsiya
+              </a>
             </div>
           )}
 
+          {/* Available time slots */}
           {selectedDoctor && selectedDate && (
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-sm font-semibold text-foreground mb-3">Bo'sh vaqtlar:</p>
@@ -485,8 +723,8 @@ const AppointmentsModule = () => {
                     return (
                       <button key={s} disabled={booking || isTaken} onClick={() => !isTaken && book(s)}
                         className={`px-4 py-2 rounded-xl text-sm transition border ${
-                          isTaken 
-                            ? "bg-secondary text-muted-foreground/50 border-border/50 cursor-not-allowed opacity-50" 
+                          isTaken
+                            ? "bg-secondary text-muted-foreground/50 border-border/50 cursor-not-allowed opacity-50"
                             : "bg-secondary hover:gradient-primary hover:text-primary-foreground border-border hover:border-transparent text-foreground shadow-sm"
                         }`}>
                         {s}
@@ -500,15 +738,20 @@ const AppointmentsModule = () => {
         </motion.div>
       )}
 
-      {/* Appointments lists */}
+      {/* ═══ Appointments Lists ═══ */}
       {loading ? (
-        <p className="text-muted-foreground">Yuklanmoqda...</p>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <span className="ml-3 text-muted-foreground">Yuklanmoqda...</span>
+        </div>
       ) : (
         <div className="space-y-6">
           <div>
-            <h3 className="font-display font-bold text-foreground mb-3">Faol qabullar</h3>
+            <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+              <CalendarClock size={18} className="text-primary" /> Faol qabullar
+            </h3>
             {upcoming.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Faol qabullar yo'q.</p>
+              <p className="text-sm text-muted-foreground bg-secondary/30 p-4 rounded-xl text-center">Faol qabullar yo'q.</p>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">{upcoming.map(renderAppointmentCard)}</div>
             )}

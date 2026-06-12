@@ -49,7 +49,7 @@ const PatientInvitations = ({ onBack }: Props) => {
     (sentRes.data || []).forEach((r: any) => allUserIds.add(r.patient_user_id));
     (recvRes.data || []).forEach((r: any) => allUserIds.add(r.doctor_id));
 
-    let profileMap = new Map<string, any>();
+    const profileMap = new Map<string, any>();
     if (allUserIds.size > 0) {
       const { data: profs } = await supabase.from("profiles")
         .select("user_id, full_name, email, specialty")
