@@ -773,33 +773,7 @@ export type Database = {
       }
     }
     Views: {
-      doctor_directory: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          is_blocked: boolean | null
-          role: string | null
-          specialty: string | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          full_name?: string | null
-          is_blocked?: boolean | null
-          role?: string | null
-          specialty?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          full_name?: string | null
-          is_blocked?: boolean | null
-          role?: string | null
-          specialty?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_admin_user_ids: {
@@ -820,6 +794,15 @@ export type Database = {
         Returns: {
           doctor_id: string
           patient_count: number
+        }[]
+      }
+      get_public_doctors: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          specialty: string
+          user_id: string
         }[]
       }
       has_role: {
