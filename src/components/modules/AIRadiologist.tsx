@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, Camera, CameraOff, CircleDot } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, Camera, CameraOff, CircleDot, Stethoscope } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
