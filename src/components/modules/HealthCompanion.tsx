@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, User, UserPlus
+  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, Volume2, VolumeX, Bell
 } from "lucide-react";
 import { toast } from "sonner";
+import boyCompanion from "@/assets/companion-boy.png";
+import girlCompanion from "@/assets/companion-girl.png";
 
 type CharacterType = "boy" | "girl";
 type TabType = "alarm" | "diet" | "fitness";
@@ -12,35 +14,103 @@ const HealthCompanion = () => {
   const [character, setCharacter] = useState<CharacterType>("boy");
   const [activeTab, setActiveTab] = useState<TabType>("alarm");
 
-  // Character speaking bubble
+  // --- SPEECH ---
   const [speechText, setSpeechText] = useState("");
-  
-  const speak = (text: string) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const bubbleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const speak = useCallback((text: string) => {
     setSpeechText(text);
-    setTimeout(() => setSpeechText(""), 5000);
-  };
+    if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+    bubbleTimer.current = setTimeout(() => setSpeechText(""), 6000);
+
+    if (!voiceEnabled || typeof window === "undefined" || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      const voices = window.speechSynthesis.getVoices();
+      const preferred =
+        voices.find((v) => v.lang.startsWith("uz")) ||
+        voices.find((v) => v.lang.startsWith("ru")) ||
+        voices.find((v) => v.lang.startsWith("tr")) ||
+        voices[0];
+      if (preferred) utter.voice = preferred;
+      utter.lang = preferred?.lang || "ru-RU";
+      utter.rate = 0.98;
+      utter.pitch = character === "girl" ? 1.4 : 1.05;
+      utter.onstart = () => setIsSpeaking(true);
+      utter.onend = () => setIsSpeaking(false);
+      utter.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utter);
+    } catch {
+      /* speech not supported */
+    }
+  }, [voiceEnabled, character]);
+
+  // warm up voices list
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     if (character === "boy") {
-      speak("Salom! Men sizning sog'lom hayot bo'yicha hamrohingizman. Keling, birga shug'ullanamiz!");
+      speak("Salom! Men Alisher, sizning sog'lom hayot hamrohingizman. Keling, birga shug'ullanamiz!");
     } else {
-      speak("Assalomu alaykum! Men sizga to'g'ri ovqatlanish va vaqtida uxlashni eslatib turaman.");
+      speak("Assalomu alaykum! Men Malika. Sizga to'g'ri ovqatlanish va vaqtida uxlashni eslatib turaman.");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character]);
 
-  // --- ALARM STATE ---
+  // --- ALARM / REMINDERS STATE ---
   const [sleepTime, setSleepTime] = useState("22:30");
   const [wakeTime, setWakeTime] = useState("06:00");
+  const [breakfastTime, setBreakfastTime] = useState("08:00");
+  const [lunchTime, setLunchTime] = useState("13:00");
+  const [dinnerTime, setDinnerTime] = useState("19:00");
   const [alarmActive, setAlarmActive] = useState(false);
+  const firedRef = useRef<Record<string, string>>({});
+
+  // Reminder engine — checks the clock every 15s while active
+  useEffect(() => {
+    if (!alarmActive) return;
+    const schedule: Record<string, { time: string; msg: string }> = {
+      wake: { time: wakeTime, msg: "Xayrli tong! Uyg'onish vaqti bo'ldi. Yangi kunni tabassum bilan boshlang!" },
+      breakfast: { time: breakfastTime, msg: "Nonushta vaqti! Kuningizni to'yimli ovqat bilan boshlang." },
+      lunch: { time: lunchTime, msg: "Tushlik vaqti bo'ldi. Ozgina tanaffus qilib, ovqatlaning." },
+      dinner: { time: dinnerTime, msg: "Kechki ovqat vaqti. Yengil taomlarni tanlang." },
+      sleep: { time: sleepTime, msg: "Uxlash vaqti keldi. Ekranlarni yig'ishtirib, dam oling." },
+    };
+    const tick = () => {
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const dayKey = now.toDateString();
+      Object.entries(schedule).forEach(([key, { time, msg }]) => {
+        if (time === hhmm && firedRef.current[key] !== dayKey + time) {
+          firedRef.current[key] = dayKey + time;
+          toast.success(msg);
+          speak(msg);
+        }
+      });
+    };
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => clearInterval(id);
+  }, [alarmActive, wakeTime, breakfastTime, lunchTime, dinnerTime, sleepTime, speak]);
 
   const toggleAlarm = () => {
     setAlarmActive(!alarmActive);
     if (!alarmActive) {
-      toast.success("Budilnik yoqildi! Vaqtida uxlashni unutmang.");
-      speak("Ajoyib! Bugun o'z vaqtida uxlab, erta tongda uyg'onamiz.");
+      toast.success("Rejim yoqildi! Barcha eslatmalar faollashtirildi.");
+      speak("Ajoyib! Endi men sizga uxlash, uyg'onish va ovqatlanish vaqtlarini eslatib turaman.");
     } else {
-      toast("Budilnik o'chirildi.");
-      speak("Budilnik o'chirildi. Rejimni buzmang!");
+      toast("Rejim o'chirildi.");
+      speak("Rejim o'chirildi. Sog'lom odatlarni unutmang!");
     }
   };
 
@@ -54,7 +124,7 @@ const HealthCompanion = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => setFoodImage(e.target?.result as string);
+    reader.onload = (ev) => setFoodImage(ev.target?.result as string);
     reader.readAsDataURL(file);
 
     setAnalyzing(true);
@@ -65,15 +135,11 @@ const HealthCompanion = () => {
       setAnalyzing(false);
       const isHealthy = Math.random() > 0.4;
       const cals = Math.floor(Math.random() * 500) + 150;
-      setCalories({
-        name: "Taniqsiz taom",
-        cal: cals,
-        status: isHealthy ? "Sog'lom" : "Og'ir taom",
-      });
+      setCalories({ name: "Aniqlangan taom", cal: cals, status: isHealthy ? "Sog'lom" : "Og'ir taom" });
       if (isHealthy) {
-        speak(`Bu juda zo'r taom! ${cals} kaloriya. Buni bemalol yeyishingiz mumkin.`);
+        speak(`Bu juda zo'r taom! Taxminan ${cals} kaloriya. Buni bemalol yeyishingiz mumkin.`);
       } else {
-        speak(`Bu biroz og'irroq taom (${cals} kkal). Buni yesangiz ko'proq yugurishingiz kerak bo'ladi!`);
+        speak(`Bu biroz og'irroq taom, ${cals} kaloriya. Yesangiz ko'proq harakat qilishingiz kerak bo'ladi!`);
       }
     }, 2500);
   };
@@ -82,7 +148,7 @@ const HealthCompanion = () => {
   const exercises = [
     { id: 1, name: "Ertalabki yugurish", time: "15 min", cals: "120 kkal", icon: <Activity size={20} /> },
     { id: 2, name: "Qo'llar uchun mashq", time: "10 min", cals: "80 kkal", icon: <Dumbbell size={20} /> },
-    { id: 3, name: "Yengil chigalyozdi", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} /> },
+    { id: 3, name: "Yengil cho'zilish", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} /> },
   ];
 
   const startExercise = (name: string) => {
@@ -90,23 +156,38 @@ const HealthCompanion = () => {
     speak(`Qani, ketdik! ${name} mashqini men bilan birga bajaring! Bir, ikki, uch...`);
   };
 
+  const activeImage = character === "boy" ? boyCompanion : girlCompanion;
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div>
-        <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-          <HeartPulse className="text-primary" /> Sog'lom Hamroh
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Sizning shaxsiy 3D hamrohingiz. Sog'lom turmush tarzi, uyqu, ovqatlanish va mashqlarni birga bajaramiz!
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
+            <HeartPulse className="text-primary" /> Salomat Hamroh
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Sizning shaxsiy 3D hamrohingiz. U harakatlanadi, gapiradi va sog'lom turmush tarzingizni nazorat qiladi!
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            const next = !voiceEnabled;
+            setVoiceEnabled(next);
+            if (!next && window.speechSynthesis) window.speechSynthesis.cancel();
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+            voiceEnabled ? "bg-primary/10 text-primary border-primary/30" : "bg-secondary text-muted-foreground border-border"
+          }`}
+        >
+          {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          {voiceEnabled ? "Ovoz yoniq" : "Ovoz o'chiq"}
+        </button>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-6">
-        
         {/* CHARACTER SECTION (LEFT) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-card border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[500px]">
-            
+          <div className="bg-gradient-to-b from-primary/5 to-accent/10 border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[520px]">
             {/* Speech Bubble */}
             <AnimatePresence>
               {speechText && (
@@ -114,54 +195,66 @@ const HealthCompanion = () => {
                   initial={{ opacity: 0, scale: 0.8, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                  className="absolute top-6 left-1/2 -translate-x-1/2 w-3/4 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-4 rounded-2xl shadow-xl z-20 border border-slate-100 dark:border-slate-700 font-medium text-sm text-center"
+                  className="absolute top-5 left-1/2 -translate-x-1/2 w-4/5 bg-card text-foreground p-4 rounded-2xl shadow-xl z-20 border border-border font-medium text-sm text-center"
                 >
                   {speechText}
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-slate-800 rotate-45 border-r border-b border-slate-100 dark:border-slate-700"></div>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card rotate-45 border-r border-b border-border" />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* 3D Character View */}
-            <motion.div
-              animate={{ 
-                scale: [1, 1.02, 1],
-                y: [0, -5, 0]
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: 4, 
-                ease: "easeInOut" 
-              }}
-              className="w-full h-full relative rounded-2xl overflow-hidden mt-8"
-              style={{
-                backgroundImage: 'url(/characters.jpg)',
-                backgroundSize: '200% 100%',
-                backgroundPosition: character === "boy" ? "left center" : "right center",
-                backgroundRepeat: 'no-repeat'
-              }}
-            >
-              {/* Optional glowing effect at bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </motion.div>
+            {/* Character */}
+            <div className="flex-1 w-full flex items-end justify-center relative">
+              {/* Ground shadow */}
+              <motion.div
+                className="absolute bottom-6 w-40 h-6 bg-foreground/15 rounded-[50%] blur-md"
+                animate={{ scaleX: isSpeaking ? [1, 1.08, 1] : [1, 1.04, 1], opacity: [0.5, 0.35, 0.5] }}
+                transition={{ repeat: Infinity, duration: isSpeaking ? 0.6 : 4, ease: "easeInOut" }}
+              />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={character}
+                  src={activeImage}
+                  alt={character === "boy" ? "Alisher hamroh" : "Malika hamroh"}
+                  width={768}
+                  height={1024}
+                  loading="lazy"
+                  className="relative z-10 max-h-[420px] object-contain drop-shadow-xl select-none pointer-events-none"
+                  initial={{ opacity: 0, x: character === "boy" ? -40 : 40, rotate: -3 }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    y: [0, -12, 0],
+                    rotate: isSpeaking ? [0, -1.5, 1.5, 0] : [0, 1, -1, 0],
+                  }}
+                  exit={{ opacity: 0, x: character === "boy" ? 40 : -40 }}
+                  transition={{
+                    opacity: { duration: 0.4 },
+                    x: { duration: 0.4 },
+                    y: { repeat: Infinity, duration: 3.5, ease: "easeInOut" },
+                    rotate: { repeat: Infinity, duration: isSpeaking ? 0.5 : 5, ease: "easeInOut" },
+                  }}
+                />
+              </AnimatePresence>
+            </div>
 
             {/* Character Selector */}
-            <div className="absolute bottom-6 bg-card/80 backdrop-blur-md p-1.5 rounded-full border border-border shadow-sm flex gap-1 z-10">
+            <div className="mt-2 bg-card/80 backdrop-blur-md p-1.5 rounded-full border border-border shadow-sm flex gap-1 z-10">
               <button
                 onClick={() => setCharacter("boy")}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                   character === "boy" ? "bg-blue-500 text-white shadow-md" : "text-muted-foreground hover:bg-secondary"
                 }`}
               >
-                O'g'il bola
+                Alisher
               </button>
               <button
                 onClick={() => setCharacter("girl")}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                   character === "girl" ? "bg-pink-500 text-white shadow-md" : "text-muted-foreground hover:bg-secondary"
                 }`}
               >
-                Qiz bola
+                Malika
               </button>
             </div>
           </div>
@@ -169,16 +262,15 @@ const HealthCompanion = () => {
 
         {/* FEATURES SECTION (RIGHT) */}
         <div className="lg:col-span-3 space-y-6">
-          
           {/* Tabs */}
           <div className="flex bg-secondary p-1 rounded-2xl">
             <button
-              onClick={() => { setActiveTab("alarm"); speak("Vaqtida uxlash sog'lik uchun eng muhim narsa!"); }}
+              onClick={() => { setActiveTab("alarm"); speak("Vaqtida uxlash va ovqatlanish sog'lik uchun eng muhim narsa!"); }}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${
                 activeTab === "alarm" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Clock size={18} /> Budilnik
+              <Clock size={18} /> Rejim
             </button>
             <button
               onClick={() => { setActiveTab("diet"); speak("Nima yeyayotganingizni bilish - sog'lom tananing siri."); }}
@@ -189,7 +281,7 @@ const HealthCompanion = () => {
               <Utensils size={18} /> Ratsion
             </button>
             <button
-              onClick={() => { setActiveTab("fitness"); speak("Harakatda barakat! Keling ozgina badantarbiya qilamiz."); }}
+              onClick={() => { setActiveTab("fitness"); speak("Harakatda barakat! Keling, ozgina badantarbiya qilamiz."); }}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${
                 activeTab === "fitness" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
@@ -200,8 +292,7 @@ const HealthCompanion = () => {
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
-            
-            {/* ALARM TAB */}
+            {/* ALARM / REMINDERS TAB */}
             {activeTab === "alarm" && (
               <motion.div
                 key="alarm"
@@ -212,51 +303,52 @@ const HealthCompanion = () => {
               >
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                    <Moon size={24} />
+                    <Bell size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Uyqu Nazorati</h3>
-                    <p className="text-sm text-muted-foreground">O'z vaqtida uxlashni odat qiling</p>
+                    <h3 className="text-xl font-bold text-foreground">Kunlik Rejim Nazorati</h3>
+                    <p className="text-sm text-muted-foreground">Uxlash, uyg'onish va ovqatlanish vaqtlari</p>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-6 mb-8">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                      <Moon size={16} /> Uxlash vaqti
-                    </label>
-                    <input 
-                      type="time" 
-                      value={sleepTime}
-                      onChange={(e) => setSleepTime(e.target.value)}
-                      disabled={alarmActive}
-                      className="w-full text-3xl font-display font-bold bg-secondary/50 border border-border rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                      <Sun size={16} /> Uyg'onish vaqti
-                    </label>
-                    <input 
-                      type="time" 
-                      value={wakeTime}
-                      onChange={(e) => setWakeTime(e.target.value)}
-                      disabled={alarmActive}
-                      className="w-full text-3xl font-display font-bold bg-secondary/50 border border-border rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                    />
-                  </div>
+                <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                  {[
+                    { label: "Uyg'onish", icon: <Sun size={16} />, val: wakeTime, set: setWakeTime },
+                    { label: "Nonushta", icon: <Utensils size={16} />, val: breakfastTime, set: setBreakfastTime },
+                    { label: "Tushlik", icon: <Utensils size={16} />, val: lunchTime, set: setLunchTime },
+                    { label: "Kechki ovqat", icon: <Utensils size={16} />, val: dinnerTime, set: setDinnerTime },
+                    { label: "Uxlash", icon: <Moon size={16} />, val: sleepTime, set: setSleepTime },
+                  ].map((item) => (
+                    <div key={item.label} className="space-y-2">
+                      <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        {item.icon} {item.label}
+                      </label>
+                      <input
+                        type="time"
+                        value={item.val}
+                        onChange={(e) => item.set(e.target.value)}
+                        disabled={alarmActive}
+                        className="w-full text-2xl font-display font-bold bg-secondary/50 border border-border rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 <button
                   onClick={toggleAlarm}
                   className={`w-full py-4 rounded-2xl text-lg font-bold transition-all shadow-md active:scale-[0.98] flex justify-center items-center gap-2 ${
-                    alarmActive 
-                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" 
+                    alarmActive
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       : "gradient-primary text-white hover:opacity-90"
                   }`}
                 >
-                  {alarmActive ? "Budilnikni O'chirish" : "Budilnikni Yoqish"}
+                  {alarmActive ? "Rejimni O'chirish" : "Rejimni Yoqish"}
                 </button>
+                {alarmActive && (
+                  <p className="text-center text-xs text-medical-green mt-3 flex items-center justify-center gap-1">
+                    <CheckCircle2 size={14} /> Hamroh vaqtida sizni eslatib turadi
+                  </p>
+                )}
               </motion.div>
             )}
 
@@ -280,7 +372,6 @@ const HealthCompanion = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-6">
-                  {/* Upload Area */}
                   <div className="flex-1">
                     <label className="border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors rounded-3xl p-8 flex flex-col items-center justify-center text-center cursor-pointer h-full min-h-[200px] relative overflow-hidden group">
                       <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
@@ -303,7 +394,6 @@ const HealthCompanion = () => {
                     </label>
                   </div>
 
-                  {/* Results Area */}
                   <div className="flex-1 flex flex-col">
                     {analyzing ? (
                       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-secondary/50 rounded-3xl">
@@ -317,7 +407,6 @@ const HealthCompanion = () => {
                         </div>
                         <h4 className="text-2xl font-bold mb-1">{calories.cal} <span className="text-lg text-muted-foreground font-normal">kkal</span></h4>
                         <p className="text-foreground font-medium mb-4">{calories.name}</p>
-                        
                         <div className={`px-4 py-2 rounded-xl text-sm font-semibold inline-flex w-max ${
                           calories.status === "Sog'lom" ? "bg-medical-green-light text-medical-green" : "bg-medical-orange-light text-medical-orange"
                         }`}>
@@ -369,7 +458,7 @@ const HealthCompanion = () => {
                           </div>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => startExercise(ex.name)}
                         className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
                       >
@@ -390,7 +479,6 @@ const HealthCompanion = () => {
                 </div>
               </motion.div>
             )}
-
           </AnimatePresence>
         </div>
       </div>
