@@ -50,6 +50,9 @@ export type Database = {
           doctor_id: string
           duration_minutes: number
           id: string
+          location_address: string | null
+          location_coords: string | null
+          location_name: string | null
           notes: string | null
           patient_id: string
           reason: string | null
@@ -62,6 +65,9 @@ export type Database = {
           doctor_id: string
           duration_minutes?: number
           id?: string
+          location_address?: string | null
+          location_coords?: string | null
+          location_name?: string | null
           notes?: string | null
           patient_id: string
           reason?: string | null
@@ -74,6 +80,9 @@ export type Database = {
           doctor_id?: string
           duration_minutes?: number
           id?: string
+          location_address?: string | null
+          location_coords?: string | null
+          location_name?: string | null
           notes?: string | null
           patient_id?: string
           reason?: string | null
@@ -294,28 +303,40 @@ export type Database = {
       }
       doctor_availability: {
         Row: {
+          available_date: string | null
           created_at: string
           doctor_id: string
           end_time: string
           id: string
+          location_address: string | null
+          location_coords: string | null
+          location_name: string | null
           slot_minutes: number
           start_time: string
           weekday: number
         }
         Insert: {
+          available_date?: string | null
           created_at?: string
           doctor_id: string
           end_time: string
           id?: string
+          location_address?: string | null
+          location_coords?: string | null
+          location_name?: string | null
           slot_minutes?: number
           start_time: string
           weekday: number
         }
         Update: {
+          available_date?: string | null
           created_at?: string
           doctor_id?: string
           end_time?: string
           id?: string
+          location_address?: string | null
+          location_coords?: string | null
+          location_name?: string | null
           slot_minutes?: number
           start_time?: string
           weekday?: number
