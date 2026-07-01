@@ -773,7 +773,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      doctor_directory: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          is_blocked: boolean | null
+          role: string | null
+          specialty: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          is_blocked?: boolean | null
+          role?: string | null
+          specialty?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          is_blocked?: boolean | null
+          role?: string | null
+          specialty?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_admin_user_ids: {
