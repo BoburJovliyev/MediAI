@@ -50,9 +50,6 @@ export type Database = {
           doctor_id: string
           duration_minutes: number
           id: string
-          location_address: string | null
-          location_coords: string | null
-          location_name: string | null
           notes: string | null
           patient_id: string
           reason: string | null
@@ -65,9 +62,6 @@ export type Database = {
           doctor_id: string
           duration_minutes?: number
           id?: string
-          location_address?: string | null
-          location_coords?: string | null
-          location_name?: string | null
           notes?: string | null
           patient_id: string
           reason?: string | null
@@ -80,9 +74,6 @@ export type Database = {
           doctor_id?: string
           duration_minutes?: number
           id?: string
-          location_address?: string | null
-          location_coords?: string | null
-          location_name?: string | null
           notes?: string | null
           patient_id?: string
           reason?: string | null
@@ -309,10 +300,7 @@ export type Database = {
           id: string
           slot_minutes: number
           start_time: string
-          available_date: string
-          location_name: string | null
-          location_address: string | null
-          location_coords: string | null
+          weekday: number
         }
         Insert: {
           created_at?: string
@@ -321,10 +309,7 @@ export type Database = {
           id?: string
           slot_minutes?: number
           start_time: string
-          available_date?: string
-          location_name?: string | null
-          location_address?: string | null
-          location_coords?: string | null
+          weekday: number
         }
         Update: {
           created_at?: string
@@ -333,10 +318,7 @@ export type Database = {
           id?: string
           slot_minutes?: number
           start_time?: string
-          available_date?: string
-          location_name?: string | null
-          location_address?: string | null
-          location_coords?: string | null
+          weekday?: number
         }
         Relationships: []
       }
