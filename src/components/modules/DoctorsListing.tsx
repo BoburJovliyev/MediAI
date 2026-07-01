@@ -39,42 +39,29 @@ const DoctorsListing = () => {
 
   const loadDoctors = async () => {
     setLoading(true);
-    // Get all doctor profiles (exclude admins)
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, avatar_url, specialty, email")
-      .eq("role", "doctor")
-      .eq("is_blocked", false);
+    // Get all doctor profiles via a safe RPC that excludes email addresses.
+    // Admins are already filtered out server-side.
+    const { data: profiles } = await supabase.rpc("get_public_doctors" as any);
 
-    if (!profiles || profiles.length === 0) {
+    const filteredProfiles = (profiles as any[]) || [];
+    if (filteredProfiles.length === 0) {
       setDoctors([]);
       setLoading(false);
       return;
     }
-
-    // Filter out admin users (Super Admin must be hidden everywhere)
-    const { data: adminRoles } = await supabase.rpc("get_admin_user_ids" as any);
-    const adminIds = new Set(((adminRoles as any[]) || []).map((r: any) => r.user_id));
-    const filteredProfiles = profiles.filter(p => !adminIds.has(p.user_id));
 
     // Get patient counts for each doctor (public aggregate via RPC)
-    const doctorIds = filteredProfiles.map(p => p.user_id);
-    if (doctorIds.length === 0) {
-      setDoctors([]);
-      setLoading(false);
-      return;
-    }
     const { data: counts } = await supabase.rpc("get_doctor_patient_counts");
     const countMap: Record<string, number> = {};
     (counts || []).forEach((r: any) => {
       countMap[r.doctor_id] = Number(r.patient_count) || 0;
     });
 
-    const result: DoctorProfile[] = filteredProfiles.map(p => ({
+    const result: DoctorProfile[] = filteredProfiles.map((p: any) => ({
       user_id: p.user_id,
       full_name: p.full_name,
       avatar_url: p.avatar_url,
-      email: p.email,
+      email: null,
       specialty: p.specialty,
       patient_count: countMap[p.user_id] || 0,
     }));

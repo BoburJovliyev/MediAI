@@ -430,6 +430,7 @@ const AppointmentsModule = () => {
     const { error } = await supabase.from("doctor_availability").insert({
       doctor_id: user.id,
       available_date: newSlot.available_date,
+      weekday: new Date(newSlot.available_date).getDay(),
       start_time: newSlot.start_time,
       end_time: newSlot.end_time,
       slot_minutes: newSlot.slot_minutes,

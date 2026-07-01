@@ -303,40 +303,43 @@ export type Database = {
       }
       doctor_availability: {
         Row: {
+          available_date: string | null
           created_at: string
           doctor_id: string
           end_time: string
           id: string
-          slot_minutes: number
-          start_time: string
-          available_date: string
-          location_name: string | null
           location_address: string | null
           location_coords: string | null
+          location_name: string | null
+          slot_minutes: number
+          start_time: string
+          weekday: number
         }
         Insert: {
+          available_date?: string | null
           created_at?: string
           doctor_id: string
           end_time: string
           id?: string
-          slot_minutes?: number
-          start_time: string
-          available_date?: string
-          location_name?: string | null
           location_address?: string | null
           location_coords?: string | null
+          location_name?: string | null
+          slot_minutes?: number
+          start_time: string
+          weekday: number
         }
         Update: {
+          available_date?: string | null
           created_at?: string
           doctor_id?: string
           end_time?: string
           id?: string
-          slot_minutes?: number
-          start_time?: string
-          available_date?: string
-          location_name?: string | null
           location_address?: string | null
           location_coords?: string | null
+          location_name?: string | null
+          slot_minutes?: number
+          start_time?: string
+          weekday?: number
         }
         Relationships: []
       }
@@ -812,6 +815,15 @@ export type Database = {
         Returns: {
           doctor_id: string
           patient_count: number
+        }[]
+      }
+      get_public_doctors: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          specialty: string
+          user_id: string
         }[]
       }
       has_role: {
