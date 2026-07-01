@@ -313,7 +313,6 @@ export type Database = {
           location_name: string | null
           slot_minutes: number
           start_time: string
-          weekday: number
         }
         Insert: {
           available_date?: string | null
@@ -326,7 +325,6 @@ export type Database = {
           location_name?: string | null
           slot_minutes?: number
           start_time: string
-          weekday: number
         }
         Update: {
           available_date?: string | null
@@ -339,7 +337,6 @@ export type Database = {
           location_name?: string | null
           slot_minutes?: number
           start_time?: string
-          weekday?: number
         }
         Relationships: []
       }

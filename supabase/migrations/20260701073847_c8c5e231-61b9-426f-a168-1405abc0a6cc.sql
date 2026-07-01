@@ -1,0 +1,1 @@
+ALTER TABLE public.doctor_availability DROP COLUMN IF EXISTS weekday;
