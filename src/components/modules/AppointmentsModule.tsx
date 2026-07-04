@@ -567,11 +567,16 @@ const AppointmentsModule = () => {
               {a.location_coords && <StaticMapPreview coords={a.location_coords} name={a.location_name} />}
 
               {/* NAVIGATOR BUTTON */}
-              {navUrl && (
-                <a
-                  href={navUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {hasNav && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openNavigation({
+                      coords: a.location_coords,
+                      name: a.location_name,
+                      address: a.location_address,
+                    })
+                  }
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
                     bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md
                     hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg hover:scale-[1.01]
@@ -580,7 +585,7 @@ const AppointmentsModule = () => {
                   <Navigation size={16} />
                   Navigator orqali borish
                   <ExternalLink size={14} className="opacity-70" />
-                </a>
+                </button>
               )}
             </div>
           )}
