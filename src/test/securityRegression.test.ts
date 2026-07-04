@@ -45,4 +45,25 @@ describe("RLS & storage policy regression guard", () => {
     expect(allSql).toContain("call_logs");
     expect(allSql).toMatch(/auth\.uid\(\) = caller_id[\s\S]*?auth\.uid\(\) = callee_id/);
   });
+
+  it("chat_messages UPDATE policy is scoped to authenticated (not public/anon)", () => {
+    // The most recent recreation of this policy must target the authenticated role.
+    expect(allSql).toMatch(
+      /create policy "users can update own messages"\s+on public\.chat_messages\s+for update\s+to authenticated/
+    );
+  });
+
+  it("doctor profile reads require the viewer to actually hold the doctor role", () => {
+    // Prevents any authenticated user from reading another user's profile/email
+    // simply by establishing a doctor_patients / patient_invitations relationship.
+    expect(allSql).toMatch(
+      /doctors can view related patient profiles[\s\S]*?has_role\(auth\.uid\(\), 'doctor'::app_role\)/
+    );
+  });
+
+  it("public doctor directory RPC never exposes email addresses", () => {
+    // get_public_doctors must only return safe directory columns.
+    expect(allSql).toContain("get_public_doctors");
+    expect(allSql).not.toMatch(/get_public_doctors[\s\S]{0,400}p\.email/);
+  });
 });
