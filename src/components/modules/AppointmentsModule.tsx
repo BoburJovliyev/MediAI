@@ -517,18 +517,7 @@ const AppointmentsModule = () => {
   const renderAppointmentCard = (a: Appointment) => {
     const other = profilesMap[isDoctor ? a.patient_id : a.doctor_id];
 
-    // Build Google Maps navigation URL
-    const getNavigationUrl = () => {
-      if (a.location_coords) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${a.location_coords}&travelmode=driving`;
-      }
-      if (a.location_name) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${a.location_name} ${a.location_address || ""}`)}`;
-      }
-      return null;
-    };
-
-    const navUrl = getNavigationUrl();
+    const hasNav = !!(a.location_coords || a.location_name);
 
     return (
       <motion.div
