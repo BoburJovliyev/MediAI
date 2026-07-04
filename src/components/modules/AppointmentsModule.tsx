@@ -289,10 +289,7 @@ const AppointmentsModule = () => {
   };
 
   const loadDoctors = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, specialty, avatar_url")
-      .eq("role", "doctor");
+    const { data } = await supabase.rpc("get_public_doctors" as any);
     setDoctors((data as DoctorProfile[]) || []);
   };
 
