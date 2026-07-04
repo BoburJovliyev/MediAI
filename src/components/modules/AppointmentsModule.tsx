@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Tooltip } from "react-leaflet";
 import L from "leaflet";
+import { openNavigation } from "@/lib/navigation";
 
 // Fix default marker icon (Leaflet + bundler issue)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -517,18 +518,7 @@ const AppointmentsModule = () => {
   const renderAppointmentCard = (a: Appointment) => {
     const other = profilesMap[isDoctor ? a.patient_id : a.doctor_id];
 
-    // Build Google Maps navigation URL
-    const getNavigationUrl = () => {
-      if (a.location_coords) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${a.location_coords}&travelmode=driving`;
-      }
-      if (a.location_name) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${a.location_name} ${a.location_address || ""}`)}`;
-      }
-      return null;
-    };
-
-    const navUrl = getNavigationUrl();
+    const hasNav = !!(a.location_coords || a.location_name);
 
     return (
       <motion.div
@@ -578,11 +568,16 @@ const AppointmentsModule = () => {
               {a.location_coords && <StaticMapPreview coords={a.location_coords} name={a.location_name} />}
 
               {/* NAVIGATOR BUTTON */}
-              {navUrl && (
-                <a
-                  href={navUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {hasNav && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openNavigation({
+                      coords: a.location_coords,
+                      name: a.location_name,
+                      address: a.location_address,
+                    })
+                  }
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
                     bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md
                     hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg hover:scale-[1.01]
@@ -591,7 +586,7 @@ const AppointmentsModule = () => {
                   <Navigation size={16} />
                   Navigator orqali borish
                   <ExternalLink size={14} className="opacity-70" />
-                </a>
+                </button>
               )}
             </div>
           )}
@@ -845,16 +840,21 @@ const AppointmentsModule = () => {
                 </MapContainer>
               </div>
               {/* Navigate to doctor location */}
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${docAvailability[0].location_coords}&travelmode=driving`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() =>
+                  openNavigation({
+                    coords: docAvailability[0].location_coords,
+                    name: docAvailability[0].location_name,
+                    address: docAvailability[0].location_address,
+                  })
+                }
                 className="mt-2 flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold
                   bg-gradient-to-r from-blue-500 to-indigo-600 text-white
                   hover:from-blue-600 hover:to-indigo-700 transition-all"
               >
                 <Navigation size={14} /> Shifoxonaga navigatsiya
-              </a>
+              </button>
             </div>
           )}
 
