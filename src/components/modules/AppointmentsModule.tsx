@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Tooltip } from "react-leaflet";
 import L from "leaflet";
+import { openNavigation } from "@/lib/navigation";
 
 // Fix default marker icon (Leaflet + bundler issue)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
