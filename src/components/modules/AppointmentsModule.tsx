@@ -839,16 +839,21 @@ const AppointmentsModule = () => {
                 </MapContainer>
               </div>
               {/* Navigate to doctor location */}
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${docAvailability[0].location_coords}&travelmode=driving`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() =>
+                  openNavigation({
+                    coords: docAvailability[0].location_coords,
+                    name: docAvailability[0].location_name,
+                    address: docAvailability[0].location_address,
+                  })
+                }
                 className="mt-2 flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold
                   bg-gradient-to-r from-blue-500 to-indigo-600 text-white
                   hover:from-blue-600 hover:to-indigo-700 transition-all"
               >
                 <Navigation size={14} /> Shifoxonaga navigatsiya
-              </a>
+              </button>
             </div>
           )}
 
