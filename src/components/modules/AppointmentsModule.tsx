@@ -266,15 +266,22 @@ const AppointmentsModule = () => {
     setAppointments(appts);
 
     const ids = Array.from(new Set(appts.flatMap((a) => [a.doctor_id, a.patient_id])));
+    const map: Record<string, DoctorProfile> = {};
     if (ids.length) {
+      // Direct read returns rows RLS allows (own profile + related patients for doctors)
       const { data: profs } = await supabase
         .from("profiles")
         .select("user_id, full_name, specialty, avatar_url")
         .in("user_id", ids);
-      const map: Record<string, DoctorProfile> = {};
       (profs as DoctorProfile[] | null)?.forEach((p) => { map[p.user_id] = p; });
-      setProfilesMap(map);
+
+      // Merge in public doctor directory so patients can see their doctor's name/photo
+      const { data: pubDocs } = await supabase.rpc("get_public_doctors" as any);
+      (pubDocs as DoctorProfile[] | null)?.forEach((p) => {
+        if (ids.includes(p.user_id)) map[p.user_id] = { ...map[p.user_id], ...p };
+      });
     }
+    setProfilesMap(map);
     setLoading(false);
   };
 
@@ -289,10 +296,7 @@ const AppointmentsModule = () => {
   };
 
   const loadDoctors = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, specialty, avatar_url")
-      .eq("role", "doctor");
+    const { data } = await supabase.rpc("get_public_doctors" as any);
     setDoctors((data as DoctorProfile[]) || []);
   };
 
