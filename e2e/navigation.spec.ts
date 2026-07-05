@@ -58,6 +58,6 @@ test.describe('Navigator button → Google Maps', () => {
     await page.getByRole('button', { name: 'Navigator orqali borish' }).click();
     const popup = await popupPromise;
 
-    expect(decodeURIComponent(popup.url())).toContain('destination=Med Center, Amir Temur 12');
+    expect(popup.url()).toContain('destination=Med+Center%2C+Amir+Temur+12');
   });
 });
