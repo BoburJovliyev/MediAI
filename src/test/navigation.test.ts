@@ -19,10 +19,16 @@ describe("buildDirectionsUrl", () => {
     expect(decodeURIComponent(url!)).toContain("destination=Med Center, Amir Temur 12");
   });
 
+  it("falls back to name + address when coords are missing/invalid", () => {
+    const url = buildDirectionsUrl({ coords: "not-coords", name: "Med Center", address: "Amir Temur 12" });
+    expect(url).toContain("destination=Med+Center%2C+Amir+Temur+12");
+  });
+
   it("falls back to address alone when only address is present", () => {
     const url = buildDirectionsUrl({ address: "Chilonzor 5" });
-    expect(decodeURIComponent(url!)).toContain("destination=Chilonzor 5");
+    expect(url).toContain("destination=Chilonzor+5");
   });
+
 
   it("includes the origin when supplied", () => {
     const url = buildDirectionsUrl({ coords: "41.3,69.2", origin: "41.0,69.0" });
