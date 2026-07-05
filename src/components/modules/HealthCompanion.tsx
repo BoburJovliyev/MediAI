@@ -146,17 +146,67 @@ const HealthCompanion = () => {
 
   // --- FITNESS STATE ---
   const exercises = [
-    { id: 1, name: "Ertalabki yugurish", time: "15 min", cals: "120 kkal", icon: <Activity size={20} /> },
-    { id: 2, name: "Qo'llar uchun mashq", time: "10 min", cals: "80 kkal", icon: <Dumbbell size={20} /> },
-    { id: 3, name: "Yengil cho'zilish", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} /> },
+    { id: 1, name: "Ertalabki yugurish", time: "15 min", cals: "120 kkal", icon: <Activity size={20} />, duration: 900 },
+    { id: 2, name: "Qo'llar uchun mashq", time: "10 min", cals: "80 kkal", icon: <Dumbbell size={20} />, duration: 600 },
+    { id: 3, name: "Yengil cho'zilish", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} />, duration: 300 },
   ];
 
-  const startExercise = (name: string) => {
+  // Live workout session
+  const [session, setSession] = useState<{ name: string; total: number } | null>(null);
+  const [remaining, setRemaining] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const spokenMarks = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!session || paused) return;
+    if (remaining <= 0) {
+      speak("Zo'r! Mashqni muvaffaqiyatli yakunladingiz. Sizdan faxrlanaman!");
+      toast.success(`${session.name} yakunlandi! 🎉`);
+      setSession(null);
+      return;
+    }
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        const next = r - 1;
+        const elapsed = session.total - next;
+        // Companion motivation at key moments
+        if (elapsed === 30 && !spokenMarks.current.has(30)) {
+          spokenMarks.current.add(30);
+          speak("Ajoyib ketyapsiz! Nafasingizni bir maromda ushlab turing.");
+        }
+        const half = Math.floor(session.total / 2);
+        if (next === half && !spokenMarks.current.has(half)) {
+          spokenMarks.current.add(half);
+          speak("Yarmini bajardingiz! Sal qoldi, davom eting!");
+        }
+        if (next === 10 && !spokenMarks.current.has(10)) {
+          spokenMarks.current.add(10);
+          speak("Oxirgi o'n soniya! Bor kuchingizni sarflang!");
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [session, paused, remaining, speak]);
+
+  const startExercise = (name: string, duration: number) => {
+    spokenMarks.current = new Set();
+    setSession({ name, total: duration });
+    setRemaining(duration);
+    setPaused(false);
     toast.success(`${name} mashqi boshlandi!`);
     speak(`Qani, ketdik! ${name} mashqini men bilan birga bajaring! Bir, ikki, uch...`);
   };
 
+  const stopExercise = () => {
+    setSession(null);
+    speak("Mayli, keyinroq davom etamiz. Dam olishni ham unutmang!");
+  };
+
+  const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
   const activeImage = character === "boy" ? boyCompanion : girlCompanion;
+
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
