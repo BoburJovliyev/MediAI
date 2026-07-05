@@ -844,6 +844,7 @@ const AppointmentsModule = () => {
               {/* Navigate to doctor location */}
               <button
                 type="button"
+                aria-label="Shifoxonaga navigatsiya"
                 onClick={() =>
                   openNavigation({
                     coords: docAvailability[0].location_coords,
@@ -851,12 +852,16 @@ const AppointmentsModule = () => {
                     address: docAvailability[0].location_address,
                   })
                 }
-                className="mt-2 flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold
-                  bg-gradient-to-r from-blue-500 to-indigo-600 text-white
-                  hover:from-blue-600 hover:to-indigo-700 transition-all"
+                className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold leading-none transition-all duration-200
+                  bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md
+                  hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg hover:scale-[1.01]
+                  active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
               >
-                <Navigation size={14} /> Shifoxonaga navigatsiya
+                <Navigation size={16} className="shrink-0" />
+                <span>Shifoxonaga navigatsiya</span>
+                <ExternalLink size={14} className="opacity-70 shrink-0" />
               </button>
+
             </div>
           )}
 
