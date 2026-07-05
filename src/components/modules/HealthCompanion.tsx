@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, Volume2, VolumeX, Bell
+  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, Volume2, VolumeX, Bell, Play, Pause, Square, Flame
 } from "lucide-react";
 import { toast } from "sonner";
 import boyCompanion from "@/assets/companion-boy.png";
