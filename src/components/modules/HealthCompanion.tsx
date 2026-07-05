@@ -534,8 +534,67 @@ const HealthCompanion = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* LIVE WORKOUT SESSION OVERLAY */}
+      <AnimatePresence>
+        {session && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-card border border-border rounded-3xl p-8 shadow-elevated w-full max-w-sm text-center relative"
+            >
+              <div className="flex items-center justify-center gap-2 mb-1 text-primary font-semibold">
+                <Flame size={18} /> Mashq davom etmoqda
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-6">{session.name}</h3>
+
+              {/* Progress ring */}
+              <div className="relative w-48 h-48 mx-auto mb-6">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
+                  <circle
+                    cx="50" cy="50" r="44" fill="none"
+                    stroke="hsl(var(--primary))" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 44}
+                    strokeDashoffset={2 * Math.PI * 44 * (remaining / session.total)}
+                    style={{ transition: "stroke-dashoffset 1s linear" }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-display font-bold text-foreground tabular-nums">{fmtTime(remaining)}</span>
+                  <span className="text-xs text-muted-foreground mt-1">qolgan vaqt</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => { setPaused((p) => !p); speak(paused ? "Davom etamiz!" : "Ozgina dam oling."); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-secondary text-foreground hover:bg-secondary/70 transition"
+                >
+                  {paused ? <><Play size={16} /> Davom etish</> : <><Pause size={16} /> To'xtatish</>}
+                </button>
+                <button
+                  onClick={stopExercise}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
+                  aria-label="Mashqni yakunlash"
+                >
+                  <Square size={16} /> Tugatish
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
 
 export default HealthCompanion;
