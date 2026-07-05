@@ -509,11 +509,13 @@ const HealthCompanion = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => startExercise(ex.name)}
-                        className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                        onClick={() => startExercise(ex.name, ex.duration)}
+                        aria-label={`${ex.name} mashqini boshlash`}
+                        className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors shrink-0"
                       >
-                        <ChevronRight size={20} />
+                        <Play size={18} />
                       </button>
+
                     </div>
                   ))}
                 </div>
