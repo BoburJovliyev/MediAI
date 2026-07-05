@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, Volume2, VolumeX, Bell
+  HeartPulse, Clock, Utensils, Dumbbell, Activity, Moon, Sun, Camera, ChevronRight, CheckCircle2, Volume2, VolumeX, Bell, Play, Pause, Square, Flame
 } from "lucide-react";
 import { toast } from "sonner";
 import boyCompanion from "@/assets/companion-boy.png";
@@ -146,17 +146,67 @@ const HealthCompanion = () => {
 
   // --- FITNESS STATE ---
   const exercises = [
-    { id: 1, name: "Ertalabki yugurish", time: "15 min", cals: "120 kkal", icon: <Activity size={20} /> },
-    { id: 2, name: "Qo'llar uchun mashq", time: "10 min", cals: "80 kkal", icon: <Dumbbell size={20} /> },
-    { id: 3, name: "Yengil cho'zilish", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} /> },
+    { id: 1, name: "Ertalabki yugurish", time: "15 min", cals: "120 kkal", icon: <Activity size={20} />, duration: 900 },
+    { id: 2, name: "Qo'llar uchun mashq", time: "10 min", cals: "80 kkal", icon: <Dumbbell size={20} />, duration: 600 },
+    { id: 3, name: "Yengil cho'zilish", time: "5 min", cals: "30 kkal", icon: <HeartPulse size={20} />, duration: 300 },
   ];
 
-  const startExercise = (name: string) => {
+  // Live workout session
+  const [session, setSession] = useState<{ name: string; total: number } | null>(null);
+  const [remaining, setRemaining] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const spokenMarks = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!session || paused) return;
+    if (remaining <= 0) {
+      speak("Zo'r! Mashqni muvaffaqiyatli yakunladingiz. Sizdan faxrlanaman!");
+      toast.success(`${session.name} yakunlandi! 🎉`);
+      setSession(null);
+      return;
+    }
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        const next = r - 1;
+        const elapsed = session.total - next;
+        // Companion motivation at key moments
+        if (elapsed === 30 && !spokenMarks.current.has(30)) {
+          spokenMarks.current.add(30);
+          speak("Ajoyib ketyapsiz! Nafasingizni bir maromda ushlab turing.");
+        }
+        const half = Math.floor(session.total / 2);
+        if (next === half && !spokenMarks.current.has(half)) {
+          spokenMarks.current.add(half);
+          speak("Yarmini bajardingiz! Sal qoldi, davom eting!");
+        }
+        if (next === 10 && !spokenMarks.current.has(10)) {
+          spokenMarks.current.add(10);
+          speak("Oxirgi o'n soniya! Bor kuchingizni sarflang!");
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [session, paused, remaining, speak]);
+
+  const startExercise = (name: string, duration: number) => {
+    spokenMarks.current = new Set();
+    setSession({ name, total: duration });
+    setRemaining(duration);
+    setPaused(false);
     toast.success(`${name} mashqi boshlandi!`);
     speak(`Qani, ketdik! ${name} mashqini men bilan birga bajaring! Bir, ikki, uch...`);
   };
 
+  const stopExercise = () => {
+    setSession(null);
+    speak("Mayli, keyinroq davom etamiz. Dam olishni ham unutmang!");
+  };
+
+  const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
   const activeImage = character === "boy" ? boyCompanion : girlCompanion;
+
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -459,11 +509,13 @@ const HealthCompanion = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => startExercise(ex.name)}
-                        className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                        onClick={() => startExercise(ex.name, ex.duration)}
+                        aria-label={`${ex.name} mashqini boshlash`}
+                        className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors shrink-0"
                       >
-                        <ChevronRight size={20} />
+                        <Play size={18} />
                       </button>
+
                     </div>
                   ))}
                 </div>
@@ -482,8 +534,67 @@ const HealthCompanion = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* LIVE WORKOUT SESSION OVERLAY */}
+      <AnimatePresence>
+        {session && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-card border border-border rounded-3xl p-8 shadow-elevated w-full max-w-sm text-center relative"
+            >
+              <div className="flex items-center justify-center gap-2 mb-1 text-primary font-semibold">
+                <Flame size={18} /> Mashq davom etmoqda
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-6">{session.name}</h3>
+
+              {/* Progress ring */}
+              <div className="relative w-48 h-48 mx-auto mb-6">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
+                  <circle
+                    cx="50" cy="50" r="44" fill="none"
+                    stroke="hsl(var(--primary))" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 44}
+                    strokeDashoffset={2 * Math.PI * 44 * (remaining / session.total)}
+                    style={{ transition: "stroke-dashoffset 1s linear" }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-display font-bold text-foreground tabular-nums">{fmtTime(remaining)}</span>
+                  <span className="text-xs text-muted-foreground mt-1">qolgan vaqt</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => { setPaused((p) => !p); speak(paused ? "Davom etamiz!" : "Ozgina dam oling."); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-secondary text-foreground hover:bg-secondary/70 transition"
+                >
+                  {paused ? <><Play size={16} /> Davom etish</> : <><Pause size={16} /> To'xtatish</>}
+                </button>
+                <button
+                  onClick={stopExercise}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
+                  aria-label="Mashqni yakunlash"
+                >
+                  <Square size={16} /> Tugatish
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
 
 export default HealthCompanion;
