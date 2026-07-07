@@ -238,8 +238,8 @@ const HealthCompanion = () => {
       <div className="grid lg:grid-cols-5 gap-6">
         {/* CHARACTER SECTION (LEFT) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-gradient-to-b from-primary/5 to-accent/10 border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[520px]">
-            {/* Speech Bubble */}
+          <div ref={dragAreaRef} className="bg-gradient-to-b from-primary/5 to-accent/10 border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[520px]">
+            <p className="absolute top-2 right-3 text-[10px] text-muted-foreground/70 z-10 select-none pointer-events-none">✋ Hamrohni ushlab suring</p>
             <AnimatePresence>
               {speechText && (
                 <motion.div
