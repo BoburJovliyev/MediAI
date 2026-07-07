@@ -13,6 +13,7 @@ type TabType = "alarm" | "diet" | "fitness";
 const HealthCompanion = () => {
   const [character, setCharacter] = useState<CharacterType>("boy");
   const [activeTab, setActiveTab] = useState<TabType>("alarm");
+  const dragAreaRef = useRef<HTMLDivElement>(null);
 
   // --- SPEECH ---
   const [speechText, setSpeechText] = useState("");
