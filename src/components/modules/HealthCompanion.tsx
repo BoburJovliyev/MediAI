@@ -13,6 +13,7 @@ type TabType = "alarm" | "diet" | "fitness";
 const HealthCompanion = () => {
   const [character, setCharacter] = useState<CharacterType>("boy");
   const [activeTab, setActiveTab] = useState<TabType>("alarm");
+  const dragAreaRef = useRef<HTMLDivElement>(null);
 
   // --- SPEECH ---
   const [speechText, setSpeechText] = useState("");
@@ -237,8 +238,8 @@ const HealthCompanion = () => {
       <div className="grid lg:grid-cols-5 gap-6">
         {/* CHARACTER SECTION (LEFT) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-gradient-to-b from-primary/5 to-accent/10 border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[520px]">
-            {/* Speech Bubble */}
+          <div ref={dragAreaRef} className="bg-gradient-to-b from-primary/5 to-accent/10 border border-border rounded-3xl p-5 shadow-card flex flex-col items-center relative overflow-hidden h-[520px]">
+            <p className="absolute top-2 right-3 text-[10px] text-muted-foreground/70 z-10 select-none pointer-events-none">✋ Hamrohni ushlab suring</p>
             <AnimatePresence>
               {speechText && (
                 <motion.div
@@ -262,29 +263,37 @@ const HealthCompanion = () => {
                 transition={{ repeat: Infinity, duration: isSpeaking ? 0.6 : 4, ease: "easeInOut" }}
               />
               <AnimatePresence mode="wait">
-                <motion.img
+                <motion.div
                   key={character}
-                  src={activeImage}
-                  alt={character === "boy" ? "Alisher hamroh" : "Malika hamroh"}
-                  width={768}
-                  height={1024}
-                  loading="lazy"
-                  className="relative z-10 max-h-[420px] object-contain drop-shadow-xl select-none pointer-events-none"
-                  initial={{ opacity: 0, x: character === "boy" ? -40 : 40, rotate: -3 }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                    y: [0, -12, 0],
-                    rotate: isSpeaking ? [0, -1.5, 1.5, 0] : [0, 1, -1, 0],
-                  }}
+                  drag
+                  dragConstraints={dragAreaRef}
+                  dragElastic={0.15}
+                  dragMomentum={false}
+                  whileDrag={{ scale: 1.05, cursor: "grabbing" }}
+                  className="relative z-10 cursor-grab active:cursor-grabbing touch-none"
+                  initial={{ opacity: 0, x: character === "boy" ? -40 : 40 }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: character === "boy" ? 40 : -40 }}
-                  transition={{
-                    opacity: { duration: 0.4 },
-                    x: { duration: 0.4 },
-                    y: { repeat: Infinity, duration: 3.5, ease: "easeInOut" },
-                    rotate: { repeat: Infinity, duration: isSpeaking ? 0.5 : 5, ease: "easeInOut" },
-                  }}
-                />
+                  transition={{ opacity: { duration: 0.4 }, x: { duration: 0.4 } }}
+                >
+                  <motion.img
+                    src={activeImage}
+                    alt={character === "boy" ? "Alisher hamroh" : "Malika hamroh"}
+                    width={768}
+                    height={1024}
+                    loading="lazy"
+                    draggable={false}
+                    className="max-h-[340px] object-contain drop-shadow-xl select-none pointer-events-none"
+                    animate={{
+                      y: [0, -12, 0],
+                      rotate: isSpeaking ? [0, -1.5, 1.5, 0] : [0, 1, -1, 0],
+                    }}
+                    transition={{
+                      y: { repeat: Infinity, duration: 3.5, ease: "easeInOut" },
+                      rotate: { repeat: Infinity, duration: isSpeaking ? 0.5 : 5, ease: "easeInOut" },
+                    }}
+                  />
+                </motion.div>
               </AnimatePresence>
             </div>
 
