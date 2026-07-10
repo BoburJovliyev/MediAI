@@ -183,6 +183,7 @@ const HealthCompanion = () => {
     if (remaining <= 0) {
       speak("Zo'r! Mashqni muvaffaqiyatli yakunladingiz. Sizdan faxrlanaman!");
       toast.success(`${session.name} yakunlandi! 🎉`);
+      trigger("greet", "Zo'r! Mashqni yakunladingiz! 🎉", 4000);
       setSession(null);
       return;
     }
