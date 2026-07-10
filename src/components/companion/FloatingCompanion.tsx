@@ -80,10 +80,19 @@ const Character = ({ src, alt, action }: { src: string; alt: string; action: Com
 );
 
 const FloatingCompanion = () => {
-  const { action, speech, hidden, setHidden } = useCompanion();
+  const { action, speech, hidden, setHidden, trigger } = useCompanion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const constraintsRef = useRef<HTMLDivElement>(null);
+
+  // Greet the user with hand-on-chest salom when the app opens.
+  useEffect(() => {
+    const t = setTimeout(
+      () => trigger("greet", "Assalomu alaykum! Biz sizning sog'lom hayot hamrohlaringizmiz 👋", 5000),
+      800,
+    );
+    return () => clearTimeout(t);
+  }, [trigger]);
 
   // Restore / default position (bottom-right).
   useEffect(() => {
