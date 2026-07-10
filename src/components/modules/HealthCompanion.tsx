@@ -117,16 +117,19 @@ const HealthCompanion = () => {
     tick();
     const id = setInterval(tick, 15000);
     return () => clearInterval(id);
-  }, [alarmActive, wakeTime, breakfastTime, lunchTime, dinnerTime, sleepTime, speak]);
+  }, [alarmActive, wakeTime, breakfastTime, lunchTime, dinnerTime, sleepTime, speak, trigger]);
 
   const toggleAlarm = () => {
     setAlarmActive(!alarmActive);
     if (!alarmActive) {
       toast.success("Rejim yoqildi! Barcha eslatmalar faollashtirildi.");
       speak("Ajoyib! Endi men sizga uxlash, uyg'onish va ovqatlanish vaqtlarini eslatib turaman.");
+      trigger("wave", "Rejim yoqildi! Men sizni vaqtida eslatib turaman.", 4000);
     } else {
+      stopAlarm();
       toast("Rejim o'chirildi.");
       speak("Rejim o'chirildi. Sog'lom odatlarni unutmang!");
+      trigger("idle");
     }
   };
 
