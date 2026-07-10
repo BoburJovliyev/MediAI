@@ -99,8 +99,20 @@ const HealthCompanion = () => {
           firedRef.current[key] = dayKey + time;
           toast.success(msg);
           speak(msg);
+          // Drive the floating companions to act out each moment.
+          if (key === "wake") {
+            trigger("sleep", msg, 12000);
+            playAlarm(10);
+          } else if (key === "sleep") {
+            trigger("calmSleep", msg, 12000);
+            playCalm();
+          } else {
+            trigger("eat", msg, 8000);
+            playClang();
+          }
         }
       });
+
     };
     tick();
     const id = setInterval(tick, 15000);
