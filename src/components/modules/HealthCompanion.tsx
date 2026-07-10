@@ -209,7 +209,7 @@ const HealthCompanion = () => {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [session, paused, remaining, speak]);
+  }, [session, paused, remaining, speak, trigger]);
 
   const startExercise = (name: string, duration: number) => {
     spokenMarks.current = new Set();
@@ -218,11 +218,14 @@ const HealthCompanion = () => {
     setPaused(false);
     toast.success(`${name} mashqi boshlandi!`);
     speak(`Qani, ketdik! ${name} mashqini men bilan birga bajaring! Bir, ikki, uch...`);
+    trigger("exercise", `${name} — men bilan birga! 💪`, 600000);
+    playExercise();
   };
 
   const stopExercise = () => {
     setSession(null);
     speak("Mayli, keyinroq davom etamiz. Dam olishni ham unutmang!");
+    trigger("idle");
   };
 
   const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
