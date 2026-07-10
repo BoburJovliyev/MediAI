@@ -6,6 +6,8 @@ import {
 import { toast } from "sonner";
 import boyCompanion from "@/assets/companion-boy.png";
 import girlCompanion from "@/assets/companion-girl.png";
+import { useCompanion } from "@/hooks/useCompanion";
+import { playAlarm, stopAlarm, playClang, playCalm, playShutter, playExercise } from "@/lib/companionSounds";
 
 type CharacterType = "boy" | "girl";
 type TabType = "alarm" | "diet" | "fitness";
@@ -14,6 +16,7 @@ const HealthCompanion = () => {
   const [character, setCharacter] = useState<CharacterType>("boy");
   const [activeTab, setActiveTab] = useState<TabType>("alarm");
   const dragAreaRef = useRef<HTMLDivElement>(null);
+  const { trigger } = useCompanion();
 
   // --- SPEECH ---
   const [speechText, setSpeechText] = useState("");
@@ -96,22 +99,37 @@ const HealthCompanion = () => {
           firedRef.current[key] = dayKey + time;
           toast.success(msg);
           speak(msg);
+          // Drive the floating companions to act out each moment.
+          if (key === "wake") {
+            trigger("sleep", msg, 12000);
+            playAlarm(10);
+          } else if (key === "sleep") {
+            trigger("calmSleep", msg, 12000);
+            playCalm();
+          } else {
+            trigger("eat", msg, 8000);
+            playClang();
+          }
         }
       });
+
     };
     tick();
     const id = setInterval(tick, 15000);
     return () => clearInterval(id);
-  }, [alarmActive, wakeTime, breakfastTime, lunchTime, dinnerTime, sleepTime, speak]);
+  }, [alarmActive, wakeTime, breakfastTime, lunchTime, dinnerTime, sleepTime, speak, trigger]);
 
   const toggleAlarm = () => {
     setAlarmActive(!alarmActive);
     if (!alarmActive) {
       toast.success("Rejim yoqildi! Barcha eslatmalar faollashtirildi.");
       speak("Ajoyib! Endi men sizga uxlash, uyg'onish va ovqatlanish vaqtlarini eslatib turaman.");
+      trigger("wave", "Rejim yoqildi! Men sizni vaqtida eslatib turaman.", 4000);
     } else {
+      stopAlarm();
       toast("Rejim o'chirildi.");
       speak("Rejim o'chirildi. Sog'lom odatlarni unutmang!");
+      trigger("idle");
     }
   };
 
@@ -131,6 +149,8 @@ const HealthCompanion = () => {
     setAnalyzing(true);
     setCalories(null);
     speak("Taomni tahlil qilyapman. Qani ko'raylikchi, bu qanchalik foydali ekan...");
+    trigger("photo", "Rasmga olyapman, bir soniya! 📷", 3000);
+    playShutter();
 
     setTimeout(() => {
       setAnalyzing(false);
@@ -163,6 +183,7 @@ const HealthCompanion = () => {
     if (remaining <= 0) {
       speak("Zo'r! Mashqni muvaffaqiyatli yakunladingiz. Sizdan faxrlanaman!");
       toast.success(`${session.name} yakunlandi! 🎉`);
+      trigger("greet", "Zo'r! Mashqni yakunladingiz! 🎉", 4000);
       setSession(null);
       return;
     }
@@ -188,7 +209,7 @@ const HealthCompanion = () => {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [session, paused, remaining, speak]);
+  }, [session, paused, remaining, speak, trigger]);
 
   const startExercise = (name: string, duration: number) => {
     spokenMarks.current = new Set();
@@ -197,11 +218,14 @@ const HealthCompanion = () => {
     setPaused(false);
     toast.success(`${name} mashqi boshlandi!`);
     speak(`Qani, ketdik! ${name} mashqini men bilan birga bajaring! Bir, ikki, uch...`);
+    trigger("exercise", `${name} — men bilan birga! 💪`, 600000);
+    playExercise();
   };
 
   const stopExercise = () => {
     setSession(null);
     speak("Mayli, keyinroq davom etamiz. Dam olishni ham unutmang!");
+    trigger("idle");
   };
 
   const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
