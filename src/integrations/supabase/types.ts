@@ -807,6 +807,20 @@ export type Database = {
           scheduled_at: string
         }[]
       }
+      get_doctor_availability: {
+        Args: { _day: string; _doctor_id: string }
+        Returns: {
+          available_date: string
+          doctor_id: string
+          end_time: string
+          id: string
+          location_address: string
+          location_coords: string
+          location_name: string
+          slot_minutes: number
+          start_time: string
+        }[]
+      }
       get_doctor_patient_counts: {
         Args: never
         Returns: {
