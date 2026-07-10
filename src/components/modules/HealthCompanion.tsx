@@ -149,6 +149,8 @@ const HealthCompanion = () => {
     setAnalyzing(true);
     setCalories(null);
     speak("Taomni tahlil qilyapman. Qani ko'raylikchi, bu qanchalik foydali ekan...");
+    trigger("photo", "Rasmga olyapman, bir soniya! 📷", 3000);
+    playShutter();
 
     setTimeout(() => {
       setAnalyzing(false);
