@@ -16,6 +16,7 @@ const HealthCompanion = () => {
   const [character, setCharacter] = useState<CharacterType>("boy");
   const [activeTab, setActiveTab] = useState<TabType>("alarm");
   const dragAreaRef = useRef<HTMLDivElement>(null);
+  const { trigger } = useCompanion();
 
   // --- SPEECH ---
   const [speechText, setSpeechText] = useState("");
