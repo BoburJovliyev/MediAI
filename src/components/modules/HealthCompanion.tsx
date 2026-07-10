@@ -6,6 +6,8 @@ import {
 import { toast } from "sonner";
 import boyCompanion from "@/assets/companion-boy.png";
 import girlCompanion from "@/assets/companion-girl.png";
+import { useCompanion } from "@/hooks/useCompanion";
+import { playAlarm, stopAlarm, playClang, playCalm, playShutter, playExercise } from "@/lib/companionSounds";
 
 type CharacterType = "boy" | "girl";
 type TabType = "alarm" | "diet" | "fitness";
