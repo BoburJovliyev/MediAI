@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { CompanionProvider } from "@/hooks/useCompanion";
+import FloatingCompanion from "@/components/companion/FloatingCompanion";
 import Index from "./pages/Index.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import DepartmentsPage from "./pages/DepartmentsPage.tsx";
