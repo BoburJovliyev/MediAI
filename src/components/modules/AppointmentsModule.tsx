@@ -326,11 +326,10 @@ const AppointmentsModule = () => {
   useEffect(() => {
     if (isDoctor || !selectedDoctor || !selectedDate) return;
     const load = async () => {
-      const { data: avail } = await supabase
-        .from("doctor_availability")
-        .select("*")
-        .eq("doctor_id", selectedDoctor)
-        .eq("available_date", selectedDate);
+      const { data: avail } = await supabase.rpc("get_doctor_availability" as any, {
+        _doctor_id: selectedDoctor,
+        _day: selectedDate,
+      });
       setDocAvailability((avail as Availability[]) || []);
       const { data: booked } = await supabase.rpc("get_booked_slots", {
         _doctor_id: selectedDoctor,
