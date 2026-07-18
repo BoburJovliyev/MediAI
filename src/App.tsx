@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { CompanionProvider } from "@/hooks/useCompanion";
-import FloatingCompanion from "@/components/companion/FloatingCompanion";
+import CompanionOverlay from "@/components/CompanionOverlay/CompanionOverlay";
 import Index from "./pages/Index.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import DepartmentsPage from "./pages/DepartmentsPage.tsx";
@@ -32,7 +32,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-            <FloatingCompanion />
+            <CompanionOverlay />
           </CompanionProvider>
         </LanguageProvider>
       </ThemeProvider>
