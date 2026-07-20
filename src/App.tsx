@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LanguageProvider } from "@/hooks/useLanguage";
-import { CompanionProvider } from "@/hooks/useCompanion";
 import CompanionOverlay from "@/components/CompanionOverlay/CompanionOverlay";
 import Index from "./pages/Index.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
@@ -20,7 +19,6 @@ const App = () => (
     <TooltipProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <CompanionProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -33,7 +31,6 @@ const App = () => (
               </Routes>
             </BrowserRouter>
             <CompanionOverlay />
-          </CompanionProvider>
         </LanguageProvider>
       </ThemeProvider>
     </TooltipProvider>
