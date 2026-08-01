@@ -10,11 +10,11 @@ const WIDTH = 260;
 const HEIGHT = 340;
 
 function clampToViewport(x: number, y: number) {
-  const maxX = Math.max(0, window.innerWidth - WIDTH * 0.55);
-  const maxY = Math.max(0, window.innerHeight - HEIGHT * 0.45);
+  const maxX = Math.max(8, window.innerWidth - WIDTH - 8);
+  const maxY = Math.max(8, window.innerHeight - HEIGHT - 8);
   return {
-    x: Math.min(Math.max(x, -WIDTH * 0.25), maxX),
-    y: Math.min(Math.max(y, 0), maxY),
+    x: Math.min(Math.max(x, 8), maxX),
+    y: Math.min(Math.max(y, 8), maxY),
   };
 }
 
