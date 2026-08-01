@@ -63,16 +63,6 @@ function CompanionScene() {
         far={1.2}
       />
 
-      {/* AAA Post-processing */}
-      <EffectComposer disableNormalPass>
-        <Bloom 
-          luminanceThreshold={0.8} 
-          luminanceSmoothing={0.9} 
-          intensity={0.8} 
-          levels={4} 
-        />
-        <Vignette eskil={false} offset={0.1} darkness={0.4} />
-      </EffectComposer>
     </>
   );
 }
