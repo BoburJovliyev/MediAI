@@ -206,7 +206,10 @@ function loadPosition(): CompanionPosition {
       if (typeof p.x === "number" && typeof p.y === "number") return p;
     }
   } catch { /* ignore */ }
-  return { x: window.innerWidth - 200, y: window.innerHeight - 350 };
+  return {
+    x: Math.max(8, window.innerWidth - 290),
+    y: Math.max(8, window.innerHeight - 420),
+  };
 }
 
 const DEFAULT_SCHEDULE: DailySchedule = {

@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Float } from "@react-three/drei";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useCompanionStore } from "@/stores/useCompanionStore";
 import { useCompanionDrag } from "@/hooks/useCompanionDrag";
@@ -63,16 +63,6 @@ function CompanionScene() {
         far={1.2}
       />
 
-      {/* AAA Post-processing */}
-      <EffectComposer disableNormalPass>
-        <Bloom 
-          luminanceThreshold={0.8} 
-          luminanceSmoothing={0.9} 
-          intensity={0.8} 
-          levels={4} 
-        />
-        <Vignette eskil={false} offset={0.1} darkness={0.4} />
-      </EffectComposer>
     </>
   );
 }
