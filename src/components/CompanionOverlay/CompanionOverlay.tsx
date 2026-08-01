@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Float } from "@react-three/drei";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useCompanionStore } from "@/stores/useCompanionStore";
 import { useCompanionDrag } from "@/hooks/useCompanionDrag";
