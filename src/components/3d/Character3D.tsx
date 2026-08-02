@@ -146,6 +146,9 @@ function Character3D({
         color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 0.8, roughness: 0.1,
       }),
       eyebrow: new THREE.MeshStandardMaterial({ color: pal.hair, roughness: 0.7 }),
+      doppi: new THREE.MeshStandardMaterial({ color: pal.doppi, roughness: 0.75 }),
+      doppiPattern: new THREE.MeshStandardMaterial({ color: pal.doppiPattern, roughness: 0.6 }),
+
     }),
     [pal],
   );
