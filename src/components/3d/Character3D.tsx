@@ -27,28 +27,33 @@ interface Character3DProps {
 /* ------------------------------------------------------------------ */
 const PALETTES = {
   boy: {
-    skin: "#f5d0b5",
-    hair: "#3d2b1f",
-    shirt: "#4a90d9",
-    shirtDark: "#3570b5",
-    pants: "#2c3e50",
-    shoes: "#1a1a2e",
-    eye: "#2c3e50",
-    cheek: "#ffb5a0",
-    mouth: "#e74c6f",
+    skin: "#f3cdaa",
+    hair: "#1c1310",
+    shirt: "#f7f7f5",      // white polo
+    shirtDark: "#dcdcd8",  // polo collar
+    pants: "#26364f",      // dark blue jeans
+    shoes: "#141418",      // black shoes
+    eye: "#3b2415",
+    cheek: "#ff9f8a",
+    mouth: "#c8465c",
+    doppi: "#14141c",      // black doppi
+    doppiPattern: "#f4f4f4",
   },
   girl: {
-    skin: "#f8d4c4",
-    hair: "#8B4513",
-    shirt: "#e84393",
-    shirtDark: "#c0316e",
-    pants: "#6c5ce7",
-    shoes: "#2d2d44",
-    eye: "#6c5ce7",
-    cheek: "#ffaabb",
-    mouth: "#ff6b81",
+    skin: "#f7d3b8",
+    hair: "#1e1512",
+    shirt: "#d63a7a",      // pink dress
+    shirtDark: "#b32a63",
+    pants: "#d63a7a",      // dress skirt
+    shoes: "#c62f6b",      // pink shoes
+    eye: "#3b2415",
+    cheek: "#ffa3ae",
+    mouth: "#d94a68",
+    doppi: "#f6f2ea",      // white embroidered doppi
+    doppiPattern: "#d1332f",
   },
 } as const;
+
 
 /* ------------------------------------------------------------------ */
 /*  Blink system state                                                 */
@@ -141,6 +146,9 @@ function Character3D({
         color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 0.8, roughness: 0.1,
       }),
       eyebrow: new THREE.MeshStandardMaterial({ color: pal.hair, roughness: 0.7 }),
+      doppi: new THREE.MeshStandardMaterial({ color: pal.doppi, roughness: 0.75 }),
+      doppiPattern: new THREE.MeshStandardMaterial({ color: pal.doppiPattern, roughness: 0.6 }),
+
     }),
     [pal],
   );
@@ -517,6 +525,14 @@ function Character3D({
         <sphereGeometry args={[0.12, 12, 8]} />
       </mesh>
 
+      {/* girl dress skirt */}
+      {character === "girl" && (
+        <mesh position={[0, 0.3, 0]} material={mats.shirt} castShadow>
+          <coneGeometry args={[0.42, 0.42, 20, 1, true]} />
+        </mesh>
+      )}
+
+
       {/* ---- HEAD GROUP ---- */}
       <group ref={headGroupRef} position={[0, 1.15, 0]}>
         {/* head sphere */}
@@ -525,33 +541,59 @@ function Character3D({
         </mesh>
 
         {/* hair */}
-        <mesh position={[0, 0.15, -0.02]} material={mats.hair}>
-          <sphereGeometry args={[0.4, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+        <mesh position={[0, 0.13, -0.02]} material={mats.hair}>
+          <sphereGeometry args={[0.395, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
         </mesh>
         {/* fringe / bangs */}
-        <mesh position={[0, 0.2, 0.2]} material={mats.hair}>
-          <boxGeometry args={[0.55, 0.12, 0.2]} />
+        <mesh position={[0, 0.18, 0.2]} material={mats.hair}>
+          <boxGeometry args={[0.55, 0.13, 0.2]} />
         </mesh>
         {character === "girl" && (
           <>
-            {/* pigtails */}
-            <mesh position={[-0.38, 0.08, -0.05]} material={mats.hair}>
-              <sphereGeometry args={[0.14, 12, 12]} />
+            {/* short bob sides */}
+            <mesh position={[-0.31, -0.02, -0.03]} material={mats.hair}>
+              <sphereGeometry args={[0.14, 14, 14]} />
             </mesh>
-            <mesh position={[0.38, 0.08, -0.05]} material={mats.hair}>
-              <sphereGeometry args={[0.14, 12, 12]} />
+            <mesh position={[0.31, -0.02, -0.03]} material={mats.hair}>
+              <sphereGeometry args={[0.14, 14, 14]} />
             </mesh>
-            {/* hair ribbons */}
-            <mesh position={[-0.35, 0.2, -0.02]}>
-              <sphereGeometry args={[0.06, 8, 8]} />
-              <meshStandardMaterial color="#ff6b9d" roughness={0.4} />
-            </mesh>
-            <mesh position={[0.35, 0.2, -0.02]}>
-              <sphereGeometry args={[0.06, 8, 8]} />
-              <meshStandardMaterial color="#ff6b9d" roughness={0.4} />
+            <mesh position={[0, -0.05, -0.22]} material={mats.hair}>
+              <sphereGeometry args={[0.26, 16, 16]} />
             </mesh>
           </>
         )}
+
+        {/* ---- DOPPI (Uzbek skullcap) ---- */}
+        <group position={[0, 0.3, -0.01]}>
+          {/* cap dome */}
+          <mesh material={mats.doppi}>
+            <cylinderGeometry args={[0.33, 0.36, 0.19, 4, 1, false]} />
+          </mesh>
+          {/* flat top */}
+          <mesh position={[0, 0.1, 0]} material={mats.doppi}>
+            <cylinderGeometry args={[0.325, 0.325, 0.02, 4]} />
+          </mesh>
+          {/* embroidery band */}
+          <mesh position={[0, -0.07, 0]} material={mats.doppiPattern}>
+            <cylinderGeometry args={[0.363, 0.368, 0.035, 4]} />
+          </mesh>
+          {/* pattern accents on the four faces */}
+          {[0, 1, 2, 3].map((i) => (
+            <mesh
+              key={i}
+              position={[
+                Math.sin((i * Math.PI) / 2) * 0.27,
+                0.01,
+                Math.cos((i * Math.PI) / 2) * 0.27,
+              ]}
+              rotation={[0, (i * Math.PI) / 2, 0]}
+              material={mats.doppiPattern}
+            >
+              <boxGeometry args={[0.1, 0.09, 0.01]} />
+            </mesh>
+          ))}
+        </group>
+
 
         {/* ---- EYEBROWS ---- */}
         <mesh ref={leftEyebrowRef} position={[-0.15, 0.25, 0.34]} material={mats.eyebrow}>

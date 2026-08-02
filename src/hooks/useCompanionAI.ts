@@ -33,10 +33,11 @@ export function useCompanionAI() {
   const animFrameRef = useRef<number>(0);
   const conversationRef = useRef<{ role: string; content: string }[]>([]);
 
-  /* voice parameters per character */
+  /* voice parameters per character — 8 year-old child voices */
   const voiceParams = character === "boy"
-    ? { pitch: 1.15, rate: 1.05 }
-    : { pitch: 1.35, rate: 1.0 };
+    ? { pitch: 1.7, rate: 1.0 }
+    : { pitch: 2.0, rate: 1.02 };
+
 
   /* ------------------------------------------------------------------ */
   /*  TTS with audio analyser for lip-sync                              */
@@ -61,11 +62,16 @@ export function useCompanionAI() {
       utterance.rate = voiceParams.rate;
       utterance.volume = useCompanionStore.getState().audioVolume;
 
+      // Prefer a native Uzbek voice; fall back to Turkish (closest phonetics,
+      // no Russian accent). Russian voices are avoided on purpose.
       const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(
-        (v) => v.lang.startsWith("uz") || v.lang.startsWith("tr") || v.lang.startsWith("ru")
-      );
+      const preferred =
+        voices.find((v) => v.lang.toLowerCase().startsWith("uz")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("tr")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("kk")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("az"));
       if (preferred) utterance.voice = preferred;
+
 
       /* try setting up an analyser for lip-sync data */
       try {
