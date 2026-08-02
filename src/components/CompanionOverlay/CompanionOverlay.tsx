@@ -112,6 +112,19 @@ function AlarmUI({ onStop }: { onStop: () => void }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Autonomous routine lines (companion speaks by itself)              */
+/* ------------------------------------------------------------------ */
+const ACTIVITY_LINES: Record<string, string> = {
+  waking_up: "Xayrli tong! Uyg'onish vaqti bo'ldi, turaylik!",
+  eating_breakfast: "Nonushta vaqti! Kuchli bo'lish uchun yaxshilab ovqatlaning.",
+  eating_lunch: "Tushlik vaqti bo'ldi. Sog'lom taom tanlang!",
+  eating_dinner: "Kechki ovqat vaqti. Yengil taom eng yaxshisi.",
+  working_out: "Mashq qilish vaqti! Qani, birga harakat qilamiz!",
+  sleeping: "Uxlash vaqti bo'ldi. Shirin tushlar ko'ring!",
+  greeting: "Assalomu alaykum! Men sizning hamrohingizman.",
+};
+
+/* ------------------------------------------------------------------ */
 /*  Main Overlay                                                       */
 /* ------------------------------------------------------------------ */
 const CompanionOverlay = () => {
@@ -127,10 +140,22 @@ const CompanionOverlay = () => {
     alarmActive,
     stopAlarm,
     welcomePlaying,
+    activity,
   } = useCompanionStore();
 
   const { position, isDragging, dragHandlers } = useCompanionDrag();
   const { speakText, startListening, stopListening } = useCompanionAI();
+
+  /* companion announces its own routine — no user interaction needed */
+  const lastActivityRef = useRef<string>("");
+  useEffect(() => {
+    if (!activity || activity === "none") return;
+    if (lastActivityRef.current === activity) return;
+    lastActivityRef.current = activity;
+    const line = ACTIVITY_LINES[activity];
+    if (line) speakText(line);
+  }, [activity, speakText]);
+
   
   // Initialize hooks that need to be mounted globally
   useAudioSystem();
