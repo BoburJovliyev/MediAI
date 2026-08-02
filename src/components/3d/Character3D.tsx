@@ -533,33 +533,59 @@ function Character3D({
         </mesh>
 
         {/* hair */}
-        <mesh position={[0, 0.15, -0.02]} material={mats.hair}>
-          <sphereGeometry args={[0.4, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+        <mesh position={[0, 0.13, -0.02]} material={mats.hair}>
+          <sphereGeometry args={[0.395, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
         </mesh>
         {/* fringe / bangs */}
-        <mesh position={[0, 0.2, 0.2]} material={mats.hair}>
-          <boxGeometry args={[0.55, 0.12, 0.2]} />
+        <mesh position={[0, 0.18, 0.2]} material={mats.hair}>
+          <boxGeometry args={[0.55, 0.13, 0.2]} />
         </mesh>
         {character === "girl" && (
           <>
-            {/* pigtails */}
-            <mesh position={[-0.38, 0.08, -0.05]} material={mats.hair}>
-              <sphereGeometry args={[0.14, 12, 12]} />
+            {/* short bob sides */}
+            <mesh position={[-0.31, -0.02, -0.03]} material={mats.hair}>
+              <sphereGeometry args={[0.14, 14, 14]} />
             </mesh>
-            <mesh position={[0.38, 0.08, -0.05]} material={mats.hair}>
-              <sphereGeometry args={[0.14, 12, 12]} />
+            <mesh position={[0.31, -0.02, -0.03]} material={mats.hair}>
+              <sphereGeometry args={[0.14, 14, 14]} />
             </mesh>
-            {/* hair ribbons */}
-            <mesh position={[-0.35, 0.2, -0.02]}>
-              <sphereGeometry args={[0.06, 8, 8]} />
-              <meshStandardMaterial color="#ff6b9d" roughness={0.4} />
-            </mesh>
-            <mesh position={[0.35, 0.2, -0.02]}>
-              <sphereGeometry args={[0.06, 8, 8]} />
-              <meshStandardMaterial color="#ff6b9d" roughness={0.4} />
+            <mesh position={[0, -0.05, -0.22]} material={mats.hair}>
+              <sphereGeometry args={[0.26, 16, 16]} />
             </mesh>
           </>
         )}
+
+        {/* ---- DOPPI (Uzbek skullcap) ---- */}
+        <group position={[0, 0.3, -0.01]}>
+          {/* cap dome */}
+          <mesh material={mats.doppi}>
+            <cylinderGeometry args={[0.33, 0.36, 0.19, 4, 1, false]} />
+          </mesh>
+          {/* flat top */}
+          <mesh position={[0, 0.1, 0]} material={mats.doppi}>
+            <cylinderGeometry args={[0.325, 0.325, 0.02, 4]} />
+          </mesh>
+          {/* embroidery band */}
+          <mesh position={[0, -0.07, 0]} material={mats.doppiPattern}>
+            <cylinderGeometry args={[0.363, 0.368, 0.035, 4]} />
+          </mesh>
+          {/* pattern accents on the four faces */}
+          {[0, 1, 2, 3].map((i) => (
+            <mesh
+              key={i}
+              position={[
+                Math.sin((i * Math.PI) / 2) * 0.27,
+                0.01,
+                Math.cos((i * Math.PI) / 2) * 0.27,
+              ]}
+              rotation={[0, (i * Math.PI) / 2, 0]}
+              material={mats.doppiPattern}
+            >
+              <boxGeometry args={[0.1, 0.09, 0.01]} />
+            </mesh>
+          ))}
+        </group>
+
 
         {/* ---- EYEBROWS ---- */}
         <mesh ref={leftEyebrowRef} position={[-0.15, 0.25, 0.34]} material={mats.eyebrow}>
