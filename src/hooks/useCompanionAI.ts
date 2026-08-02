@@ -62,11 +62,16 @@ export function useCompanionAI() {
       utterance.rate = voiceParams.rate;
       utterance.volume = useCompanionStore.getState().audioVolume;
 
+      // Prefer a native Uzbek voice; fall back to Turkish (closest phonetics,
+      // no Russian accent). Russian voices are avoided on purpose.
       const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(
-        (v) => v.lang.startsWith("uz") || v.lang.startsWith("tr") || v.lang.startsWith("ru")
-      );
+      const preferred =
+        voices.find((v) => v.lang.toLowerCase().startsWith("uz")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("tr")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("kk")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith("az"));
       if (preferred) utterance.voice = preferred;
+
 
       /* try setting up an analyser for lip-sync data */
       try {
