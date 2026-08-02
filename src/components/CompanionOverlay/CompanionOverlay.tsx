@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Float } from "@react-three/drei";
 
