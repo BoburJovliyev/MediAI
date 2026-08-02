@@ -525,6 +525,14 @@ function Character3D({
         <sphereGeometry args={[0.12, 12, 8]} />
       </mesh>
 
+      {/* girl dress skirt */}
+      {character === "girl" && (
+        <mesh position={[0, 0.3, 0]} material={mats.shirt} castShadow>
+          <coneGeometry args={[0.42, 0.42, 20, 1, true]} />
+        </mesh>
+      )}
+
+
       {/* ---- HEAD GROUP ---- */}
       <group ref={headGroupRef} position={[0, 1.15, 0]}>
         {/* head sphere */}
