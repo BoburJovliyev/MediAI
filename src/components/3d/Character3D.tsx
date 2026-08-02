@@ -27,28 +27,33 @@ interface Character3DProps {
 /* ------------------------------------------------------------------ */
 const PALETTES = {
   boy: {
-    skin: "#f5d0b5",
-    hair: "#3d2b1f",
-    shirt: "#4a90d9",
-    shirtDark: "#3570b5",
-    pants: "#2c3e50",
-    shoes: "#1a1a2e",
-    eye: "#2c3e50",
-    cheek: "#ffb5a0",
-    mouth: "#e74c6f",
+    skin: "#f3cdaa",
+    hair: "#1c1310",
+    shirt: "#f7f7f5",      // white polo
+    shirtDark: "#dcdcd8",  // polo collar
+    pants: "#26364f",      // dark blue jeans
+    shoes: "#141418",      // black shoes
+    eye: "#3b2415",
+    cheek: "#ff9f8a",
+    mouth: "#c8465c",
+    doppi: "#14141c",      // black doppi
+    doppiPattern: "#f4f4f4",
   },
   girl: {
-    skin: "#f8d4c4",
-    hair: "#8B4513",
-    shirt: "#e84393",
-    shirtDark: "#c0316e",
-    pants: "#6c5ce7",
-    shoes: "#2d2d44",
-    eye: "#6c5ce7",
-    cheek: "#ffaabb",
-    mouth: "#ff6b81",
+    skin: "#f7d3b8",
+    hair: "#1e1512",
+    shirt: "#d63a7a",      // pink dress
+    shirtDark: "#b32a63",
+    pants: "#d63a7a",      // dress skirt
+    shoes: "#c62f6b",      // pink shoes
+    eye: "#3b2415",
+    cheek: "#ffa3ae",
+    mouth: "#d94a68",
+    doppi: "#f6f2ea",      // white embroidered doppi
+    doppiPattern: "#d1332f",
   },
 } as const;
+
 
 /* ------------------------------------------------------------------ */
 /*  Blink system state                                                 */
