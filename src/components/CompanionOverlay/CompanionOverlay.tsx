@@ -253,7 +253,7 @@ const CompanionOverlay = () => {
             >
               <Canvas
                 shadows
-                camera={{ position: [0, 0.8, 3.2], fov: 38 }}
+                camera={{ position: [0, 0.95, 4.1], fov: 34 }}
                 gl={{ antialias: true, alpha: true }}
                 style={{ background: "transparent" }}
                 dpr={[1, 2]} // Performance optimization: max dpr 2
