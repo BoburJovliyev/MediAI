@@ -65,6 +65,7 @@ const sampleImages: Record<ScanType, { src: string; label: string; desc: string 
 
 const AIRadiologist = () => {
   const { user } = useAuth();
+  const [mode, setMode] = useState<Mode>("scan");
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
