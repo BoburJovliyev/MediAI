@@ -12,7 +12,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors" | "appointments" | "prescriptions";
+type Tab = "dashboard" | "radiologist" | "advisor" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors" | "appointments" | "prescriptions";
 
 interface DashboardLayoutProps {
   activeTab: Tab;
@@ -34,7 +34,6 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
     { id: "dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard size={20} />, roles: ["admin", "doctor", "user", "moderator", "patient"] },
     { id: "radiologist", labelKey: "nav.radiologist", icon: <FileImage size={20} />, roles: ["admin", "doctor", "user", "patient"] },
     { id: "advisor", labelKey: "nav.advisor", icon: <Brain size={20} />, roles: ["admin", "doctor", "user", "patient"] },
-    { id: "rehab", labelKey: "nav.rehab", icon: <HeartPulse size={20} />, roles: ["admin", "doctor", "user", "patient"] },
     { id: "chat", labelKey: "nav.chat", icon: <MessageCircle size={20} />, roles: ["admin", "doctor", "patient", "user"] },
     { id: "aichat", labelKey: "nav.aichat", icon: <BotMessageSquare size={20} />, roles: ["admin", "doctor", "patient", "user"] },
     { id: "doctors", labelKey: "nav.doctors", icon: <Stethoscope size={20} />, roles: ["admin", "user", "patient"] },

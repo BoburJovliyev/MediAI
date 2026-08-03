@@ -6,7 +6,6 @@ import DashboardHome from "@/components/dashboard/DashboardHome";
 import AIRadiologist from "@/components/modules/AIRadiologist";
 import SmartMedicalAdvisor from "@/components/modules/SmartMedicalAdvisor";
 import DoctorsListing from "@/components/modules/DoctorsListing";
-import HealthCompanion from "@/components/modules/HealthCompanion";
 import PatientsManager from "@/components/modules/PatientsManager";
 import AdminPanel from "@/components/modules/AdminPanel";
 import ChatModule from "@/components/modules/ChatModule";
@@ -20,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
-type Tab = "dashboard" | "radiologist" | "advisor" | "rehab" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors" | "appointments" | "prescriptions";
+type Tab = "dashboard" | "radiologist" | "advisor" | "patients" | "admin" | "chat" | "aichat" | "profile" | "doctors" | "appointments" | "prescriptions";
 
 const AppContent = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -50,7 +49,7 @@ const AppContent = () => {
   useEffect(() => {
     const handler = (e: any) => {
       const tab = e?.detail?.tab as Tab | undefined;
-      const valid: Tab[] = ["dashboard","radiologist","advisor","rehab","patients","admin","chat","aichat","profile","doctors","appointments","prescriptions"];
+      const valid: Tab[] = ["dashboard","radiologist","advisor","patients","admin","chat","aichat","profile","doctors","appointments","prescriptions"];
       if (tab && valid.includes(tab)) setActiveTab(tab);
     };
     window.addEventListener("app:navigate", handler);
@@ -88,7 +87,6 @@ const AppContent = () => {
       case "dashboard": return <DashboardHome onNavigate={setActiveTab} />;
       case "radiologist": return <AIRadiologist />;
       case "advisor": return <SmartMedicalAdvisor />;
-      case "rehab": return <HealthCompanion />;
       case "patients": return <PatientsManager />;
       case "admin": return <AdminPanel />;
       case "chat": return <ChatModule />;
