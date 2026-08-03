@@ -1,13 +1,38 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, Camera, CameraOff, CircleDot, Stethoscope } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, Camera, CameraOff, CircleDot, Stethoscope, UtensilsCrossed } from "lucide-react";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import FoodCalorieAI from "./FoodCalorieAI";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import sampleXray from "@/assets/sample-xray.jpg";
 import sampleUzi from "@/assets/sample-uzi.jpg";
 import sampleMrt from "@/assets/sample-mrt.jpg";
+
+type Mode = "scan" | "food";
+
+const ModeSwitch = ({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) => (
+  <div className="inline-flex bg-card border border-border rounded-2xl p-1 gap-1">
+    <button
+      onClick={() => setMode("scan")}
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+        mode === "scan" ? "gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      <FileImage size={16} /> Tibbiy tasvir
+    </button>
+    <button
+      onClick={() => setMode("food")}
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+        mode === "food" ? "gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      <UtensilsCrossed size={16} /> Kunlik Ratsion AI
+    </button>
+  </div>
+);
+
 
 interface AnalysisResult {
   findings: string[];
