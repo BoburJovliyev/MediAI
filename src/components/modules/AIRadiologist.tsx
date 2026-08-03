@@ -154,6 +154,19 @@ const AIRadiologist = () => {
     }
   }, []);
 
+  if (mode === "food") {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-display font-bold text-foreground">AI Radiologist</h2>
+          <p className="text-muted-foreground mt-1">Tibbiy tasvirlar va ovqat ratsionini sun'iy intellekt bilan tahlil qiling</p>
+        </div>
+        <ModeSwitch mode={mode} setMode={setMode} />
+        <FoodCalorieAI />
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
@@ -161,7 +174,10 @@ const AIRadiologist = () => {
         <p className="text-muted-foreground mt-1">Rentgen, UZI va MRT tasvirlarini sun'iy intellekt yordamida tahlil qiling</p>
       </div>
 
+      <ModeSwitch mode={mode} setMode={setMode} />
+
       <div className="grid lg:grid-cols-2 gap-6">
+
         <div className="space-y-4">
           {/* Scan type selector */}
           <div className="flex gap-2">
