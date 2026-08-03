@@ -136,28 +136,6 @@ const DashboardCharts = () => {
                 <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
               </PieChart>
             </ResponsiveContainer>
-            {/* 3D Characters Overlay in the center of the Pie Chart */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center top-[-15px]">
-              <div className="w-[180px] h-[180px]">
-                <Canvas
-                  shadows
-                  camera={{ position: [0, 0.8, 3.5], fov: 45 }}
-                  gl={{ antialias: true, alpha: true }}
-                >
-                  <Suspense fallback={null}>
-                    <ambientLight intensity={0.6} />
-                    <spotLight position={[3, 5, 4]} angle={0.35} penumbra={0.8} intensity={1.2} />
-                    <Environment preset="city" />
-                    <group position={[-0.3, -0.6, 0]}>
-                      <Character3D character="boy" mood="happy" isSpeaking={false} lookTarget={{ x: 0, y: 0 }} audioLevel={0} />
-                    </group>
-                    <group position={[0.3, -0.6, 0]}>
-                      <Character3D character="girl" mood="happy" isSpeaking={false} lookTarget={{ x: 0, y: 0 }} audioLevel={0} />
-                    </group>
-                  </Suspense>
-                </Canvas>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="h-60 flex items-center justify-center text-muted-foreground text-sm">Tashxis ma'lumoti yo'q</div>
