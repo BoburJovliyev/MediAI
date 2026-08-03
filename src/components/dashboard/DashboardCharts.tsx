@@ -1,10 +1,7 @@
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Canvas } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
-import Character3D from "@/components/3d/Character3D";
 
 const COLORS = [
   "hsl(195, 85%, 42%)",
