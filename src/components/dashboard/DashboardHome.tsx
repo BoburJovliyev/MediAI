@@ -69,7 +69,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       return [
         { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini AI yordamida tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
         { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
-        { id: "rehab", title: "Sog'lom Hamroh AI", description: "Sog'lom turmush tarzi, uyqu va ovqatlanish nazorati", icon: <HeartPulse size={28} />, gradient: "gradient-warm" },
         { id: "patients", title: "Bemorlar", description: "Bemorlar ro'yxati va tarix", icon: <Users size={28} />, gradient: "gradient-primary" },
       ];
     }
@@ -77,7 +76,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       return [
         { id: "radiologist", title: "AI Radiologist", description: "MRT va Rentgen tasvirlarini tahlil qiling", icon: <FileImage size={28} />, gradient: "gradient-primary" },
         { id: "advisor", title: "AI Assistant", description: "AI tashxis va dori tavsiyalari", icon: <Brain size={28} />, gradient: "gradient-accent" },
-        { id: "rehab", title: "Sog'lom Hamroh AI", description: "Sog'lom turmush tarzi", icon: <HeartPulse size={28} />, gradient: "gradient-warm" },
         { id: "patients", title: "Bemorlar", description: "Bemorlaringiz ro'yxati", icon: <Users size={28} />, gradient: "gradient-primary" },
       ];
     }
