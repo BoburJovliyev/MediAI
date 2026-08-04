@@ -394,6 +394,63 @@ export type Database = {
         }
         Relationships: []
       }
+      food_logs: {
+        Row: {
+          carbs_g: number
+          created_at: string
+          daily_percent: number
+          dish_name: string
+          fat_g: number
+          fiber_g: number
+          health_score: number
+          id: string
+          meal_type: string
+          protein_g: number
+          sodium_mg: number
+          status: string
+          sugar_g: number
+          total_calories: number
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          carbs_g?: number
+          created_at?: string
+          daily_percent?: number
+          dish_name?: string
+          fat_g?: number
+          fiber_g?: number
+          health_score?: number
+          id?: string
+          meal_type?: string
+          protein_g?: number
+          sodium_mg?: number
+          status?: string
+          sugar_g?: number
+          total_calories?: number
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          carbs_g?: number
+          created_at?: string
+          daily_percent?: number
+          dish_name?: string
+          fat_g?: number
+          fiber_g?: number
+          health_score?: number
+          id?: string
+          meal_type?: string
+          protein_g?: number
+          sodium_mg?: number
+          status?: string
+          sugar_g?: number
+          total_calories?: number
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string

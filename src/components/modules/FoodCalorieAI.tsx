@@ -1,12 +1,16 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera, CameraOff, CircleDot, UtensilsCrossed, Loader2, Flame, Sparkles,
-  AlertTriangle, CheckCircle2, Trash2,
+  AlertTriangle, CheckCircle2, Trash2, HeartPulse,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import NutritionSafety, { buildSafetyNotes, AGE_GROUPS, CONDITIONS, type SafetyProfile } from "./NutritionSafety";
+import { MacroBreakdown, FoodTrend } from "./FoodInsights";
+import MealPlan from "./MealPlan";
 
 interface FoodItem { name: string; portion: string; calories: number }
 
@@ -48,7 +52,8 @@ const Macro = ({ label, value, unit, color }: { label: string; value: number; un
   </div>
 );
 
-const FoodCalorieAI = () => {
+const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
+  const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [meal, setMeal] = useState<string>("tushlik");
@@ -56,8 +61,19 @@ const FoodCalorieAI = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<FoodResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [safety, setSafety] = useState<SafetyProfile>({ ageGroup: "katta", conditions: [] });
+  const [historyKey, setHistoryKey] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const safetyNotes = useMemo(() => buildSafetyNotes(safety, result), [safety, result]);
+
+  const toggleCondition = (id: string) =>
+    setSafety((s) => ({
+      ...s,
+      conditions: s.conditions.includes(id) ? s.conditions.filter((c) => c !== id) : [...s.conditions, id],
+    }));
+
 
   const readFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -115,18 +131,41 @@ const FoodCalorieAI = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-food", {
-        body: { imageBase64: image, mealType: meal, note },
+        body: { imageBase64: image, mealType: meal, note, safety },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setResult(data as FoodResult);
+      const r = data as FoodResult;
+      setResult(r);
+
+      if (user) {
+        const { error: logErr } = await (supabase.from("food_logs" as any) as any).insert({
+          user_id: user.id,
+          dish_name: r.dish_name ?? "",
+          meal_type: meal,
+          total_calories: r.total_calories ?? 0,
+          protein_g: r.protein_g ?? 0,
+          fat_g: r.fat_g ?? 0,
+          carbs_g: r.carbs_g ?? 0,
+          fiber_g: r.fiber_g ?? 0,
+          sugar_g: r.sugar_g ?? 0,
+          sodium_mg: r.sodium_mg ?? 0,
+          health_score: r.health_score ?? 0,
+          status: r.status ?? "norm",
+          daily_percent: r.daily_percent ?? 0,
+          verdict: r.verdict ?? "",
+        });
+        if (!logErr) setHistoryKey((k) => k + 1);
+      }
+
       toast.success("Ovqat tahlili tayyor!");
     } catch (err: any) {
       toast.error(err.message || "Tahlilda xatolik yuz berdi");
     } finally {
       setAnalyzing(false);
     }
-  }, [image, meal, note]);
+  }, [image, meal, note, safety, user]);
+
 
   return (
     <div className="space-y-6">
@@ -137,6 +176,41 @@ const FoodCalorieAI = () => {
         <div>
           <h3 className="text-xl font-display font-bold text-foreground">Kunlik Ratsion AI</h3>
           <p className="text-sm text-muted-foreground">Ovqat rasmini yuklang — AI kaloriya va me'yorni aniqlaydi</p>
+        </div>
+      </div>
+
+      {/* Safety profile */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <HeartPulse size={16} className="text-medical-red" /> Salomatlik profili (tavsiyalar shunga moslashadi)
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {AGE_GROUPS.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => setSafety((s) => ({ ...s, ageGroup: a.id }))}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                safety.ageGroup === a.id ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {CONDITIONS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => toggleCondition(c.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                safety.conditions.includes(c.id)
+                  ? "bg-medical-red-light text-medical-red border-medical-red/30"
+                  : "bg-secondary text-muted-foreground border-transparent"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -333,7 +407,10 @@ const FoodCalorieAI = () => {
                   </div>
                 )}
               </div>
-              <MedicalDisclaimer type="diagnosis" />
+
+              <MacroBreakdown result={result} />
+              <NutritionSafety notes={safetyNotes} />
+              <MedicalDisclaimer type="nutrition" />
             </motion.div>
           ) : (
             <motion.div
@@ -347,6 +424,12 @@ const FoodCalorieAI = () => {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* History + plan */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <FoodTrend refreshKey={historyKey} />
+        <MealPlan food={result} scan={scanResult} profile={safety} />
       </div>
     </div>
   );

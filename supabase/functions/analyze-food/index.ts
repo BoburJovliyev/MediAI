@@ -9,14 +9,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { imageBase64, mealType, note } = await req.json();
+    const { imageBase64, mealType, note, safety } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!imageBase64) throw new Error("Rasm yuborilmadi");
 
+    const ageGroup = safety?.ageGroup ?? "katta";
+    const conditions: string[] = Array.isArray(safety?.conditions) ? safety.conditions : [];
+
     const systemPrompt = `Sen professional nutritsiolog va oziq-ovqat tahlilchisisan. Foydalanuvchi yuborgan ovqat rasmini tahlil qil.
 Barcha matnlarni sof o'zbek tilida yoz. Kaloriya va nutrientlarni porsiya hajmiga qarab realistik baholab ber.
 Ovqat turi: ${mealType || "noma'lum"}. Foydalanuvchi izohi: ${note || "yo'q"}.
+Foydalanuvchi yosh guruhi: ${ageGroup}. Salomatlik holatlari: ${conditions.length ? conditions.join(", ") : "ko'rsatilmagan"}.
+Xavfsizlik qoidalari: 18 yoshgacha bo'lganlarga va homiladorlarga kaloriya cheklash yoki parhez tavsiya qilma — faqat muvozanatli ovqatlanish haqida yoz.
+Ovqatlanish buzilishi belgilari ko'rsatilgan bo'lsa, vazn yoki kaloriya kamaytirish haqida umuman yozma va mutaxassisga murojaat qilishni eslat.
+Diabet, yuqori bosim yoki buyrak kasalligi ko'rsatilgan bo'lsa, shakar/natriy/oqsil bo'yicha aniq ogohlantirish qo'sh.
+"warnings" maydoniga aynan shu holatga mos ogohlantirishlarni yoz.
 "norm" — kunlik ratsion me'yorlariga mos bo'lsa, "high" — kaloriya yoki yog'/shakar ortiqcha bo'lsa, "low" — juda kam quvvatli bo'lsa.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
