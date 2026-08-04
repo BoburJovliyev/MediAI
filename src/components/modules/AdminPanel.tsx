@@ -189,13 +189,17 @@ const AdminPanel = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-secondary rounded-xl p-1 overflow-x-auto">
-        {([["users", "Foydalanuvchilar"], ["dashboards", "Dashboardlar"], ["chats", "Chatlar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"]] as const).map(([id, label]) => (
+        {([["users", "Foydalanuvchilar"], ["system", "Tizim nazorati"], ["security", "Xavfsizlik"], ["dashboards", "Dashboardlar"], ["chats", "Chatlar"], ["activity", "Faoliyat jurnali"], ["notify", "Bildirishnoma"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap px-3 ${tab === id ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
           </button>
         ))}
       </div>
+
+      {tab === "system" && <SystemMonitor />}
+      {tab === "security" && <SecurityCenter />}
+
 
       {tab === "users" && (
         <div className="space-y-4">
