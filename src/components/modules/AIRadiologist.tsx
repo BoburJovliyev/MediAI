@@ -188,7 +188,7 @@ const AIRadiologist = () => {
           <p className="text-muted-foreground mt-1">Tibbiy tasvirlar va ovqat ratsionini sun'iy intellekt bilan tahlil qiling</p>
         </div>
         <ModeSwitch mode={mode} setMode={setMode} />
-        <FoodCalorieAI />
+        <FoodCalorieAI scanResult={result} />
       </motion.div>
     );
   }
