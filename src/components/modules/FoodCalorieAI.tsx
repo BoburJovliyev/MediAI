@@ -1,12 +1,16 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera, CameraOff, CircleDot, UtensilsCrossed, Loader2, Flame, Sparkles,
-  AlertTriangle, CheckCircle2, Trash2,
+  AlertTriangle, CheckCircle2, Trash2, HeartPulse,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import MedicalDisclaimer from "../shared/MedicalDisclaimer";
+import NutritionSafety, { buildSafetyNotes, AGE_GROUPS, CONDITIONS, type SafetyProfile } from "./NutritionSafety";
+import { MacroBreakdown, FoodTrend } from "./FoodInsights";
+import MealPlan from "./MealPlan";
 
 interface FoodItem { name: string; portion: string; calories: number }
 
