@@ -52,7 +52,8 @@ const Macro = ({ label, value, unit, color }: { label: string; value: number; un
   </div>
 );
 
-const FoodCalorieAI = () => {
+const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
+  const { user } = useAuth();
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [meal, setMeal] = useState<string>("tushlik");
@@ -60,8 +61,19 @@ const FoodCalorieAI = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<FoodResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [safety, setSafety] = useState<SafetyProfile>({ ageGroup: "katta", conditions: [] });
+  const [historyKey, setHistoryKey] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const safetyNotes = useMemo(() => buildSafetyNotes(safety, result), [safety, result]);
+
+  const toggleCondition = (id: string) =>
+    setSafety((s) => ({
+      ...s,
+      conditions: s.conditions.includes(id) ? s.conditions.filter((c) => c !== id) : [...s.conditions, id],
+    }));
+
 
   const readFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
