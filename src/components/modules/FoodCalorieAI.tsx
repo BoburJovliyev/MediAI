@@ -179,6 +179,41 @@ const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
         </div>
       </div>
 
+      {/* Safety profile */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <HeartPulse size={16} className="text-medical-red" /> Salomatlik profili (tavsiyalar shunga moslashadi)
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {AGE_GROUPS.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => setSafety((s) => ({ ...s, ageGroup: a.id }))}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                safety.ageGroup === a.id ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {CONDITIONS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => toggleCondition(c.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                safety.conditions.includes(c.id)
+                  ? "bg-medical-red-light text-medical-red border-medical-red/30"
+                  : "bg-secondary text-muted-foreground border-transparent"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-6">
         {/* LEFT: upload */}
         <div className="space-y-4">
