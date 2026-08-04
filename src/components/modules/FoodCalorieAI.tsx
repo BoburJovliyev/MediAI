@@ -372,7 +372,10 @@ const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
                   </div>
                 )}
               </div>
-              <MedicalDisclaimer type="diagnosis" />
+
+              <MacroBreakdown result={result} />
+              <NutritionSafety notes={safetyNotes} />
+              <MedicalDisclaimer type="nutrition" />
             </motion.div>
           ) : (
             <motion.div
@@ -387,6 +390,14 @@ const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* History + plan */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <FoodTrend refreshKey={historyKey} />
+        <MealPlan food={result} scan={scanResult} profile={safety} />
+      </div>
+    </div>
+
     </div>
   );
 };
