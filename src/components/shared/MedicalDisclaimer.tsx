@@ -2,13 +2,14 @@ import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface MedicalDisclaimerProps {
-  type?: "general" | "medication" | "diagnosis";
+  type?: "general" | "medication" | "diagnosis" | "nutrition";
 }
 
 const disclaimerTexts = {
   general: "Bu platforma faqat ma'lumot berish maqsadida yaratilgan. Tibbiy maslahat uchun mutaxassis shifokorga murojaat qiling.",
   medication: "⚠️ Ogohlantirish: Dori vositalari faqat shifokor nazorati ostida qabul qilinishi kerak. O'z-o'zini davolash xavfli bo'lishi mumkin. Dozalarni o'zgartirish yoki yangi dori boshlash uchun shifokoringizga murojaat qiling.",
   diagnosis: "Bu AI tomonidan taqdim etilgan dastlabki tahlil bo'lib, yakuniy tashxis sifatida qabul qilinmasligi kerak. Iltimos, rasmiy tashxis uchun tegishli mutaxassisga murojaat qiling.",
+  nutrition: "Kaloriya va nutrientlar rasm asosida taxminiy hisoblanadi — laboratoriya aniqligiga ega emas. Ratsion tavsiyalari davolash usuli emas. Surunkali kasallik, homiladorlik, diabet yoki ovqat allergiyasi bo'lsa, parhezni faqat shifokor yoki nutritsiolog bilan kelishib o'zgartiring.",
 };
 
 const MedicalDisclaimer = ({ type = "general" }: MedicalDisclaimerProps) => (
