@@ -397,8 +397,6 @@ const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
         <MealPlan food={result} scan={scanResult} profile={safety} />
       </div>
     </div>
-
-    </div>
   );
 };
 
