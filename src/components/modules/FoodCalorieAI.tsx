@@ -131,18 +131,41 @@ const FoodCalorieAI = ({ scanResult }: { scanResult?: unknown }) => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-food", {
-        body: { imageBase64: image, mealType: meal, note },
+        body: { imageBase64: image, mealType: meal, note, safety },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setResult(data as FoodResult);
+      const r = data as FoodResult;
+      setResult(r);
+
+      if (user) {
+        const { error: logErr } = await (supabase.from("food_logs" as any) as any).insert({
+          user_id: user.id,
+          dish_name: r.dish_name ?? "",
+          meal_type: meal,
+          total_calories: r.total_calories ?? 0,
+          protein_g: r.protein_g ?? 0,
+          fat_g: r.fat_g ?? 0,
+          carbs_g: r.carbs_g ?? 0,
+          fiber_g: r.fiber_g ?? 0,
+          sugar_g: r.sugar_g ?? 0,
+          sodium_mg: r.sodium_mg ?? 0,
+          health_score: r.health_score ?? 0,
+          status: r.status ?? "norm",
+          daily_percent: r.daily_percent ?? 0,
+          verdict: r.verdict ?? "",
+        });
+        if (!logErr) setHistoryKey((k) => k + 1);
+      }
+
       toast.success("Ovqat tahlili tayyor!");
     } catch (err: any) {
       toast.error(err.message || "Tahlilda xatolik yuz berdi");
     } finally {
       setAnalyzing(false);
     }
-  }, [image, meal, note]);
+  }, [image, meal, note, safety, user]);
+
 
   return (
     <div className="space-y-6">
