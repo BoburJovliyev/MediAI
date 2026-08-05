@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu, HardDrive, MemoryStick, Database, Gauge, RefreshCw, Server, Monitor,
@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import LiveChart from "./LiveChart";
+
 
 interface Metrics {
   generated_at: string;
@@ -99,6 +101,17 @@ const SystemMonitor = () => {
   const [loading, setLoading] = useState(false);
   const [device, setDevice] = useState<DeviceInfo | null>(null);
   const [fps, setFps] = useState(0);
+  const [history, setHistory] = useState<Record<string, number[]>>({
+    heap: [], rss: [], latency: [], traffic: [], fps: [], storage: [], battery: [],
+  });
+  const lastAlert = useRef(0);
+
+  const push = useCallback((key: string, value: number) => {
+    setHistory((h) => {
+      const arr = [...(h[key] || []), Number.isFinite(value) ? value : 0];
+      return { ...h, [key]: arr.slice(-60) };
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,13 +119,29 @@ const SystemMonitor = () => {
       const { data, error } = await supabase.functions.invoke("system-metrics");
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      setMetrics(data as Metrics);
+      const m = data as Metrics;
+      setMetrics(m);
+      push("heap", m.memory.heap_percent);
+      push("rss", m.memory.rss_mb);
+      push("latency", m.database.latency_ms);
+      push("traffic", m.traffic.activity_last_24h);
+      // anomaly detection
+      const now = Date.now();
+      const anomalies: string[] = [];
+      if (m.memory.heap_percent > 85) anomalies.push(`RAM yuklamasi yuqori: ${m.memory.heap_percent.toFixed(0)}%`);
+      if (m.database.latency_ms > 600) anomalies.push(`Baza javob vaqti sekin: ${m.database.latency_ms} ms`);
+      if (m.database.status !== "healthy") anomalies.push(`Baza holati: ${m.database.status}`);
+      if (anomalies.length && now - lastAlert.current > 60000) {
+        lastAlert.current = now;
+        toast.warning("Anomaliya aniqlandi", { description: anomalies.join(" · ") });
+      }
     } catch (e: any) {
       toast.error(e.message || "Server ma'lumotlarini olishda xatolik");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [push]);
+
 
   useEffect(() => {
     load();
@@ -175,6 +204,18 @@ const SystemMonitor = () => {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /* sample client-side series every 2s */
+  useEffect(() => {
+    const t = setInterval(() => {
+      push("fps", fps);
+      push("storage", device?.storagePercent ?? 0);
+      push("battery", device?.batteryPercent ?? 0);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [fps, device, push]);
+
+
+
   const dbStatusColor = metrics?.database.status === "healthy"
     ? "bg-medical-green-light text-medical-green"
     : metrics?.database.status === "degraded"
@@ -227,6 +268,16 @@ const SystemMonitor = () => {
           />
         </div>
 
+        {/* live server charts */}
+        <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <LiveChart data={history.heap} label="RAM (heap) yuklamasi" value={(metrics?.memory.heap_percent ?? 0).toFixed(0)} sub={`${metrics?.memory.heap_used_mb ?? 0} MB ishlatilmoqda`} hue="hsl(195, 85%, 50%)" />
+          <LiveChart data={history.rss} label="RSS xotira" value={String(metrics?.memory.rss_mb ?? 0)} unit=" MB" sub="Jarayon xotirasi" hue="hsl(280, 70%, 60%)" max={Math.max(128, ...(history.rss.length ? history.rss : [128]))} />
+          <LiveChart data={history.latency} label="Baza javob vaqti" value={String(metrics?.database.latency_ms ?? 0)} unit=" ms" sub={metrics?.database.status ?? "—"} hue="hsl(165, 65%, 45%)" max={Math.max(200, ...(history.latency.length ? history.latency : [200]))} />
+          <LiveChart data={history.traffic} label="24 soatlik hodisalar" value={String(metrics?.traffic.activity_last_24h ?? 0)} unit="" sub="activity_log" hue="hsl(35, 90%, 55%)" max={Math.max(20, ...(history.traffic.length ? history.traffic : [20]))} />
+        </div>
+
+
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <Stat icon={<Cpu size={17} />} label="Runtime yadrolari" value={String(metrics?.cpu.cores ?? "—")} />
           <Stat icon={<Timer size={17} />} label="Uptime" value={fmtUptime(metrics?.runtime.uptime_s ?? 0)} accent="bg-medical-teal-light text-medical-teal" />
@@ -274,6 +325,15 @@ const SystemMonitor = () => {
             hue="hsl(220, 80%, 58%)"
           />
         </div>
+
+        {/* live device charts */}
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
+          <LiveChart data={history.fps} label="Render (FPS)" value={String(fps)} unit=" fps" sub={`Ekran ${device?.screen ?? "—"}`} hue="hsl(220, 85%, 60%)" max={70} />
+          <LiveChart data={history.storage} label="Qurilma xotirasi" value={(device?.storagePercent ?? 0).toFixed(1)} sub={`${device?.storageUsedMb ?? 0} / ${device?.storageQuotaMb ?? 0} MB`} hue="hsl(25, 90%, 55%)" />
+          <LiveChart data={history.battery} label={device?.charging ? "Batareya (quvvatlanmoqda)" : "Batareya"} value={String(device?.batteryPercent ?? 0)} sub={device?.network ?? "—"} hue="hsl(142, 65%, 45%)" />
+        </div>
+
+
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <Stat icon={<Monitor size={17} />} label="Platforma" value={device?.platform ?? "—"} />
