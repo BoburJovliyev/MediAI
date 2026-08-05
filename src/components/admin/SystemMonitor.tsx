@@ -204,6 +204,18 @@ const SystemMonitor = () => {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /* sample client-side series every 2s */
+  useEffect(() => {
+    const t = setInterval(() => {
+      push("fps", fps);
+      push("storage", device?.storagePercent ?? 0);
+      push("battery", device?.batteryPercent ?? 0);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [fps, device, push]);
+
+
+
   const dbStatusColor = metrics?.database.status === "healthy"
     ? "bg-medical-green-light text-medical-green"
     : metrics?.database.status === "degraded"
