@@ -7,8 +7,6 @@ import StatsSection from "@/components/landing/StatsSection";
 import ShowcaseSlider from "@/components/landing/ShowcaseSlider";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import PartnersSection from "@/components/landing/PartnersSection";
 import FAQSection from "@/components/landing/FAQSection";
 
 interface LandingPageProps {
