@@ -101,6 +101,17 @@ const SystemMonitor = () => {
   const [loading, setLoading] = useState(false);
   const [device, setDevice] = useState<DeviceInfo | null>(null);
   const [fps, setFps] = useState(0);
+  const [history, setHistory] = useState<Record<string, number[]>>({
+    heap: [], rss: [], latency: [], traffic: [], fps: [], storage: [], battery: [],
+  });
+  const lastAlert = useRef(0);
+
+  const push = useCallback((key: string, value: number) => {
+    setHistory((h) => {
+      const arr = [...(h[key] || []), Number.isFinite(value) ? value : 0];
+      return { ...h, [key]: arr.slice(-60) };
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,13 +119,29 @@ const SystemMonitor = () => {
       const { data, error } = await supabase.functions.invoke("system-metrics");
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      setMetrics(data as Metrics);
+      const m = data as Metrics;
+      setMetrics(m);
+      push("heap", m.memory.heap_percent);
+      push("rss", m.memory.rss_mb);
+      push("latency", m.database.latency_ms);
+      push("traffic", m.traffic.activity_last_24h);
+      // anomaly detection
+      const now = Date.now();
+      const anomalies: string[] = [];
+      if (m.memory.heap_percent > 85) anomalies.push(`RAM yuklamasi yuqori: ${m.memory.heap_percent.toFixed(0)}%`);
+      if (m.database.latency_ms > 600) anomalies.push(`Baza javob vaqti sekin: ${m.database.latency_ms} ms`);
+      if (m.database.status !== "healthy") anomalies.push(`Baza holati: ${m.database.status}`);
+      if (anomalies.length && now - lastAlert.current > 60000) {
+        lastAlert.current = now;
+        toast.warning("Anomaliya aniqlandi", { description: anomalies.join(" · ") });
+      }
     } catch (e: any) {
       toast.error(e.message || "Server ma'lumotlarini olishda xatolik");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [push]);
+
 
   useEffect(() => {
     load();
