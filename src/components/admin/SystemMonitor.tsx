@@ -268,6 +268,16 @@ const SystemMonitor = () => {
           />
         </div>
 
+        {/* live server charts */}
+        <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <LiveChart data={history.heap} label="RAM (heap) yuklamasi" value={(metrics?.memory.heap_percent ?? 0).toFixed(0)} sub={`${metrics?.memory.heap_used_mb ?? 0} MB ishlatilmoqda`} hue="hsl(195, 85%, 50%)" />
+          <LiveChart data={history.rss} label="RSS xotira" value={String(metrics?.memory.rss_mb ?? 0)} unit=" MB" sub="Jarayon xotirasi" hue="hsl(280, 70%, 60%)" max={Math.max(128, ...(history.rss.length ? history.rss : [128]))} />
+          <LiveChart data={history.latency} label="Baza javob vaqti" value={String(metrics?.database.latency_ms ?? 0)} unit=" ms" sub={metrics?.database.status ?? "—"} hue="hsl(165, 65%, 45%)" max={Math.max(200, ...(history.latency.length ? history.latency : [200]))} />
+          <LiveChart data={history.traffic} label="24 soatlik hodisalar" value={String(metrics?.traffic.activity_last_24h ?? 0)} unit="" sub="activity_log" hue="hsl(35, 90%, 55%)" max={Math.max(20, ...(history.traffic.length ? history.traffic : [20]))} />
+        </div>
+
+
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <Stat icon={<Cpu size={17} />} label="Runtime yadrolari" value={String(metrics?.cpu.cores ?? "—")} />
           <Stat icon={<Timer size={17} />} label="Uptime" value={fmtUptime(metrics?.runtime.uptime_s ?? 0)} accent="bg-medical-teal-light text-medical-teal" />
