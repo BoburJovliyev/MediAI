@@ -326,6 +326,15 @@ const SystemMonitor = () => {
           />
         </div>
 
+        {/* live device charts */}
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
+          <LiveChart data={history.fps} label="Render (FPS)" value={String(fps)} unit=" fps" sub={`Ekran ${device?.screen ?? "—"}`} hue="hsl(220, 85%, 60%)" max={70} />
+          <LiveChart data={history.storage} label="Qurilma xotirasi" value={(device?.storagePercent ?? 0).toFixed(1)} sub={`${device?.storageUsedMb ?? 0} / ${device?.storageQuotaMb ?? 0} MB`} hue="hsl(25, 90%, 55%)" />
+          <LiveChart data={history.battery} label={device?.charging ? "Batareya (quvvatlanmoqda)" : "Batareya"} value={String(device?.batteryPercent ?? 0)} sub={device?.network ?? "—"} hue="hsl(142, 65%, 45%)" />
+        </div>
+
+
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <Stat icon={<Monitor size={17} />} label="Platforma" value={device?.platform ?? "—"} />
           <Stat icon={<Cpu size={17} />} label="Protsessor yadrolari" value={String(device?.cores ?? "—")} accent="bg-medical-teal-light text-medical-teal" />
