@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu, HardDrive, MemoryStick, Database, Gauge, RefreshCw, Server, Monitor,
@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import LiveChart from "./LiveChart";
+
 
 interface Metrics {
   generated_at: string;
