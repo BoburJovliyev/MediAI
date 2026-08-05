@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import FloatingObjects from "@/components/landing/FloatingObjects";
 import LandingHeader from "@/components/landing/LandingHeader";
 import ContactSection from "@/components/landing/ContactSection";
+import ContactInfoGrid from "@/components/landing/ContactInfoGrid";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
 
