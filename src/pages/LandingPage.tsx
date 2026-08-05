@@ -35,10 +35,8 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <Divider />
       <FeaturesSection />
       <Divider />
-      <TestimonialsSection />
-      <Divider />
-      <PartnersSection />
-      <Divider />
+      <FAQSection />
+
       <FAQSection />
 
       {/* Footer */}
