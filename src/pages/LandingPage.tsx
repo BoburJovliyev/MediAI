@@ -37,7 +37,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <Divider />
       <FAQSection />
 
-      <FAQSection />
+
 
       {/* Footer */}
       <motion.footer
