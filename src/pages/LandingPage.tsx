@@ -1,7 +1,6 @@
 import FloatingObjects from "@/components/landing/FloatingObjects";
 import SiteFooter from "@/components/landing/SiteFooter";
 
-import FloatingObjects from "@/components/landing/FloatingObjects";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsSection from "@/components/landing/StatsSection";
@@ -21,7 +20,7 @@ const Divider = () => (
 );
 
 const LandingPage = ({ onGetStarted }: LandingPageProps) => {
-  const { t } = useLanguage();
+
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
