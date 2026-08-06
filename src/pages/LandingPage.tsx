@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
-import { useLanguage } from "@/hooks/useLanguage";
+import FloatingObjects from "@/components/landing/FloatingObjects";
+import SiteFooter from "@/components/landing/SiteFooter";
+
 import FloatingObjects from "@/components/landing/FloatingObjects";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
