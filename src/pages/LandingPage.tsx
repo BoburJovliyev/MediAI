@@ -1,6 +1,6 @@
-import { motion } from "framer-motion";
-import { useLanguage } from "@/hooks/useLanguage";
 import FloatingObjects from "@/components/landing/FloatingObjects";
+import SiteFooter from "@/components/landing/SiteFooter";
+
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import StatsSection from "@/components/landing/StatsSection";
@@ -20,7 +20,7 @@ const Divider = () => (
 );
 
 const LandingPage = ({ onGetStarted }: LandingPageProps) => {
-  const { t } = useLanguage();
+
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -37,21 +37,10 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <Divider />
       <FAQSection />
 
-
-
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="relative z-10 border-t border-border/50 py-8 text-center text-sm text-muted-foreground"
-      >
-        <div className="max-w-5xl mx-auto px-4">
-          © 2026 Medi AI. {t("landing.footer")}
-        </div>
-      </motion.footer>
+      <SiteFooter />
     </div>
   );
 };
+
 
 export default LandingPage;
