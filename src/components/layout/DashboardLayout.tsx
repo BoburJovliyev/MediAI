@@ -66,14 +66,16 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
   const primary = navItems.slice(0, 4);
   const rest = navItems.slice(4);
 
-  const Avatar = ({ size = 9 }: { size?: number }) =>
-    avatarUrl ? (
-      <img src={avatarUrl} alt={userName || "user"} className={`w-${size} h-${size} rounded-full object-cover border border-border shrink-0`} />
+  const Avatar = ({ small = false }: { small?: boolean }) => {
+    const cls = small ? "w-8 h-8" : "w-9 h-9";
+    return avatarUrl ? (
+      <img src={avatarUrl} alt={userName || "user"} className={`${cls} rounded-full object-cover border border-border shrink-0`} />
     ) : (
-      <div className={`w-${size} h-${size} rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 shadow-glow`}>
+      <div className={`${cls} rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 shadow-glow`}>
         {(userName || "U").charAt(0).toUpperCase()}
       </div>
     );
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -173,7 +175,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </motion.button>
           <button onClick={() => onTabChange("profile")} aria-label="Profil">
-            <Avatar size={8} />
+            <Avatar small />
           </button>
         </div>
       </div>
