@@ -82,61 +82,13 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex w-72 flex-col border-r border-border bg-card fixed h-screen">
         <div className="p-6 pb-4">
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-6">
             <motion.img whileHover={{ rotate: 10, scale: 1.08 }} src={logo} alt="Medi AI" className="w-10 h-10 rounded-xl object-cover" />
             <div>
               <h1 className="text-lg font-display font-bold text-foreground">Medi AI</h1>
               <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
             </div>
           </div>
-
-          {/* User card — moved to top so it never gets cut off on small laptops */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -2 }}
-            className="rounded-2xl border border-border/70 bg-secondary/50 p-3 shadow-card"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <button onClick={() => onTabChange("profile")} className="flex items-center gap-2 min-w-0 text-left">
-                <Avatar />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{userName || "Foydalanuvchi"}</p>
-                  <p className="text-[11px] text-muted-foreground capitalize">{userRole}</p>
-                </div>
-              </button>
-              <NotificationBell />
-            </div>
-
-            <div className="flex gap-2 mt-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={toggle}
-                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-muted-foreground bg-card hover:text-foreground transition-all border border-border/60"
-              >
-                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
-              </motion.button>
-              <LanguageSwitcher compact />
-            </div>
-
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-3">
-              <Shield size={13} className="text-accent" />
-              <span>HIPAA Compliant • Encrypted</span>
-            </div>
-
-            {onSignOut && (
-              <motion.button
-                whileHover={{ x: 3 }}
-                onClick={onSignOut}
-                className="w-full mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-              >
-                <LogOut size={15} />
-                {t("nav.signout")}
-              </motion.button>
-            )}
-          </motion.div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-6 pb-6 space-y-1">
@@ -161,6 +113,58 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           ))}
         </nav>
       </aside>
+
+      {/* Desktop horizontal top bar */}
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="hidden lg:flex fixed top-0 left-72 right-0 z-40 h-16 items-center justify-between px-6 border-b border-border bg-card/80 backdrop-blur-2xl"
+      >
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield size={14} className="text-accent" />
+          <span>HIPAA Compliant • Encrypted</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggle}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground bg-secondary hover:text-foreground transition-all border border-border/60"
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
+          </motion.button>
+
+          <LanguageSwitcher compact />
+
+          <NotificationBell />
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            onClick={() => onTabChange("profile")}
+            className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-2xl bg-secondary/50 border border-border/60 hover:bg-secondary transition-all"
+          >
+            <Avatar />
+            <div className="text-left min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate leading-tight">{userName || "Foydalanuvchi"}</p>
+              <p className="text-[11px] text-muted-foreground capitalize leading-tight">{userRole}</p>
+            </div>
+          </motion.button>
+
+          {onSignOut && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onSignOut}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all border border-border/60"
+            >
+              <LogOut size={15} />
+              {t("nav.signout")}
+            </motion.button>
+          )}
+        </div>
+      </motion.header>
 
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-2.5 flex items-center justify-between">
@@ -265,7 +269,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       </motion.nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 pt-14 lg:pt-0 pb-24 lg:pb-0">
+      <main className="flex-1 lg:ml-72 pt-14 lg:pt-20 pb-24 lg:pb-6">
         <div className="p-4 lg:p-8 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
