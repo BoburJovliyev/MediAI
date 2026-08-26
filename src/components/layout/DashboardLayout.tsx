@@ -25,6 +25,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName }: DashboardLayoutProps) => {
   const [railOpen, setRailOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -126,43 +127,68 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         </div>
 
         <div className="flex items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggle}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground bg-secondary hover:text-foreground transition-all border border-border/60"
-          >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-            {theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
-          </motion.button>
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-2xl bg-secondary/50 border border-border/60 hover:bg-secondary transition-all"
+            >
+              <Avatar />
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate leading-tight">{userName || "Foydalanuvchi"}</p>
+                <p className="text-[11px] text-muted-foreground capitalize leading-tight">{userRole}</p>
+              </div>
+            </motion.button>
 
-          <LanguageSwitcher compact />
+            <AnimatePresence>
+              {profileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute left-0 mt-2 w-48 rounded-xl bg-card border border-border/60 shadow-elevated py-1 z-50"
+                >
+                  <button
+                    onClick={() => {
+                      onTabChange("profile");
+                      setProfileOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                  >
+                    <User size={16} />
+                    Profil
+                  </button>
+                  {onSignOut && (
+                    <button
+                      onClick={() => {
+                        onSignOut();
+                        setProfileOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut size={16} />
+                      Chiqish
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <NotificationBell />
 
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            onClick={() => onTabChange("profile")}
-            className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-2xl bg-secondary/50 border border-border/60 hover:bg-secondary transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggle}
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground bg-secondary hover:text-foreground transition-all border border-border/60"
+            aria-label={theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
           >
-            <Avatar />
-            <div className="text-left min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate leading-tight">{userName || "Foydalanuvchi"}</p>
-              <p className="text-[11px] text-muted-foreground capitalize leading-tight">{userRole}</p>
-            </div>
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </motion.button>
 
-          {onSignOut && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onSignOut}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all border border-border/60"
-            >
-              <LogOut size={15} />
-              {t("nav.signout")}
-            </motion.button>
-          )}
+          <LanguageSwitcher compact />
         </div>
       </motion.header>
 
