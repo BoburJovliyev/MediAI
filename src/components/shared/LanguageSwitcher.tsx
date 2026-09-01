@@ -28,12 +28,14 @@ const LanguageSwitcher = ({ compact = false }: LanguageSwitcherProps) => {
     return (
       <button
         onClick={() => setLang(nextLang)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
+        className="flex items-center gap-1.5 px-2 py-1.5 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all shrink-0"
         title={FLAGS[lang].label}
+        aria-label={FLAGS[lang].label}
       >
-        <img src={FLAGS[lang].src} alt={FLAGS[lang].label} className="w-5 h-5 rounded-full" />
-        <span className="text-xs font-bold text-primary">{lang.toUpperCase()}</span>
+        <img src={FLAGS[lang].src} alt="" className="w-5 h-5 rounded-full" />
+        <span className="text-xs font-bold text-primary max-[380px]:hidden">{lang.toUpperCase()}</span>
       </button>
+
     );
   }
 
