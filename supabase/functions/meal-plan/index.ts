@@ -48,6 +48,8 @@ Foydalanuvchi ma'lumoti: ${JSON.stringify(profile ?? {})}`;
                 type: "object",
                 properties: {
                   target_calories: { type: "number" },
+                  trend_insight: { type: "string", description: "14 kunlik kaloriya trendi tahlili" },
+
                   summary: { type: "string" },
                   steps: {
                     type: "array",
