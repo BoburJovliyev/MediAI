@@ -228,7 +228,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
 
 
       {/* Mobile right-edge rail */}
-      <div className="lg:hidden fixed right-2 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
+      <div className="lg:hidden fixed right-[max(0.5rem,env(safe-area-inset-right))] top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setRailOpen((v) => !v)}
@@ -245,7 +245,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 40, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 220, damping: 22 }}
-              className="flex flex-col gap-2 p-2 rounded-3xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-elevated max-h-[60vh] overflow-y-auto"
+              className="flex flex-col gap-2 p-2 rounded-3xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-elevated max-h-[50vh] overflow-y-auto"
             >
               {rest.map((item, i) => (
                 <motion.button
@@ -282,9 +282,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 180, damping: 22 }}
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[env(safe-area-inset-bottom)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
-        <div className="mx-auto mb-2 max-w-md rounded-3xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-elevated px-2 py-1.5 flex items-center justify-around">
+        <div className="mx-auto max-w-md rounded-3xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-elevated px-1.5 py-1.5 grid grid-flow-col auto-cols-fr gap-0.5">
           {[...primary, navItems.find((n) => n.id === "profile")!].filter(Boolean).map((item) => {
             const active = activeTab === item.id;
             return (
@@ -292,7 +292,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
                 key={item.id}
                 whileTap={{ scale: 0.88 }}
                 onClick={() => onTabChange(item.id)}
-                className="relative flex flex-col items-center gap-0.5 px-3 py-2 min-w-0"
+                aria-label={t(item.labelKey)}
+                aria-current={active ? "page" : undefined}
+                className="relative flex flex-col items-center justify-center gap-0.5 min-w-0 px-0.5 py-1.5 min-h-[52px]"
               >
                 {active && (
                   <motion.span
@@ -301,8 +303,14 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
                     transition={{ type: "spring", stiffness: 320, damping: 28 }}
                   />
                 )}
-                <span className={`relative z-10 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>{item.icon}</span>
-                <span className={`relative z-10 text-[10px] font-medium truncate max-w-[64px] ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>
+                <span className={`relative z-10 [&_svg]:w-[19px] [&_svg]:h-[19px] ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>
+                  {item.icon}
+                </span>
+                <span
+                  className={`relative z-10 w-full text-center text-[clamp(8px,2.6vw,10px)] leading-tight font-medium truncate ${
+                    active ? "text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
                   {t(item.labelKey)}
                 </span>
               </motion.button>
@@ -312,9 +320,10 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       </motion.nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 pt-14 lg:pt-20 pb-24 lg:pb-6">
-        <div className="p-4 lg:p-8 max-w-7xl mx-auto">{children}</div>
+      <main className="flex-1 lg:ml-72 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-20 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-6">
+        <div className="p-3 sm:p-4 lg:p-8 max-w-7xl mx-auto">{children}</div>
       </main>
+
     </div>
   );
 };
