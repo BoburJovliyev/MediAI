@@ -193,22 +193,39 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       </motion.header>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="Medi AI" className="w-8 h-8 rounded-lg object-cover" />
-          <span className="font-display font-bold text-foreground">Medi AI</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <LanguageSwitcher compact />
-          <NotificationBell />
-          <motion.button whileTap={{ scale: 0.9, rotate: 180 }} onClick={toggle} className="text-foreground p-1">
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-          </motion.button>
-          <button onClick={() => onTabChange("profile")} aria-label="Profil">
-            <Avatar small />
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between gap-2 px-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] h-14">
+          <button
+            onClick={() => onTabChange("dashboard")}
+            className="flex items-center gap-2 min-w-0 shrink"
+            aria-label="Medi AI"
+          >
+            <img src={logo} alt="Medi AI" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+            <span className="font-display font-bold text-foreground text-[clamp(0.9rem,4vw,1.05rem)] truncate">Medi AI</span>
           </button>
+
+          <div className="flex items-center gap-1 shrink-0 [&_button]:shrink-0">
+            <LanguageSwitcher compact />
+            <NotificationBell />
+            <motion.button
+              whileTap={{ scale: 0.9, rotate: 180 }}
+              onClick={toggle}
+              aria-label={theme === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground bg-secondary/60 border border-border/50 active:bg-secondary"
+            >
+              {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            </motion.button>
+            <button
+              onClick={() => onTabChange("profile")}
+              aria-label="Profil"
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+            >
+              <Avatar small />
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* Mobile right-edge rail */}
       <div className="lg:hidden fixed right-2 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
