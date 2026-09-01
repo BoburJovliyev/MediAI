@@ -83,6 +83,14 @@ const MealPlan = ({ food, scan, profile }: Props) => {
               <p className="text-xs text-muted-foreground mt-2">Kunlik maqsad: <span className="font-semibold text-foreground">{Math.round(plan.target_calories)} kkal</span></p>
             </div>
 
+            {plan.trend_insight && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+                <p className="text-xs font-semibold text-foreground mb-1">14 kunlik kaloriya trendi tahlili</p>
+                <p className="text-xs text-foreground/80">{plan.trend_insight}</p>
+              </div>
+            )}
+
+
             <div className="relative pl-6 space-y-3">
               <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
               {plan.steps.map((s, i) => (
