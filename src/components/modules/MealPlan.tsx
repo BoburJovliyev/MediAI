@@ -9,6 +9,7 @@ import type { SafetyProfile } from "./NutritionSafety";
 interface PlanStep { time: string; meal: string; dish: string; portion: string; calories: number; why: string }
 interface Plan {
   target_calories: number;
+  trend_insight?: string;
   summary: string;
   steps: PlanStep[];
   avoid: string[];
@@ -29,8 +30,23 @@ const MealPlan = ({ food, scan, profile }: Props) => {
   const generate = useCallback(async () => {
     setLoading(true);
     try {
+      // So'nggi 14 kunlik kaloriya trendi
+      const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: logs } = await supabase
+        .from("food_logs")
+        .select("created_at,total_calories")
+        .gte("created_at", since)
+        .order("created_at", { ascending: true });
+
+      const byDay = new Map<string, number>();
+      (logs ?? []).forEach((l: any) => {
+        const d = String(l.created_at).slice(0, 10);
+        byDay.set(d, (byDay.get(d) ?? 0) + Number(l.total_calories || 0));
+      });
+      const trend = Array.from(byDay.entries()).map(([day, calories]) => ({ day, calories: Math.round(calories) }));
+
       const { data, error } = await supabase.functions.invoke("meal-plan", {
-        body: { food, scan, profile },
+        body: { food, scan, profile, trend },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -42,6 +58,7 @@ const MealPlan = ({ food, scan, profile }: Props) => {
       setLoading(false);
     }
   }, [food, scan, profile]);
+
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5 shadow-card space-y-4">
@@ -65,6 +82,14 @@ const MealPlan = ({ food, scan, profile }: Props) => {
               <p className="text-sm text-foreground/80">{plan.summary}</p>
               <p className="text-xs text-muted-foreground mt-2">Kunlik maqsad: <span className="font-semibold text-foreground">{Math.round(plan.target_calories)} kkal</span></p>
             </div>
+
+            {plan.trend_insight && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+                <p className="text-xs font-semibold text-foreground mb-1">14 kunlik kaloriya trendi tahlili</p>
+                <p className="text-xs text-foreground/80">{plan.trend_insight}</p>
+              </div>
+            )}
+
 
             <div className="relative pl-6 space-y-3">
               <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
