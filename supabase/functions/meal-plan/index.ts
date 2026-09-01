@@ -71,7 +71,7 @@ Foydalanuvchi ma'lumoti: ${JSON.stringify(profile ?? {})}`;
                   hydration: { type: "string" },
                   safety_notes: { type: "array", items: { type: "string" } },
                 },
-                required: ["target_calories", "summary", "steps", "avoid", "hydration", "safety_notes"],
+                required: ["target_calories", "trend_insight", "summary", "steps", "avoid", "hydration", "safety_notes"],
                 additionalProperties: false,
               },
             },
