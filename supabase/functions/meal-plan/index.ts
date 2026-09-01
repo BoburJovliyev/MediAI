@@ -14,17 +14,20 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { food, scan, profile } = await req.json();
+    const { food, scan, profile, trend } = await req.json();
 
     const systemPrompt = `Sen professional klinik nutritsiologsan. Sof o'zbek tilida yoz.
-Foydalanuvchining oxirgi ovqat tahlili va (mavjud bo'lsa) AI radiolog tahlili natijalariga asoslanib,
-bosqichma-bosqich kunlik ratsion rejasini tuz. Real o'zbek taomlaridan foydalan (mastava, shovla, non, qatiq, sabzavotlar...).
+Foydalanuvchining oxirgi ovqat tahlili, so'nggi 14 kunlik kaloriya trendi va (mavjud bo'lsa) AI radiolog tahlili natijalariga asoslanib,
+bosqichma-bosqich kunlik ratsion rejasini va menyuni tuz. Real o'zbek taomlaridan foydalan (mastava, shovla, non, qatiq, sabzavotlar...).
+14 kunlik trendni tahlil qil: o'rtacha kaloriya me'yordan yuqori yoki past bo'lsa, rejani shunga moslashtir va buni "trend_insight" da tushuntir.
 Har bosqich uchun taxminiy kaloriya va soatni ko'rsat. Maslahatlar dorivor tavsiya emas, faqat ovqatlanish bo'yicha.
 Agar radiolog natijasi jiddiy bo'lsa — shifokorga murojaat qilish shartligini eslat.`;
 
     const userText = `Ovqat tahlili: ${JSON.stringify(food ?? {})}
 Radiolog natijasi: ${JSON.stringify(scan ?? {})}
+14 kunlik kaloriya trendi (kun: jami kkal): ${JSON.stringify(trend ?? [])}
 Foydalanuvchi ma'lumoti: ${JSON.stringify(profile ?? {})}`;
+
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
