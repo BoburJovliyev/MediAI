@@ -66,7 +66,7 @@ const AboutExtended = () => (
             whileHover={{ y: -6 }}
             className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6 text-center backdrop-blur-xl"
           >
-            <p className="text-3xl md:text-4xl font-display font-bold text-foreground">{s.value}</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
           </motion.div>
         ))}
@@ -78,7 +78,7 @@ const AboutExtended = () => (
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-4xl font-display font-bold text-foreground text-center mb-10"
+          className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground text-center mb-10"
         >
           Nimalarni qila olamiz
         </motion.h2>
@@ -110,7 +110,7 @@ const AboutExtended = () => (
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-4xl font-display font-bold text-foreground text-center mb-10"
+          className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground text-center mb-10"
         >
           Bizning yo'limiz
         </motion.h2>

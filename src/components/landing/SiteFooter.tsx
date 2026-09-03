@@ -62,7 +62,7 @@ const SiteFooter = () => {
             className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/60 to-transparent p-8 md:p-10 shadow-elevated flex flex-col md:flex-row items-center justify-between gap-6"
           >
             <div>
-              <h3 className="text-2xl md:text-3xl font-display font-bold text-foreground flex items-center gap-2">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground flex items-center gap-2">
                 <Sparkles className="text-primary" size={24} /> Sog'ligingizni AI bilan boshqaring
               </h3>
               <p className="text-muted-foreground mt-2 max-w-xl">

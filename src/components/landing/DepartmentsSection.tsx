@@ -15,15 +15,15 @@ const DepartmentsSection = () => {
   ];
 
   return (
-    <section id="departments" className="py-20 px-4 relative z-10">
+    <section id="departments" className="py-12 sm:py-20 px-4 relative z-10">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-8 sm:mb-14"
         >
-          <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold text-foreground mb-4">
             {t("landing.departments.title")}
           </h2>
         </motion.div>

@@ -52,12 +52,12 @@ const ContactHub = () => {
   };
 
   return (
-    <section id="contact" className="relative z-10 py-16 px-4">
+    <section id="contact" className="relative z-10 py-10 sm:py-16 px-4">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
         {/* Left: heading + channels */}
         <div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-display font-bold text-foreground tracking-tight">
               Get in Touch
             </h1>
             <p className="text-muted-foreground mt-4 text-lg max-w-xl">

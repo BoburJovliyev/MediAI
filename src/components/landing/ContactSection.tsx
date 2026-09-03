@@ -53,15 +53,15 @@ const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-20 px-4 relative z-10">
+    <section id="contact" className="py-12 sm:py-20 px-4 relative z-10">
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-7 sm:mb-12"
         >
-          <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold text-foreground mb-4">
             {t("landing.contact.title")}
           </h2>
           <p className="text-muted-foreground text-lg">{t("landing.contact.desc")}</p>

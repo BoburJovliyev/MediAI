@@ -39,13 +39,13 @@ const FAQSection = () => {
   const faqs = faqData[currentLang] || faqData.en;
 
   return (
-    <section className="relative z-10 py-20 px-4">
+    <section className="relative z-10 py-12 sm:py-20 px-4">
       <div className="max-w-3xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-4xl font-display font-bold text-center text-foreground mb-12"
+          className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center text-foreground mb-7 sm:mb-12"
         >
           {titles[currentLang]}
         </motion.h2>
