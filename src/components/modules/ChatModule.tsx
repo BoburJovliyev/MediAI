@@ -766,26 +766,46 @@ const ChatModule = () => {
     );
   };
 
+  const previewOf = (raw?: string) => {
+    if (!raw) return "Xabar yo'q";
+    const txt = raw.trim();
+    if (txt.startsWith("{")) {
+      try {
+        const p = JSON.parse(txt);
+        if (p.type === "call_activity") {
+          const kind = p.video ? "Video qo'ng'iroq" : "Qo'ng'iroq";
+          const st = p.status === "missed" ? "Javobsiz" : p.status === "rejected" ? "Rad etilgan" : "Tugallangan";
+          return `📞 ${st} ${kind.toLowerCase()}`;
+        }
+        if (p.type === "invitation_activity") return "✉️ Taklif";
+        if (p.type === "edit_activity") return "✏️ Xabar tahrirlandi";
+        return "Xabar";
+      } catch { /* not json */ }
+    }
+    return txt;
+  };
+
   const TabBar = (
-    <div className="flex gap-2 mb-3">
+    <div className="grid grid-cols-3 gap-2 mb-3 w-full max-w-full">
       {([
-        { key: "all", label: "All chats", icon: MessageCircle, badge: totalUnread },
-        { key: "contacts", label: "Contacts", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
-        { key: "groups", label: "Groups", icon: Megaphone, badge: 0 },
+        { key: "all", label: "Chatlar", icon: MessageCircle, badge: totalUnread },
+        { key: "contacts", label: "Kontakt", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
+        { key: "groups", label: "Guruh", icon: Megaphone, badge: 0 },
       ] as const).map(t => (
         <button key={t.key} onClick={() => setActiveTab(t.key)}
-          className={`flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-xl text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+          className={`min-w-0 flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[11px] sm:text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
           <div className="relative">
             <t.icon size={18} />
             {t.badge > 0 && (
               <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{t.badge}</span>
             )}
           </div>
-          <span>{t.label}</span>
+          <span className="truncate max-w-full">{t.label}</span>
         </button>
       ))}
     </div>
   );
+
 
   if (activeTab === "groups") {
     return (
@@ -797,12 +817,13 @@ const ChatModule = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full max-w-full overflow-x-hidden">
     {TabBar}
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-12rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100dvh-15rem)] md:h-[calc(100vh-12rem)] w-full max-w-full flex rounded-2xl overflow-hidden border border-border bg-card">
       {/* Contacts sidebar */}
-      <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
-        <div className="p-4 border-b border-border">
+      <div className={`w-full max-w-full min-w-0 md:w-80 md:shrink-0 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
+        <div className="p-3 sm:p-4 border-b border-border">
+
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-bold text-foreground text-lg flex items-center gap-2">
               <MessageCircle size={20} className="text-primary" /> Chatlar
@@ -871,7 +892,7 @@ const ChatModule = () => {
                 <div className="text-center py-12 text-muted-foreground text-sm">Kontaktlar topilmadi</div>
               ) : filteredContacts.map(c => (
                 <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
-                  className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
+                  className={`w-full max-w-full min-w-0 p-3 sm:p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
                   {c.avatar_url ? (
                     <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
                   ) : (
@@ -879,19 +900,20 @@ const ChatModule = () => {
                       {c.full_name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
-                      {c.lastMessageTime && <span className="text-[10px] text-muted-foreground">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate min-w-0">{c.full_name}</p>
+                      {c.lastMessageTime && <span className="text-[10px] text-muted-foreground shrink-0">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "Xabar yo'q"}</p>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-xs text-muted-foreground truncate min-w-0">{previewOf(c.lastMessage)}</p>
                       {(c.unreadCount || 0) > 0 && (
-                        <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
+                        <span className="w-5 h-5 shrink-0 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
                       )}
                     </div>
                   </div>
                 </button>
+
               ))}
             </>
           )}
@@ -899,7 +921,7 @@ const ChatModule = () => {
       </div>
 
       {/* Chat area */}
-      <div className={`flex-1 flex flex-col ${!showMobileChat ? "hidden md:flex" : "flex"}`}>
+      <div className={`flex-1 min-w-0 max-w-full flex flex-col ${!showMobileChat ? "hidden md:flex" : "flex"}`}>
         {!selectedContact ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
             <MessageCircle size={48} className="mb-3 opacity-30" />
