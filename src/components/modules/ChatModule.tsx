@@ -892,7 +892,7 @@ const ChatModule = () => {
                 <div className="text-center py-12 text-muted-foreground text-sm">Kontaktlar topilmadi</div>
               ) : filteredContacts.map(c => (
                 <button key={c.user_id} onClick={() => { setSelectedContact(c); setShowMobileChat(true); }}
-                  className={`w-full p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
+                  className={`w-full max-w-full min-w-0 p-3 sm:p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left ${selectedContact?.user_id === c.user_id ? "bg-secondary" : ""}`}>
                   {c.avatar_url ? (
                     <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
                   ) : (
@@ -900,19 +900,20 @@ const ChatModule = () => {
                       {c.full_name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground truncate">{c.full_name}</p>
-                      {c.lastMessageTime && <span className="text-[10px] text-muted-foreground">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate min-w-0">{c.full_name}</p>
+                      {c.lastMessageTime && <span className="text-[10px] text-muted-foreground shrink-0">{format(new Date(c.lastMessageTime), "HH:mm")}</span>}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "Xabar yo'q"}</p>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-xs text-muted-foreground truncate min-w-0">{previewOf(c.lastMessage)}</p>
                       {(c.unreadCount || 0) > 0 && (
-                        <span className="w-5 h-5 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
+                        <span className="w-5 h-5 shrink-0 rounded-full gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{c.unreadCount}</span>
                       )}
                     </div>
                   </div>
                 </button>
+
               ))}
             </>
           )}
