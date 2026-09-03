@@ -766,26 +766,46 @@ const ChatModule = () => {
     );
   };
 
+  const previewOf = (raw?: string) => {
+    if (!raw) return "Xabar yo'q";
+    const txt = raw.trim();
+    if (txt.startsWith("{")) {
+      try {
+        const p = JSON.parse(txt);
+        if (p.type === "call_activity") {
+          const kind = p.video ? "Video qo'ng'iroq" : "Qo'ng'iroq";
+          const st = p.status === "missed" ? "Javobsiz" : p.status === "rejected" ? "Rad etilgan" : "Tugallangan";
+          return `📞 ${st} ${kind.toLowerCase()}`;
+        }
+        if (p.type === "invitation_activity") return "✉️ Taklif";
+        if (p.type === "edit_activity") return "✏️ Xabar tahrirlandi";
+        return "Xabar";
+      } catch { /* not json */ }
+    }
+    return txt;
+  };
+
   const TabBar = (
-    <div className="flex gap-2 mb-3">
+    <div className="grid grid-cols-3 gap-2 mb-3 w-full max-w-full">
       {([
-        { key: "all", label: "All chats", icon: MessageCircle, badge: totalUnread },
-        { key: "contacts", label: "Contacts", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
-        { key: "groups", label: "Groups", icon: Megaphone, badge: 0 },
+        { key: "all", label: "Chatlar", icon: MessageCircle, badge: totalUnread },
+        { key: "contacts", label: "Kontakt", icon: Users, badge: contactsOnly.filter(c => (c.unreadCount || 0) > 0).length },
+        { key: "groups", label: "Guruh", icon: Megaphone, badge: 0 },
       ] as const).map(t => (
         <button key={t.key} onClick={() => setActiveTab(t.key)}
-          className={`flex-1 flex flex-col items-center gap-1 py-2 px-2 rounded-xl text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+          className={`min-w-0 flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[11px] sm:text-xs font-medium transition-all relative ${activeTab === t.key ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
           <div className="relative">
             <t.icon size={18} />
             {t.badge > 0 && (
               <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{t.badge}</span>
             )}
           </div>
-          <span>{t.label}</span>
+          <span className="truncate max-w-full">{t.label}</span>
         </button>
       ))}
     </div>
   );
+
 
   if (activeTab === "groups") {
     return (
