@@ -817,12 +817,13 @@ const ChatModule = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full max-w-full overflow-x-hidden">
     {TabBar}
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-12rem)] flex rounded-2xl overflow-hidden border border-border bg-card">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100dvh-15rem)] md:h-[calc(100vh-12rem)] w-full max-w-full flex rounded-2xl overflow-hidden border border-border bg-card">
       {/* Contacts sidebar */}
-      <div className={`w-full md:w-80 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
-        <div className="p-4 border-b border-border">
+      <div className={`w-full max-w-full min-w-0 md:w-80 md:shrink-0 border-r border-border flex flex-col bg-card ${showMobileChat ? "hidden md:flex" : "flex"}`}>
+        <div className="p-3 sm:p-4 border-b border-border">
+
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-bold text-foreground text-lg flex items-center gap-2">
               <MessageCircle size={20} className="text-primary" /> Chatlar
