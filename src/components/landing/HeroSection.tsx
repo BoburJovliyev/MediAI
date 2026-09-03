@@ -10,7 +10,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   const { t } = useLanguage();
 
   return (
-    <section id="home" className="relative pt-32 pb-20 px-4 overflow-hidden">
+    <section id="home" className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 overflow-hidden">
       <div className="max-w-5xl mx-auto text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -21,7 +21,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] sm:text-sm font-medium mb-5 sm:mb-8"
           >
             <Sparkles size={16} className="animate-pulse" />
             {t("landing.badge")}
@@ -32,7 +32,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.7 }}
-            className="text-4xl sm:text-5xl md:text-7xl font-display font-bold text-foreground leading-[1.1] mb-8"
+            className="text-[clamp(1.65rem,7.5vw,2.25rem)] sm:text-5xl md:text-7xl font-display font-bold text-foreground leading-[1.15] sm:leading-[1.1] mb-4 sm:mb-8"
           >
             {t("landing.hero.title").split(" ").map((word, i) => (
               <motion.span
@@ -51,7 +51,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
-            className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed"
           >
             {t("landing.hero.subtitle")}
           </motion.p>
@@ -66,7 +66,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
               onClick={onGetStarted}
               whileHover={{ scale: 1.05, boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.5)" }}
               whileTap={{ scale: 0.95 }}
-              className="gradient-primary text-primary-foreground px-8 py-4 rounded-2xl text-lg font-semibold inline-flex items-center justify-center gap-3 shadow-glow"
+              className="gradient-primary text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-base sm:text-lg font-semibold inline-flex items-center justify-center gap-3 shadow-glow"
             >
               {t("landing.getStarted")}
               <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>

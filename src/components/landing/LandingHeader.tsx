@@ -27,24 +27,24 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="mx-4 mt-3">
+      <div className="mx-2 sm:mx-4 mt-[max(0.5rem,env(safe-area-inset-top))] sm:mt-3">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="max-w-6xl mx-auto bg-card/70 backdrop-blur-2xl rounded-2xl border border-border/50 shadow-elevated px-4 py-3"
+          className="max-w-6xl mx-auto bg-card/70 backdrop-blur-2xl rounded-2xl border border-border/50 shadow-elevated px-2.5 sm:px-4 py-2 sm:py-3"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-1.5">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 min-w-0 shrink">
               <motion.img
                 src={logo}
                 alt="Medi AI"
-                className="w-10 h-10 rounded-xl object-cover"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shrink-0"
                 whileHover={{ rotate: 10, scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 300 }}
               />
-              <h1 className="text-xl font-display font-bold text-foreground">Medi AI</h1>
-            </div>
+              <h1 className="text-base sm:text-xl font-display font-bold text-foreground whitespace-nowrap">Medi AI</h1>
+            </button>
 
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
@@ -63,29 +63,29 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
               ))}
             </nav>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
               >
-                <Search size={18} />
+                <Search size={16} />
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.1, rotate: 180 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={toggle}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
               >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
               </motion.button>
               <LanguageSwitcher compact />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onGetStarted}
-                className="gradient-primary text-primary-foreground px-5 py-2 rounded-xl text-sm font-semibold shadow-glow"
+                className="gradient-primary text-primary-foreground px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-glow whitespace-nowrap"
               >
                 {t("landing.login")}
               </motion.button>

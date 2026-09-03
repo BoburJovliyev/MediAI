@@ -141,6 +141,20 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
+
+  /* App-like mobile behaviour */
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, a {
+      touch-action: manipulation;
+    }
+  }
 }
 
 @layer utilities {
