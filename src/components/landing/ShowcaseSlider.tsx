@@ -82,13 +82,13 @@ const ShowcaseSlider = () => {
   };
 
   return (
-    <section className="relative z-10 py-20 px-4">
+    <section className="relative z-10 py-12 sm:py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-5xl font-display font-bold text-foreground text-center mb-14"
+          className="text-2xl sm:text-3xl md:text-5xl font-display font-bold text-foreground text-center mb-8 sm:mb-14"
         >
           {sectionTitle[currentLang]}
         </motion.h2>
@@ -117,7 +117,7 @@ const ShowcaseSlider = () => {
                     {slide.icon}
                   </motion.div>
 
-                  <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4">
                     {slide.title[currentLang]}
                   </h3>
                   <p className="text-muted-foreground leading-relaxed mb-6">

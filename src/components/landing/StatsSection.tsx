@@ -35,7 +35,7 @@ const StatsSection = () => {
   const l = labels[lang];
 
   return (
-    <section className="py-16 px-4 relative z-10">
+    <section className="py-10 sm:py-16 px-4 relative z-10">
       <div className="max-w-5xl mx-auto">
         <div className="bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-elevated p-4 md:p-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-0 md:divide-x divide-border">

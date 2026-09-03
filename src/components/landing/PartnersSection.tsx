@@ -21,13 +21,13 @@ const PartnersSection = () => {
   const currentLang = (lang || "en") as "uz" | "ru" | "en";
 
   return (
-    <section className="relative z-10 py-16 px-4 overflow-hidden">
+    <section className="relative z-10 py-10 sm:py-16 px-4 overflow-hidden">
       <div className="max-w-5xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-2xl md:text-3xl font-display font-bold text-foreground text-center mb-10"
+          className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground text-center mb-10"
         >
           {titles[currentLang]}
         </motion.h2>
