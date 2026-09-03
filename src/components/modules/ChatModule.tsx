@@ -921,7 +921,7 @@ const ChatModule = () => {
       </div>
 
       {/* Chat area */}
-      <div className={`flex-1 flex flex-col ${!showMobileChat ? "hidden md:flex" : "flex"}`}>
+      <div className={`flex-1 min-w-0 max-w-full flex flex-col ${!showMobileChat ? "hidden md:flex" : "flex"}`}>
         {!selectedContact ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
             <MessageCircle size={48} className="mb-3 opacity-30" />
