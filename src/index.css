@@ -183,3 +183,77 @@
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
   }
 }
+
+@layer utilities {
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Sweeping light across premium cards */
+  .shine-sweep {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, hsl(var(--primary) / 0.16) 50%, transparent 65%);
+    transform: translateX(-120%);
+    transition: transform 0.9s ease;
+  }
+  .group:hover .shine-sweep {
+    transform: translateX(120%);
+  }
+
+  /* Soft aurora background blobs */
+  .aurora-blob {
+    position: absolute;
+    width: 26rem;
+    height: 26rem;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.28;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .aurora-blob--one {
+    top: -6rem;
+    left: -6rem;
+    background: hsl(var(--primary));
+    animation: aurora-drift 18s ease-in-out infinite;
+  }
+  .aurora-blob--two {
+    bottom: -8rem;
+    right: -6rem;
+    background: hsl(var(--accent));
+    animation: aurora-drift 22s ease-in-out infinite reverse;
+  }
+
+  .float-slow {
+    animation: float-y 6s ease-in-out infinite;
+  }
+
+  .card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  }
+  .card-3d:hover {
+    transform: translateY(-6px) rotateX(4deg);
+    box-shadow: var(--shadow-elevated), 0 0 30px -12px hsl(var(--primary) / 0.5);
+  }
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3rem, 2rem, 0) scale(1.15); }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob, .float-slow { animation: none; }
+  .shine-sweep { display: none; }
+}
