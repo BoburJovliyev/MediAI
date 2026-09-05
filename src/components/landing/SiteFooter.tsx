@@ -151,7 +151,7 @@ const SiteFooter = () => {
             {[
               { icon: Mail, label: "jbobur005@gmail.com", href: "mailto:jbobur005@gmail.com" },
               { icon: Phone, label: "+998 (93) 005-42-87", href: "tel:+998930054287" },
-              { icon: MapPin, label: "Toshkent, O'zbekiston", href: "/contact" },
+              { icon: MapPin, label: "Xorazm, O'zbekiston", href: "/contact" },
             ].map((c, i) => (
               <motion.a
                 key={c.label}
