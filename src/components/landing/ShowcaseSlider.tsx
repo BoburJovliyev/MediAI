@@ -99,7 +99,7 @@ const ShowcaseSlider = () => {
 
           <div className="relative z-10 grid md:grid-cols-2 gap-0 min-h-[400px]">
             {/* Text side */}
-            <div className="flex flex-col justify-center p-8 md:p-12">
+            <div className="flex flex-col justify-center p-5 sm:p-8 md:p-12">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={current}
@@ -137,7 +137,7 @@ const ShowcaseSlider = () => {
             </div>
 
             {/* Image side */}
-            <div className="relative hidden md:flex items-center justify-center p-8">
+            <div className="relative hidden md:flex items-center justify-center p-5 sm:p-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={current}

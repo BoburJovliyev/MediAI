@@ -24,7 +24,7 @@ const ContactInfoGrid = () => (
           viewport={{ once: true }}
           transition={{ delay: i * 0.07 }}
           whileHover={{ y: -5 }}
-          className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 flex flex-col items-center gap-3 shadow-lg hover:border-primary/40 transition-colors"
+          className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-2xl p-4 sm:p-6 flex flex-col items-center gap-3 shadow-lg hover:border-primary/40 transition-colors"
         >
           <div className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center text-primary-foreground shadow-glow">
             <it.icon size={24} />

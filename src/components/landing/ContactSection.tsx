@@ -72,7 +72,7 @@ const ContactSection = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="bg-card/60 backdrop-blur-xl rounded-3xl p-8 border border-border/50 shadow-elevated"
+          className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 sm:p-8 border border-border/50 shadow-elevated"
         >
           {sent ? (
             <motion.div

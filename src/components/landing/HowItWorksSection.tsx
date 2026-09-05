@@ -67,7 +67,7 @@ const HowItWorksSection = () => {
           {/* Connecting line */}
           <div className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-primary/20 via-primary/50 to-primary/20" />
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-8">
             {steps.map((step, i) => (
               <motion.div
                 key={i}

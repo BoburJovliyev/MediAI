@@ -106,7 +106,7 @@ const ContactHub = () => {
           viewport={{ once: true }}
           whileHover={{ rotateY: -1.5, rotateX: 1.5 }}
           style={{ transformStyle: "preserve-3d", perspective: 1000 }}
-          className="w-full rounded-3xl border border-primary/25 bg-card/60 backdrop-blur-2xl p-6 md:p-8 shadow-elevated"
+          className="w-full rounded-3xl border border-primary/25 bg-card/60 backdrop-blur-2xl p-4 sm:p-6 md:p-5 sm:p-8 shadow-elevated"
         >
           {sent ? (
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4 py-10">

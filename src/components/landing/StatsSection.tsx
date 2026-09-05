@@ -37,7 +37,7 @@ const StatsSection = () => {
   return (
     <section className="py-10 sm:py-16 px-4 relative z-10">
       <div className="max-w-5xl mx-auto">
-        <div className="bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-elevated p-2.5 sm:p-4 md:p-8">
+        <div className="bg-card/60 backdrop-blur-xl rounded-3xl border border-border/50 shadow-elevated p-2.5 sm:p-4 md:p-5 sm:p-8">
           <div className="grid grid-cols-4 md:grid-cols-4 gap-1 sm:gap-4 md:gap-0 md:divide-x divide-border">
             <AnimatedCounter end={stats.users > 0 ? stats.users : 150} suffix="+" icon={<Users size={24} />} label={l.users} />
             <AnimatedCounter end={stats.scans > 0 ? stats.scans : 1200} suffix="+" icon={<FileImage size={24} />} label={l.scans} />

@@ -10,7 +10,7 @@ const DepartmentsPage = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <FloatingObjects />
       <LandingHeader onGetStarted={() => navigate("/?auth=1")} />
-      <div className="pt-24"><DepartmentsSection /></div>
+      <div className="pt-16 sm:pt-24"><DepartmentsSection /></div>
       <SiteFooter />
     </div>
   );

@@ -59,7 +59,7 @@ const SiteFooter = () => {
             viewport={{ once: true }}
             whileHover={{ rotateX: 3, rotateY: -2 }}
             style={{ transformStyle: "preserve-3d", perspective: 1000 }}
-            className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/60 to-transparent p-8 md:p-10 shadow-elevated flex flex-col md:flex-row items-center justify-between gap-6"
+            className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/60 to-transparent p-5 sm:p-8 md:p-10 shadow-elevated flex flex-col md:flex-row items-center justify-between gap-6"
           >
             <div>
               <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground flex items-center gap-2">

@@ -38,7 +38,7 @@ const AnimatedCounter = ({ end, duration = 2, suffix = "", prefix = "", label, i
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="flex flex-col items-center gap-1.5 sm:gap-3 p-2.5 sm:p-6"
+      className="flex flex-col items-center gap-1.5 sm:gap-3 p-2.5 sm:p-4 sm:p-6"
     >
       <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary [&_svg]:w-5 [&_svg]:h-5 sm:[&_svg]:w-6 sm:[&_svg]:h-6">
         {icon}

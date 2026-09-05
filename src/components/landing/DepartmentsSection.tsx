@@ -37,7 +37,7 @@ const DepartmentsSection = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.4 }}
               whileHover={{ scale: 1.05, y: -5 }}
-              className="group bg-card/60 backdrop-blur-xl rounded-2xl p-6 border border-border/50 hover:border-primary/30 shadow-card hover:shadow-elevated transition-all text-center cursor-pointer"
+              className="group bg-card/60 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-border/50 hover:border-primary/30 shadow-card hover:shadow-elevated transition-all text-center cursor-pointer"
             >
               <motion.div
                 className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${dept.color} flex items-center justify-center text-primary-foreground mx-auto mb-3`}
