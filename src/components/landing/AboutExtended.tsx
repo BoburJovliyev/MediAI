@@ -92,7 +92,7 @@ const AboutExtended = () => (
               transition={{ delay: i * 0.07 }}
               whileHover={{ y: -6, rotateX: 5 }}
               style={{ transformStyle: "preserve-3d", perspective: 900 }}
-              className="group rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-4 sm:p-6 shadow-card hover:border-primary/40 transition-colors"
+              className="group card-3d relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-4 sm:p-6 shadow-card hover:border-primary/40 transition-colors"
             >
               <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <c.icon size={20} />

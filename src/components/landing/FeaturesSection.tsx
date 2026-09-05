@@ -35,7 +35,7 @@ const FeaturesSection = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
               whileHover={{ y: -8 }}
-              className="group relative bg-card/60 backdrop-blur-xl rounded-3xl p-7 border border-border/50 shadow-card hover:shadow-elevated transition-all overflow-hidden"
+              className="group card-3d relative bg-card/60 backdrop-blur-xl rounded-3xl p-7 border border-border/50 shadow-card hover:shadow-elevated transition-all overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative z-10">
