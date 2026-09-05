@@ -72,7 +72,7 @@ const TestimonialsSection = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
               whileHover={{ y: -6 }}
-              className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-lg"
+              className="bg-card/60 backdrop-blur-xl border border-border/50 rounded-2xl p-4 sm:p-6 shadow-lg"
             >
               <div className="flex items-center gap-3 mb-4">
                 <img

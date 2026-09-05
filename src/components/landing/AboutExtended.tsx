@@ -43,7 +43,7 @@ const AboutExtended = () => (
             transition={{ delay: i * 0.12 }}
             whileHover={{ y: -8, rotateY: 4 }}
             style={{ transformStyle: "preserve-3d", perspective: 900 }}
-            className="rounded-3xl border border-border/50 bg-card/60 backdrop-blur-xl p-8 shadow-card hover:shadow-elevated transition-shadow"
+            className="rounded-3xl border border-border/50 bg-card/60 backdrop-blur-xl p-5 sm:p-8 shadow-card hover:shadow-elevated transition-shadow"
           >
             <div className="w-14 h-14 rounded-2xl gradient-primary text-primary-foreground flex items-center justify-center shadow-glow mb-5">
               <v.icon size={22} />
@@ -64,7 +64,7 @@ const AboutExtended = () => (
             viewport={{ once: true }}
             transition={{ delay: i * 0.08, type: "spring", stiffness: 140 }}
             whileHover={{ y: -6 }}
-            className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6 text-center backdrop-blur-xl"
+            className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-4 sm:p-6 text-center backdrop-blur-xl"
           >
             <p className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
@@ -92,7 +92,7 @@ const AboutExtended = () => (
               transition={{ delay: i * 0.07 }}
               whileHover={{ y: -6, rotateX: 5 }}
               style={{ transformStyle: "preserve-3d", perspective: 900 }}
-              className="group rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 shadow-card hover:border-primary/40 transition-colors"
+              className="group rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-4 sm:p-6 shadow-card hover:border-primary/40 transition-colors"
             >
               <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <c.icon size={20} />
@@ -127,7 +127,7 @@ const AboutExtended = () => (
                 className={`relative md:w-1/2 ${i % 2 ? "md:ml-auto md:pl-10" : "md:pr-10 md:text-right"}`}
               >
                 <span className={`absolute top-6 w-3 h-3 rounded-full gradient-primary shadow-glow -left-[26px] md:left-auto ${i % 2 ? "md:-left-1.5" : "md:-right-1.5"}`} />
-                <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-card">
+                <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-4 sm:p-6 shadow-card">
                   <span className="text-xs font-semibold text-primary">{t.year}</span>
                   <h4 className="font-semibold text-foreground mt-1">{t.title}</h4>
                   <p className="text-sm text-muted-foreground mt-1.5">{t.desc}</p>
@@ -143,7 +143,7 @@ const AboutExtended = () => (
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="rounded-3xl border border-accent/30 bg-accent/5 p-8 text-center backdrop-blur-xl"
+        className="rounded-3xl border border-accent/30 bg-accent/5 p-5 sm:p-8 text-center backdrop-blur-xl"
       >
         <Sparkles className="mx-auto text-accent mb-3" size={26} />
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
