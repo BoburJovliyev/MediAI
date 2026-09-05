@@ -1,53 +1,204 @@
-import { motion } from "framer-motion";
-import { Brain, Activity, FileImage, Dumbbell, Users, Shield } from "lucide-react";
+import { useState, useRef, MouseEvent } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import {
+  Brain,
+  HeartPulse,
+  ScanLine,
+  Salad,
+  Stethoscope,
+  Siren,
+  Star,
+  Users,
+  ChevronDown,
+  Check,
+  Sparkles,
+} from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { departments, deptCopy, DepartmentInfo } from "@/data/departments";
 
-const DepartmentsSection = () => {
-  const { t } = useLanguage();
+const icons: Record<string, React.ElementType> = {
+  Brain,
+  HeartPulse,
+  ScanLine,
+  Salad,
+  Stethoscope,
+  Siren,
+};
 
-  const departments = [
-    { icon: <Brain size={28} />, name: t("landing.dept.neurology"), color: "from-medical-purple to-medical-purple/70" },
-    { icon: <Activity size={28} />, name: t("landing.dept.cardiology"), color: "from-medical-red to-medical-red/70" },
-    { icon: <FileImage size={28} />, name: t("landing.dept.radiology"), color: "from-primary to-primary/70" },
-    { icon: <Dumbbell size={28} />, name: t("landing.dept.rehabilitation"), color: "from-accent to-accent/70" },
-    { icon: <Users size={28} />, name: t("landing.dept.general"), color: "from-medical-teal to-medical-teal/70" },
-    { icon: <Shield size={28} />, name: t("landing.dept.emergency"), color: "from-medical-orange to-medical-orange/70" },
-  ];
+const DeptCard = ({
+  dept,
+  index,
+  lang,
+  open,
+  onToggle,
+}: {
+  dept: DepartmentInfo;
+  index: number;
+  lang: "uz" | "ru" | "en";
+  open: boolean;
+  onToggle: () => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+  const Icon = icons[dept.icon] ?? Brain;
+
+  const handleMove = (e: MouseEvent<HTMLDivElement>) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
+  };
 
   return (
-    <section id="departments" className="py-12 sm:py-20 px-4 relative z-10">
-      <div className="max-w-5xl mx-auto">
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40, rotateX: -12 }}
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ delay: index * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      onMouseMove={handleMove}
+      onMouseLeave={() => {
+        mx.set(0);
+        my.set(0);
+      }}
+      style={{ rotateX, rotateY, transformPerspective: 1000 }}
+      className="group relative"
+    >
+      <div
+        className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-60 blur-lg transition-opacity duration-500`}
+        aria-hidden
+      />
+      <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/70 backdrop-blur-2xl shadow-card group-hover:shadow-elevated transition-shadow duration-500 p-4 sm:p-6">
+        <div className="shine-sweep" aria-hidden />
+
+        <div className="flex items-start gap-3 sm:gap-4">
+          <motion.div
+            whileHover={{ rotateY: 180 }}
+            transition={{ duration: 0.6 }}
+            style={{ transformStyle: "preserve-3d", transform: "translateZ(40px)" }}
+            className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${dept.color} flex items-center justify-center text-primary-foreground shadow-glow`}
+          >
+            <Icon size={24} />
+          </motion.div>
+          <div className="min-w-0">
+            <h3 className="text-base sm:text-lg font-display font-bold text-foreground truncate">{dept.name[lang]}</h3>
+            <p className="text-[11px] sm:text-sm text-muted-foreground leading-snug">{dept.tagline[lang]}</p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
+          {dept.description[lang]}
+        </p>
+
+        <div className="mt-4 grid grid-cols-3 gap-1.5 text-center">
+          <div className="rounded-xl bg-secondary/60 py-1.5">
+            <div className="text-sm font-bold text-foreground">{dept.doctors}</div>
+            <div className="text-[10px] text-muted-foreground">{deptCopy.doctors[lang]}</div>
+          </div>
+          <div className="rounded-xl bg-secondary/60 py-1.5">
+            <div className="text-sm font-bold text-foreground flex items-center justify-center gap-1">
+              <Users size={11} /> {dept.patients}
+            </div>
+            <div className="text-[10px] text-muted-foreground">{deptCopy.patients[lang]}</div>
+          </div>
+          <div className="rounded-xl bg-secondary/60 py-1.5">
+            <div className="text-sm font-bold text-foreground flex items-center justify-center gap-1">
+              <Star size={11} className="fill-current text-medical-orange" /> {dept.rating}
+            </div>
+            <div className="text-[10px] text-muted-foreground">rating</div>
+          </div>
+        </div>
+
+        <button
+          onClick={onToggle}
+          className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border/60 py-2 text-xs sm:text-sm font-semibold text-foreground hover:bg-secondary/70 transition-colors"
+        >
+          {deptCopy.open[lang]}
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.3 }}>
+            <ChevronDown size={15} />
+          </motion.span>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
+                  {deptCopy.services[lang]}
+                </div>
+                <ul className="space-y-1.5">
+                  {dept.services[lang].map((s, i) => (
+                    <motion.li
+                      key={s}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="flex items-center gap-2 text-xs sm:text-sm text-foreground"
+                    >
+                      <span className="w-4 h-4 rounded-md bg-primary/15 text-primary flex items-center justify-center">
+                        <Check size={11} />
+                      </span>
+                      {s}
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+
+const DepartmentsSection = () => {
+  const { lang } = useLanguage();
+  const [open, setOpen] = useState<string | null>(null);
+  const l = (lang as "uz" | "ru" | "en") ?? "uz";
+
+  return (
+    <section id="departments" className="relative z-10 py-12 sm:py-24 px-4">
+      <div className="aurora-blob aurora-blob--one" aria-hidden />
+      <div className="aurora-blob aurora-blob--two" aria-hidden />
+
+      <div className="max-w-6xl mx-auto relative">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
           className="text-center mb-8 sm:mb-14"
         >
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold text-foreground mb-4">
-            {t("landing.departments.title")}
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] sm:text-sm font-medium mb-4">
+            <Sparkles size={14} /> Medi AI
+          </span>
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold text-gradient-primary mb-3">
+            {deptCopy.heading[l]}
           </h2>
+          <p className="text-xs sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            {deptCopy.sub[l]}
+          </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {departments.map((dept, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.85 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.4 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="group bg-card/60 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-border/50 hover:border-primary/30 shadow-card hover:shadow-elevated transition-all text-center cursor-pointer"
-            >
-              <motion.div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${dept.color} flex items-center justify-center text-primary-foreground mx-auto mb-3`}
-                whileHover={{ rotate: 10 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                {dept.icon}
-              </motion.div>
-              <h3 className="text-sm md:text-base font-semibold text-foreground">{dept.name}</h3>
-            </motion.div>
+            <DeptCard
+              key={dept.id}
+              dept={dept}
+              index={i}
+              lang={l}
+              open={open === dept.id}
+              onToggle={() => setOpen(open === dept.id ? null : dept.id)}
+            />
           ))}
         </div>
       </div>
