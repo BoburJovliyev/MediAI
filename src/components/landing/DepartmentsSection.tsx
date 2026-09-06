@@ -12,6 +12,9 @@ import {
   ChevronDown,
   Check,
   Sparkles,
+  Activity,
+  Clock3,
+  ShieldCheck,
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { departments, deptCopy, DepartmentInfo } from "@/data/departments";
@@ -24,6 +27,74 @@ const icons: Record<string, React.ElementType> = {
   Stethoscope,
   Siren,
 };
+
+const departmentDetails = {
+  uz: {
+    eyebrow: "Yagona raqamli tibbiyot muhiti",
+    title: "Sog‘lig‘ingizga har tomonlama yondashuv",
+    description:
+      "Medi AI bo‘limlari bir-biri bilan uzviy bog‘langan: dastlabki murojaatdan boshlab tahlil, shifokor konsultatsiyasi, kundalik kuzatuv va keyingi tavsiyalargacha bo‘lgan jarayon bitta xavfsiz tizimda davom etadi.",
+    items: [
+      {
+        title: "Aniq va tezkor tahlil",
+        text: "Tibbiy tasvirlar, simptomlar va kundalik ko‘rsatkichlar zamonaviy AI yordamida tahlil qilinib, shifokor uchun tushunarli ma’lumotga aylantiriladi.",
+      },
+      {
+        title: "Doimiy kuzatuv",
+        text: "Salomatlik holatidagi muhim o‘zgarishlar, qabul va tavsiyalar tarixi bir joyda saqlanadi hamda kerakli paytda eslatib turiladi.",
+      },
+      {
+        title: "Ishonchli himoya",
+        text: "Shaxsiy va tibbiy ma’lumotlar maxfiylik tamoyillari asosida himoyalanadi, natijalar esa faqat ruxsat berilgan foydalanuvchilarga ko‘rinadi.",
+      },
+    ],
+    note: "Medi AI shifokor o‘rnini bosmaydi — u to‘g‘ri qaror qabul qilish va mutaxassisga o‘z vaqtida murojaat qilishga yordam beradi.",
+  },
+  ru: {
+    eyebrow: "Единая цифровая медицинская среда",
+    title: "Комплексный подход к вашему здоровью",
+    description:
+      "Отделения Medi AI связаны между собой: первичное обращение, анализ, консультация врача, ежедневное наблюдение и дальнейшие рекомендации проходят в единой защищённой системе.",
+    items: [
+      {
+        title: "Точный и быстрый анализ",
+        text: "Медицинские изображения, симптомы и ежедневные показатели анализируются с помощью современного ИИ и превращаются в понятные врачу данные.",
+      },
+      {
+        title: "Постоянное наблюдение",
+        text: "Важные изменения здоровья, история приёмов и рекомендаций хранятся в одном месте и напоминают о себе в нужный момент.",
+      },
+      {
+        title: "Надёжная защита",
+        text: "Личные и медицинские данные защищены принципами конфиденциальности, а результаты доступны только авторизованным пользователям.",
+      },
+    ],
+    note: "Medi AI не заменяет врача — платформа помогает принимать взвешенные решения и вовремя обращаться к специалисту.",
+  },
+  en: {
+    eyebrow: "One connected digital care environment",
+    title: "A complete approach to your health",
+    description:
+      "Medi AI departments work together: initial assessment, analysis, doctor consultation, daily monitoring and follow-up guidance continue within one secure system.",
+    items: [
+      {
+        title: "Fast, precise insights",
+        text: "Medical images, symptoms and daily health indicators are analysed with modern AI and transformed into clear information for clinicians.",
+      },
+      {
+        title: "Continuous monitoring",
+        text: "Important health changes, appointments and recommendations stay organised in one place, with timely reminders when they matter.",
+      },
+      {
+        title: "Trusted protection",
+        text: "Personal and medical information is protected by privacy-first safeguards, and results remain visible only to authorised users.",
+      },
+    ],
+    note: "Medi AI does not replace a doctor — it helps you make informed decisions and seek professional care at the right time.",
+  },
+};
+
+const detailIcons = [Activity, Clock3, ShieldCheck];
 
 const DeptCard = ({
   dept,
@@ -201,6 +272,67 @@ const DepartmentsSection = () => {
             />
           ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 36 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mt-14 sm:mt-24 pt-10 sm:pt-16 border-t border-border/60"
+        >
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 sm:gap-12 lg:gap-16 items-start">
+            <div className="lg:sticky lg:top-28">
+              <span className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-primary">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                {departmentDetails[l].eyebrow}
+              </span>
+              <h3 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground leading-tight">
+                {departmentDetails[l].title}
+              </h3>
+              <p className="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                {departmentDetails[l].description}
+              </p>
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              {departmentDetails[l].items.map((item, index) => {
+                const DetailIcon = detailIcons[index] ?? Activity;
+                return (
+                  <motion.article
+                    key={item.title}
+                    initial={{ opacity: 0, x: 24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.55 }}
+                    whileHover={{ x: 6 }}
+                    className="group flex gap-4 sm:gap-5 rounded-2xl border border-border/50 bg-card/45 p-4 sm:p-5 backdrop-blur-xl shadow-card transition-colors hover:border-primary/30"
+                  >
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                      <DetailIcon size={21} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-bold text-foreground">{item.title}</h4>
+                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted-foreground">{item.text}</p>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </div>
+          </div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="mt-8 sm:mt-12 border-l-2 border-primary pl-4 text-xs sm:text-sm italic leading-relaxed text-muted-foreground"
+          >
+            {departmentDetails[l].note}
+          </motion.p>
+        </motion.div>
       </div>
     </section>
   );
