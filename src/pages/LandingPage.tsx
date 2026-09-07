@@ -1,5 +1,6 @@
 import FloatingObjects from "@/components/landing/FloatingObjects";
 import SiteFooter from "@/components/landing/SiteFooter";
+import ScrollProgress from "@/components/shared/ScrollProgress";
 
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
