@@ -241,6 +241,66 @@
     transform: translateY(-6px) rotateX(4deg);
     box-shadow: var(--shadow-elevated), 0 0 30px -12px hsl(var(--primary) / 0.5);
   }
+
+  /* Premium glowing border on hover */
+  .glow-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .glow-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.7), transparent 45%, hsl(var(--accent) / 0.6));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .glow-border:hover::before {
+    opacity: 1;
+  }
+
+  /* Depth layer for premium panels */
+  .depth-panel {
+    background: linear-gradient(160deg, hsl(var(--card) / 0.85), hsl(var(--card) / 0.55));
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-elevated), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+
+  /* Subtle animated grid for section backdrops */
+  .grid-backdrop {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.35) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .tilt-hover {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-style: preserve-3d;
+  }
+  .tilt-hover:hover {
+    transform: rotateX(6deg) rotateY(-6deg) translateZ(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-hover:hover,
+  .card-3d:hover {
+    transform: none;
+  }
 }
 
 @keyframes aurora-drift {

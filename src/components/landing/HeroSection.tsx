@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Activity, Sparkles } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { lazy, Suspense } from "react";
+
+const HeroScene = lazy(() => import("@/components/three/HeroScene"));
 
 interface HeroSectionProps {
   onGetStarted: () => void;
@@ -11,6 +14,15 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
 
   return (
     <section id="home" className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 overflow-hidden">
+      {/* Live 3D DNA helix backdrop */}
+      <div className="absolute inset-0 opacity-40 sm:opacity-60 [mask-image:radial-gradient(circle_at_70%_45%,#000_35%,transparent_75%)]">
+        <Suspense fallback={null}>
+          <HeroScene />
+        </Suspense>
+      </div>
+      <div className="aurora-blob aurora-blob--one" />
+      <div className="aurora-blob aurora-blob--two" />
+
       <div className="max-w-5xl mx-auto text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
