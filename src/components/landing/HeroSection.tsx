@@ -15,7 +15,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   return (
     <section id="home" className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 overflow-hidden">
       {/* Live 3D DNA helix backdrop */}
-      <div className="absolute inset-0 opacity-70 sm:opacity-100">
+      <div className="absolute inset-0 opacity-40 sm:opacity-60 [mask-image:radial-gradient(circle_at_70%_45%,#000_35%,transparent_75%)]">
         <Suspense fallback={null}>
           <HeroScene />
         </Suspense>

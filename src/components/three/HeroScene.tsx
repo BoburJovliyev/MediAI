@@ -23,7 +23,7 @@ function Helix() {
   const radius = 1.15;
 
   return (
-    <group ref={group} rotation-z={0.18}>
+    <group ref={group} rotation-z={0.18} position={[2.7, -0.3, -1.2]} scale={0.85}>
       {nodes.map(({ y, angle }, i) => {
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
