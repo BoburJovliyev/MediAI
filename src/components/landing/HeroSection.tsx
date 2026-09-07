@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Activity, Sparkles } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { lazy, Suspense } from "react";
+
+const HeroScene = lazy(() => import("@/components/three/HeroScene"));
 
 interface HeroSectionProps {
   onGetStarted: () => void;
