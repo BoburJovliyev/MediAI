@@ -25,6 +25,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <ScrollProgress />
       <FloatingObjects />
       <LandingHeader onGetStarted={onGetStarted} />
       <HeroSection onGetStarted={onGetStarted} />
