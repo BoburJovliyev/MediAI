@@ -14,6 +14,15 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
 
   return (
     <section id="home" className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 overflow-hidden">
+      {/* Live 3D DNA helix backdrop */}
+      <div className="absolute inset-0 opacity-70 sm:opacity-100">
+        <Suspense fallback={null}>
+          <HeroScene />
+        </Suspense>
+      </div>
+      <div className="aurora-blob aurora-blob--one" />
+      <div className="aurora-blob aurora-blob--two" />
+
       <div className="max-w-5xl mx-auto text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
