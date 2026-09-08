@@ -39,12 +39,12 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
             <button onClick={() => navigate("/")} className="flex items-center gap-2 min-w-0 shrink">
               <motion.img
                 src={logo}
-                alt="Medi AI"
+                alt="AI Medic"
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shrink-0"
                 whileHover={{ rotate: 10, scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 300 }}
               />
-              <h1 className="text-base sm:text-xl font-display font-bold text-foreground whitespace-nowrap">Medi AI</h1>
+              <h1 className="text-base sm:text-xl font-display font-bold text-foreground whitespace-nowrap">AI Medic</h1>
             </button>
 
             <nav className="hidden md:flex items-center gap-1">

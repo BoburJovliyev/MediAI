@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Medi AI Platform Security & E2E Tests', () => {
+test.describe('AI Medic Platform Security & E2E Tests', () => {
 
   // IMPORTANT: For true authenticated E2E testing, you should log in 
   // test user accounts before running the assertions. 

@@ -53,7 +53,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Dashboard
     "dash.welcome": "Xush kelibsiz",
-    "dash.subtitle": "Medi AI diagnostika platformasi",
+    "dash.subtitle": "AI Medic diagnostika platformasi",
     "dash.analyses": "Tahlillar",
     "dash.diagnoses": "Tashxislar",
     "dash.patients": "Bemorlar",
@@ -128,7 +128,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.nav.contact": "Aloqa",
     "landing.searchPlaceholder": "Qidirish...",
     "landing.about.title": "Biz haqimizda",
-    "landing.about.desc": "Medi AI — sun'iy intellekt yordamida tibbiy diagnostika va maslahatni yangi darajaga ko'taruvchi platforma.",
+    "landing.about.desc": "AI Medic — sun'iy intellekt yordamida tibbiy diagnostika va maslahatni yangi darajaga ko'taruvchi platforma.",
     "landing.about.ai": "AI texnologiyasi",
     "landing.about.aiDesc": "Eng ilg'or sun'iy intellekt modellari asosida aniq diagnostika.",
     "landing.about.secure": "Xavfsizlik",
@@ -201,7 +201,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "nav.lightMode": "Дневной режим",
 
     "dash.welcome": "Добро пожаловать",
-    "dash.subtitle": "Платформа диагностики Medi AI",
+    "dash.subtitle": "Платформа диагностики AI Medic",
     "dash.analyses": "Анализы",
     "dash.diagnoses": "Диагнозы",
     "dash.patients": "Пациенты",
@@ -272,7 +272,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.nav.contact": "Контакты",
     "landing.searchPlaceholder": "Поиск...",
     "landing.about.title": "О нас",
-    "landing.about.desc": "Medi AI — платформа, выводящая медицинскую диагностику на новый уровень с помощью ИИ.",
+    "landing.about.desc": "AI Medic — платформа, выводящая медицинскую диагностику на новый уровень с помощью ИИ.",
     "landing.about.ai": "Технология ИИ",
     "landing.about.aiDesc": "Точная диагностика на основе передовых моделей ИИ.",
     "landing.about.secure": "Безопасность",
@@ -345,7 +345,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "nav.lightMode": "Light Mode",
 
     "dash.welcome": "Welcome",
-    "dash.subtitle": "Medi AI diagnostics platform",
+    "dash.subtitle": "AI Medic diagnostics platform",
     "dash.analyses": "Analyses",
     "dash.diagnoses": "Diagnoses",
     "dash.patients": "Patients",
@@ -416,7 +416,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "landing.nav.contact": "Contact",
     "landing.searchPlaceholder": "Search...",
     "landing.about.title": "About Us",
-    "landing.about.desc": "Medi AI — a platform elevating medical diagnostics with artificial intelligence.",
+    "landing.about.desc": "AI Medic — a platform elevating medical diagnostics with artificial intelligence.",
     "landing.about.ai": "AI Technology",
     "landing.about.aiDesc": "Precise diagnostics powered by cutting-edge AI models.",
     "landing.about.secure": "Security",

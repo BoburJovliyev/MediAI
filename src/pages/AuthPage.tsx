@@ -73,8 +73,8 @@ const AuthPage = ({ onAuth, onBack }: AuthPageProps) => {
         </div>
 
         <div className="text-center mb-8">
-          <img src={logo} alt="Medi AI" className="w-16 h-16 rounded-2xl mx-auto mb-4 object-cover" />
-          <h1 className="text-3xl font-display font-bold text-foreground">Medi AI</h1>
+          <img src={logo} alt="AI Medic" className="w-16 h-16 rounded-2xl mx-auto mb-4 object-cover" />
+          <h1 className="text-3xl font-display font-bold text-foreground">AI Medic</h1>
           <p className="text-muted-foreground mt-1">Intelligent Healthcare Platform</p>
         </div>
 

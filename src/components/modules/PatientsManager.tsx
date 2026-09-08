@@ -254,7 +254,7 @@ th { background: #f1f5f9; font-weight: bold; }
 </style>
 </head>
 <body>
-<h1>🏥 Medi AI - Bemor Hisoboti</h1>
+<h1>🏥 AI Medic - Bemor Hisoboti</h1>
 <div class="patient-info">
   <p><strong>Bemor:</strong> ${selectedPatient.full_name}</p>
   <p><strong>Yosh:</strong> ${selectedPatient.age || "—"} | <strong>Jins:</strong> ${selectedPatient.gender === "male" ? "Erkak" : selectedPatient.gender === "female" ? "Ayol" : "—"}</p>
@@ -311,7 +311,7 @@ ${history.rehabs.length > 0 ? `
 </div>
 
 <div class="footer">
-  Medi AI © ${new Date().getFullYear()} | Hisobot yaratilgan: ${format(new Date(), "dd.MM.yyyy HH:mm")}
+  AI Medic © ${new Date().getFullYear()} | Hisobot yaratilgan: ${format(new Date(), "dd.MM.yyyy HH:mm")}
 </div>
 </body>
 </html>`;

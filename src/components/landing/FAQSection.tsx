@@ -5,7 +5,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 const faqData = {
   uz: [
-    { q: "Medi AI qanday ishlaydi?", a: "Medi AI sun'iy intellekt yordamida rentgen, MRT va UZI tasvirlarini tahlil qiladi, tashxis qo'yishda yordam beradi va davolash bo'yicha tavsiyalar beradi." },
+    { q: "AI Medic qanday ishlaydi?", a: "AI Medic sun'iy intellekt yordamida rentgen, MRT va UZI tasvirlarini tahlil qiladi, tashxis qo'yishda yordam beradi va davolash bo'yicha tavsiyalar beradi." },
     { q: "Platformadan foydalanish bepulmi?", a: "Ha, asosiy funksiyalar bepul. Har bir foydalanuvchi kuniga 5 ta AI maslahatlash imkoniyatiga ega." },
     { q: "Ma'lumotlarim xavfsizmi?", a: "Albatta. Barcha ma'lumotlar shifrlangan va HIPAA standartlariga mos tarzda saqlanadi." },
     { q: "Doktor bilan qanday bog'lanaman?", a: "Ro'yxatdan o'tib, Shifokorlar bo'limidan istagan doktoringizni tanlang va chat orqali bog'laning." },
@@ -13,7 +13,7 @@ const faqData = {
     { q: "Mobil qurilmada ishlasa bo'ladimi?", a: "Ha, platforma to'liq responsive bo'lib, barcha qurilmalarda mukammal ishlaydi." },
   ],
   ru: [
-    { q: "Как работает Medi AI?", a: "Medi AI анализирует рентген, МРТ и УЗИ изображения с помощью искусственного интеллекта, помогает в диагностике и даёт рекомендации по лечению." },
+    { q: "Как работает AI Medic?", a: "AI Medic анализирует рентген, МРТ и УЗИ изображения с помощью искусственного интеллекта, помогает в диагностике и даёт рекомендации по лечению." },
     { q: "Бесплатно ли использование платформы?", a: "Да, основные функции бесплатны. Каждый пользователь получает 5 AI-консультаций в день." },
     { q: "Мои данные в безопасности?", a: "Конечно. Все данные зашифрованы и хранятся в соответствии со стандартами HIPAA." },
     { q: "Как связаться с врачом?", a: "Зарегистрируйтесь, выберите врача в разделе Врачи и свяжитесь через чат." },
@@ -21,7 +21,7 @@ const faqData = {
     { q: "Работает ли на мобильных устройствах?", a: "Да, платформа полностью адаптивна и отлично работает на всех устройствах." },
   ],
   en: [
-    { q: "How does Medi AI work?", a: "Medi AI analyzes X-ray, MRI, and ultrasound images using artificial intelligence, assists in diagnosis, and provides treatment recommendations." },
+    { q: "How does AI Medic work?", a: "AI Medic analyzes X-ray, MRI, and ultrasound images using artificial intelligence, assists in diagnosis, and provides treatment recommendations." },
     { q: "Is the platform free to use?", a: "Yes, basic features are free. Each user gets 5 AI consultations per day." },
     { q: "Is my data secure?", a: "Absolutely. All data is encrypted and stored in compliance with HIPAA standards." },
     { q: "How do I contact a doctor?", a: "Register, select a doctor from the Doctors section, and connect via chat." },

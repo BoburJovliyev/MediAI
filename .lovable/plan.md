@@ -1,4 +1,4 @@
-# Medi AI — Mukammallashtirish rejasi
+# AI Medic — Mukammallashtirish rejasi
 
 Siz tanlagan to'rt yo'nalishni bosqichlarga ajratdim. Har bir bosqich mustaqil — ketma-ket yoki kerakligini tanlab amalga oshirsa bo'ladi.
 

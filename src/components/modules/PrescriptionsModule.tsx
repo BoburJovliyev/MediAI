@@ -97,7 +97,7 @@ const PrescriptionsModule = () => {
       .box{border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-top:20px}
       .foot{margin-top:40px;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}</style>
       </head><body>
-      <h1>Medi AI — Retsept</h1>
+      <h1>AI Medic — Retsept</h1>
       <div class="row"><span class="label">Shifokor:</span> <span class="val">${doctor?.full_name || "—"}${doctor?.specialty ? " (" + doctor.specialty + ")" : ""}</span></div>
       <div class="row"><span class="label">Bemor:</span> <span class="val">${patient?.full_name || "—"}</span></div>
       <div class="row"><span class="label">Sana:</span> <span class="val">${format(new Date(p.created_at), "dd.MM.yyyy")}</span></div>
@@ -107,7 +107,7 @@ const PrescriptionsModule = () => {
         ${p.duration ? `<div class="row"><span class="label">Davomiylik:</span> <span class="val">${p.duration}</span></div>` : ""}
         ${p.instructions ? `<div class="row"><span class="label">Ko'rsatma:</span> <span class="val">${p.instructions}</span></div>` : ""}
       </div>
-      <div class="foot">Ushbu retsept Medi AI platformasi orqali yaratilgan. Dori qabul qilishdan oldin shifokoringiz bilan maslahatlashing.</div>
+      <div class="foot">Ushbu retsept AI Medic platformasi orqali yaratilgan. Dori qabul qilishdan oldin shifokoringiz bilan maslahatlashing.</div>
       </body></html>`);
     w.document.close();
     w.print();

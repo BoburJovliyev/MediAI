@@ -33,7 +33,7 @@ const departmentDetails = {
     eyebrow: "Yagona raqamli tibbiyot muhiti",
     title: "Sog‘lig‘ingizga har tomonlama yondashuv",
     description:
-      "Medi AI bo‘limlari bir-biri bilan uzviy bog‘langan: dastlabki murojaatdan boshlab tahlil, shifokor konsultatsiyasi, kundalik kuzatuv va keyingi tavsiyalargacha bo‘lgan jarayon bitta xavfsiz tizimda davom etadi.",
+      "AI Medic bo‘limlari bir-biri bilan uzviy bog‘langan: dastlabki murojaatdan boshlab tahlil, shifokor konsultatsiyasi, kundalik kuzatuv va keyingi tavsiyalargacha bo‘lgan jarayon bitta xavfsiz tizimda davom etadi.",
     items: [
       {
         title: "Aniq va tezkor tahlil",
@@ -48,13 +48,13 @@ const departmentDetails = {
         text: "Shaxsiy va tibbiy ma’lumotlar maxfiylik tamoyillari asosida himoyalanadi, natijalar esa faqat ruxsat berilgan foydalanuvchilarga ko‘rinadi.",
       },
     ],
-    note: "Medi AI shifokor o‘rnini bosmaydi — u to‘g‘ri qaror qabul qilish va mutaxassisga o‘z vaqtida murojaat qilishga yordam beradi.",
+    note: "AI Medic shifokor o‘rnini bosmaydi — u to‘g‘ri qaror qabul qilish va mutaxassisga o‘z vaqtida murojaat qilishga yordam beradi.",
   },
   ru: {
     eyebrow: "Единая цифровая медицинская среда",
     title: "Комплексный подход к вашему здоровью",
     description:
-      "Отделения Medi AI связаны между собой: первичное обращение, анализ, консультация врача, ежедневное наблюдение и дальнейшие рекомендации проходят в единой защищённой системе.",
+      "Отделения AI Medic связаны между собой: первичное обращение, анализ, консультация врача, ежедневное наблюдение и дальнейшие рекомендации проходят в единой защищённой системе.",
     items: [
       {
         title: "Точный и быстрый анализ",
@@ -69,13 +69,13 @@ const departmentDetails = {
         text: "Личные и медицинские данные защищены принципами конфиденциальности, а результаты доступны только авторизованным пользователям.",
       },
     ],
-    note: "Medi AI не заменяет врача — платформа помогает принимать взвешенные решения и вовремя обращаться к специалисту.",
+    note: "AI Medic не заменяет врача — платформа помогает принимать взвешенные решения и вовремя обращаться к специалисту.",
   },
   en: {
     eyebrow: "One connected digital care environment",
     title: "A complete approach to your health",
     description:
-      "Medi AI departments work together: initial assessment, analysis, doctor consultation, daily monitoring and follow-up guidance continue within one secure system.",
+      "AI Medic departments work together: initial assessment, analysis, doctor consultation, daily monitoring and follow-up guidance continue within one secure system.",
     items: [
       {
         title: "Fast, precise insights",
@@ -90,7 +90,7 @@ const departmentDetails = {
         text: "Personal and medical information is protected by privacy-first safeguards, and results remain visible only to authorised users.",
       },
     ],
-    note: "Medi AI does not replace a doctor — it helps you make informed decisions and seek professional care at the right time.",
+    note: "AI Medic does not replace a doctor — it helps you make informed decisions and seek professional care at the right time.",
   },
 };
 
@@ -250,7 +250,7 @@ const DepartmentsSection = () => {
           className="text-center mb-8 sm:mb-14"
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] sm:text-sm font-medium mb-4">
-            <Sparkles size={14} /> Medi AI
+            <Sparkles size={14} /> AI Medic
           </span>
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold text-gradient-primary mb-3">
             {deptCopy.heading[l]}
