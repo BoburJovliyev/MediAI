@@ -117,6 +117,20 @@ export const FoodTrend = ({ refreshKey }: { refreshKey: number }) => {
 
   useEffect(() => { load(); }, [load, refreshKey]);
 
+  // Bazadagi o'zgarishlarni real vaqtda kuzatib, trendni avtomatik yangilash
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`food_logs_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "food_logs", filter: `user_id=eq.${user.id}` },
+        () => load()
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, load]);
+
   // group by day
   const byDay = rows.reduce<Record<string, { day: string; kkal: number; count: number }>>((acc, r) => {
     const d = new Date(r.created_at);
