@@ -126,7 +126,7 @@ const AIChatModule = () => {
       id: "welcome",
       role: "assistant",
       content:
-        "Assalomu alaykum! 👋🩺\n\nMen **Medi AI** — sizning shaxsiy tibbiy yordamchingizman.\n\nSog'liq bo'yicha har qanday savolingizga ilmiy dalillarga asoslangan javob berishga tayyorman. 💡\n\n**Qanday yordam bera olaman?**\n- 🤒 Kasallik belgilari haqida\n- 💊 Dori-darmonlar haqida\n- 🥗 Sog'lom ovqatlanish maslahatari\n- 🏥 Qaysi shifokorga murojaat qilish kerakligi\n\nSavolingizni yozing, birga hal qilamiz! 🤝",
+        "Assalomu alaykum! 👋🩺\n\nMen **AI Medic** — sizning shaxsiy tibbiy yordamchingizman.\n\nSog'liq bo'yicha har qanday savolingizga ilmiy dalillarga asoslangan javob berishga tayyorman. 💡\n\n**Qanday yordam bera olaman?**\n- 🤒 Kasallik belgilari haqida\n- 💊 Dori-darmonlar haqida\n- 🥗 Sog'lom ovqatlanish maslahatari\n- 🏥 Qaysi shifokorga murojaat qilish kerakligi\n\nSavolingizni yozing, birga hal qilamiz! 🤝",
       timestamp: new Date(),
     },
   ]);
@@ -201,7 +201,7 @@ const AIChatModule = () => {
         id: "welcome",
         role: "assistant",
         content:
-          "Assalomu alaykum! 👋🩺\n\nMen **Medi AI** — sizning shaxsiy tibbiy yordamchingizman.\n\nSog'liq bo'yicha har qanday savolingizga ilmiy dalillarga asoslangan javob berishga tayyorman. 💡\n\nSavolingizni yozing, birga hal qilamiz! 🤝",
+          "Assalomu alaykum! 👋🩺\n\nMen **AI Medic** — sizning shaxsiy tibbiy yordamchingizman.\n\nSog'liq bo'yicha har qanday savolingizga ilmiy dalillarga asoslangan javob berishga tayyorman. 💡\n\nSavolingizni yozing, birga hal qilamiz! 🤝",
         timestamp: new Date(),
       },
     ]);
@@ -230,7 +230,7 @@ const AIChatModule = () => {
             </h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Stethoscope size={11} />
-              Medi AI · Har doim tayyor · <Heart size={10} className="text-red-400" />
+              AI Medic · Har doim tayyor · <Heart size={10} className="text-red-400" />
             </p>
           </div>
         </div>

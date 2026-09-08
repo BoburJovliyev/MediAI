@@ -85,17 +85,17 @@ const SiteFooter = () => {
               <div className="flex items-center gap-3">
                 <motion.img
                   src={logo}
-                  alt="Medi AI"
+                  alt="AI Medic"
                   className="w-11 h-11 rounded-xl object-cover shadow-glow"
                   whileHover={{ rotate: 10, scale: 1.08 }}
                 />
                 <div>
-                  <p className="font-display font-bold text-foreground text-lg">Medi AI</p>
+                  <p className="font-display font-bold text-foreground text-lg">AI Medic</p>
                   <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-4 leading-relaxed max-w-sm">
-                Medi AI — sun'iy intellekt asosidagi tibbiy diagnostika, konsultatsiya va salomatlik monitoringi
+                AI Medic — sun'iy intellekt asosidagi tibbiy diagnostika, konsultatsiya va salomatlik monitoringi
                 platformasi. Ma'lumotlaringiz shifrlangan holda saqlanadi.
               </p>
 
@@ -171,7 +171,7 @@ const SiteFooter = () => {
 
           {/* Bottom bar */}
           <div className="mt-12 pt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-            <p>© 2026 Medi AI. Barcha huquqlar himoyalangan.</p>
+            <p>© 2026 AI Medic. Barcha huquqlar himoyalangan.</p>
             <div className="flex items-center gap-5">
               <span className="flex items-center gap-1.5"><Shield size={13} className="text-accent" /> HIPAA Compliant</span>
               <span className="flex items-center gap-1.5"><HeartPulse size={13} className="text-primary" /> AI Powered</span>

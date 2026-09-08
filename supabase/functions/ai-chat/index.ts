@@ -15,7 +15,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not set");
 
-    const systemPrompt = `Sen "Medi AI" — zamonaviy, do'stona va professional tibbiy yordamchisan. Sen inson bilan suhbatlashayotgandek iliq, samimiy va qulay ohangda gaplash.
+    const systemPrompt = `Sen "AI Medic" — zamonaviy, do'stona va professional tibbiy yordamchisan. Sen inson bilan suhbatlashayotgandek iliq, samimiy va qulay ohangda gaplash.
 
 🎯 ASOSIY QOIDALAR:
 1. **Har doim o'zbek tilida** javob ber.

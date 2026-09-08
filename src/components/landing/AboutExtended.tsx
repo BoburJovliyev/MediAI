@@ -147,7 +147,7 @@ const AboutExtended = () => (
       >
         <Sparkles className="mx-auto text-accent mb-3" size={26} />
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Medi AI natijalari maslahat xarakteriga ega bo'lib, malakali shifokor tashxisini almashtirmaydi.
+          AI Medic natijalari maslahat xarakteriga ega bo'lib, malakali shifokor tashxisini almashtirmaydi.
           Har qanday jiddiy holatda mutaxassisga murojaat qiling.
         </p>
       </motion.div>

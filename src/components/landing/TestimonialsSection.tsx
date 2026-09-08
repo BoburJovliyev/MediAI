@@ -9,9 +9,9 @@ const testimonials = [
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aziza",
     rating: 5,
     text: {
-      uz: "Medi AI platformasi mening kundalik amaliyotimni tubdan o'zgartirdi. AI tahlil natijalari juda aniq va tezkor.",
-      ru: "Платформа Medi AI кардинально изменила мою ежедневную практику. Результаты AI-анализа очень точные и быстрые.",
-      en: "Medi AI has fundamentally transformed my daily practice. AI analysis results are highly accurate and fast.",
+      uz: "AI Medic platformasi mening kundalik amaliyotimni tubdan o'zgartirdi. AI tahlil natijalari juda aniq va tezkor.",
+      ru: "Платформа AI Medic кардинально изменила мою ежедневную практику. Результаты AI-анализа очень точные и быстрые.",
+      en: "AI Medic has fundamentally transformed my daily practice. AI analysis results are highly accurate and fast.",
     },
   },
   {

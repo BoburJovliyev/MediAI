@@ -84,9 +84,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
       <aside className="hidden lg:flex w-72 flex-col border-r border-border bg-card fixed h-screen">
         <div className="p-6 pb-4">
           <div className="flex items-center gap-3 mb-6">
-            <motion.img whileHover={{ rotate: 10, scale: 1.08 }} src={logo} alt="Medi AI" className="w-10 h-10 rounded-xl object-cover" />
+            <motion.img whileHover={{ rotate: 10, scale: 1.08 }} src={logo} alt="AI Medic" className="w-10 h-10 rounded-xl object-cover" />
             <div>
-              <h1 className="text-lg font-display font-bold text-foreground">Medi AI</h1>
+              <h1 className="text-lg font-display font-bold text-foreground">AI Medic</h1>
               <p className="text-xs text-muted-foreground">Intelligent Healthcare</p>
             </div>
           </div>
@@ -198,10 +198,10 @@ const DashboardLayout = ({ activeTab, onTabChange, children, onSignOut, userName
           <button
             onClick={() => onTabChange("dashboard")}
             className="flex items-center gap-2 min-w-0 shrink"
-            aria-label="Medi AI"
+            aria-label="AI Medic"
           >
-            <img src={logo} alt="Medi AI" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-            <span className="font-display font-bold text-foreground text-[clamp(0.9rem,4vw,1.05rem)] truncate">Medi AI</span>
+            <img src={logo} alt="AI Medic" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+            <span className="font-display font-bold text-foreground text-[clamp(0.9rem,4vw,1.05rem)] truncate">AI Medic</span>
           </button>
 
           <div className="flex items-center gap-1 shrink-0 [&_button]:shrink-0">
