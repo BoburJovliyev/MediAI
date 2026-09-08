@@ -22,6 +22,7 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
     { label: t("landing.nav.home"), href: "/" },
     { label: t("landing.nav.about"), href: "/about" },
     { label: t("landing.nav.departments"), href: "/departments" },
+    { label: t("landing.nav.services"), href: "/services" },
     { label: t("landing.nav.contact"), href: "/contact" },
   ];
 
