@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Moon, Sun } from "lucide-react";
+import { Search, Moon, Sun, Menu, X } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -15,6 +15,7 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
   const { t } = useLanguage();
   const { theme, toggle } = useTheme();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,13 +48,13 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
               <h1 className="text-base sm:text-xl font-display font-bold text-foreground whitespace-nowrap">AI Medic</h1>
             </button>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 min-w-0">
               {navLinks.map((link) => (
                 <motion.button
                   key={link.href}
                   onClick={() => navigate(link.href)}
                   whileHover={{ y: -2 }}
-                  className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                  className={`px-3 xl:px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
                     location.pathname === link.href
                       ? "text-foreground bg-foreground/10 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -90,10 +91,51 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
               >
                 {t("landing.login")}
               </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label={t("landing.nav.menu")}
+                aria-expanded={menuOpen}
+                className="lg:hidden p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              >
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
+              </motion.button>
             </div>
           </div>
+
+          <AnimatePresence initial={false}>
+            {menuOpen && (
+              <motion.nav
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                className="lg:hidden overflow-hidden"
+              >
+                <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {navLinks.map((link) => (
+                    <button
+                      key={link.href}
+                      onClick={() => {
+                        navigate(link.href);
+                        setMenuOpen(false);
+                      }}
+                      className={`px-3 py-2 text-sm font-medium rounded-xl text-left transition-all ${
+                        location.pathname === link.href
+                          ? "text-foreground bg-foreground/10 dark:bg-white/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {link.label}
+                    </button>
+                  ))}
+                </div>
+              </motion.nav>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
+
 
       <AnimatePresence>
         {searchOpen && (
