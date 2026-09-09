@@ -47,13 +47,13 @@ const LandingHeader = ({ onGetStarted }: LandingHeaderProps) => {
               <h1 className="text-base sm:text-xl font-display font-bold text-foreground whitespace-nowrap">AI Medic</h1>
             </button>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 min-w-0">
               {navLinks.map((link) => (
                 <motion.button
                   key={link.href}
                   onClick={() => navigate(link.href)}
                   whileHover={{ y: -2 }}
-                  className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                  className={`px-3 xl:px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
                     location.pathname === link.href
                       ? "text-foreground bg-foreground/10 dark:bg-white/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
